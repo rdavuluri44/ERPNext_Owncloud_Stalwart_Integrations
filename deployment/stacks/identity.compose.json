@@ -24,7 +24,8 @@
       "networks": {
         "default": {}
       },
-      "ports": []
+      "ports": [],
+      "stop_grace_period": "60s"
     },
     "server": {
       "image": "ghcr.io/goauthentik/server@sha256:602227a86455d6772e3d16b7d852713c4f864f40df5df894abd1285bb53979a5",

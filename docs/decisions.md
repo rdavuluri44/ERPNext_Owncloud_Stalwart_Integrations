@@ -6,6 +6,26 @@ discussion that led to a decision is not repeated here.
 
 ## 2026-11-20
 
+### A reboot must bring everything back by itself (P57)
+- **Decision:** the Drive editor bridge is placed on every network Drive's
+  oCIS is on and starts after oCIS is healthy; databases get 60 s (Redis 30 s)
+  to shut down; Docker starts after Tailscale and waits briefly for the tailnet
+  address; a boot check verifies containers, hosts, tailnet ports and the
+  editor bridge after every start and restarts the bridge once if it cannot
+  register; a five-minute watch flags crash-looping containers; a checklist
+  and a planned-reboot procedure are documented, and the test host is
+  rebooted as a drill after changes.
+- **Why:** an unplanned reboot (20 November 2026, kernel update after six days)
+  left Drive offering downloads instead of the editor: oCIS had advertised its
+  proxy-network address at random and the bridge was not on that network, so it
+  crash-looped 181 times. A single manual network attach fixed it, which is
+  exactly the repair a rule and a test should make unnecessary. Everything
+  else came back by itself, which this keeps provable.
+- **Where:** `tools/prepare_runtime.py` (`NETWORK_PEERS`), the stack files,
+  `tools/host_check.py`, `tools/render_host_checks.py`,
+  [procedures](production-moves.md), `tests/test_reboot_resilience.py`,
+  `tests/test_host_checks.py`.
+
 ### Company front page on www; the bare domain redirects to it
 - **Decision:** the company address (`www`) serves a small static front page
   that is always reachable, signed in or not: an original pencil drawing of a

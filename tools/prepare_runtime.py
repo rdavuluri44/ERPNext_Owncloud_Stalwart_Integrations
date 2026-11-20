@@ -24,6 +24,21 @@ def write_private(path, value):
     path.chmod(0o600)
 
 
+# (follower, leader) per stack: the follower joins every network of the leader.
+NETWORK_PEERS={'drive':[('collaboration','ocis')]}
+
+
+def missing_peer_networks(compose,project):
+    """Networks a follower service lacks compared with its leader (must be empty)."""
+    missing=[]
+    for follower,leader in NETWORK_PEERS.get(project,[]):
+        services=compose.get('services',{})
+        if follower in services and leader in services:
+            lacking=set(services[leader].get('networks',{}))-set(services[follower].get('networks',{}))
+            missing+=[(follower,leader,network) for network in sorted(lacking)]
+    return missing
+
+
 def prepare(source, output, profile):
     source, output = Path(source).resolve(), Path(output).resolve()
     if output == source or source in output.parents or output in source.parents:
@@ -363,6 +378,16 @@ def prepare(source, output, profile):
                 entry=attached.get(network) or {}
                 entry['aliases']=list(dict.fromkeys((entry.get('aliases') or [])+list(aliases)))
                 attached[network]=entry
+        # P57: some services reach each other through a service registry that
+        # advertises one of the leader's own addresses, chosen at random at every
+        # start. The follower must therefore be on every network the leader is on,
+        # whatever the profile adds to either (the editor bridge could not reach
+        # oCIS after a reboot because oCIS advertised its proxy-network address).
+        for follower,leader in NETWORK_PEERS.get(project,[]):
+            if follower in compose['services'] and leader in compose['services']:
+                have=compose['services'][follower].setdefault('networks',{})
+                for network in compose['services'][leader].get('networks',{}):
+                    have.setdefault(network,{})
         write_private(output/'compose'/(project+'.json'),json.dumps(compose,indent=2)+'\n')
     write_private(values_file,json.dumps(values,indent=2)+'\n')
     write_private(output/'ready.json',json.dumps({'instance':identity['instance'],

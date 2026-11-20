@@ -76,6 +76,21 @@ Run all suites offline with `python tools/run_unit_tests.py` in the matching ERP
 
 Upstream licenses are as published by each project; verify them at the pinned version before redistributing (LICENSES.md). This module's own code: open-source license not yet chosen by the owner (P35).
 
+## Reboot resilience (P57)
+
+A reboot or restart must bring every stack back without manual repair.
+`tools/prepare_runtime.py` keeps the Drive editor bridge on every network
+oCIS is on (`NETWORK_PEERS`; oCIS advertises one of its own addresses at
+random at each start) and the stacks give the databases `stop_grace_period`
+of 60 s and Redis 30 s. `tools/render_host_checks.py` renders a Docker drop-in
+(start after Tailscale, wait up to a minute for the tailnet address), a boot
+check (`tools/host_check.py boot`: containers, hosts over HTTP, tailnet ports,
+and a one-time restart of the editor bridge if it cannot register) and a
+five-minute watch for containers that keep restarting. Checklist, planned
+reboot procedure and install commands: `docs/production-moves.md`; private
+section example: `deployment/host-checks.example.json`; tests:
+`tests/test_reboot_resilience.py`, `tests/test_host_checks.py`.
+
 ## AI-assisted development
 
 Development of this module is assisted by AI agents (Anthropic's Claude); changes follow the repository → permanent test → production workflow and are accepted by the owner (see AGENTS.md).

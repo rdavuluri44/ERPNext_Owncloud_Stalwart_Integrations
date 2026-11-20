@@ -29,7 +29,8 @@
       "networks": {
         "default": {}
       },
-      "ports": []
+      "ports": [],
+      "stop_grace_period": "60s"
     },
     "redis-cache": {
       "image": "redis@sha256:7033ad495c19b6bca38aea38f9130d1a3d5b647ac94f3ebe644c8c0fb804e039",
@@ -38,7 +39,8 @@
         "default": {}
       },
       "environment": {},
-      "ports": []
+      "ports": [],
+      "stop_grace_period": "30s"
     },
     "redis-queue": {
       "image": "redis@sha256:7033ad495c19b6bca38aea38f9130d1a3d5b647ac94f3ebe644c8c0fb804e039",
@@ -50,7 +52,8 @@
         "default": {}
       },
       "environment": {},
-      "ports": []
+      "ports": [],
+      "stop_grace_period": "30s"
     },
     "configurator": {
       "image": "${ERP_IMAGE:?Build the ERP image}",

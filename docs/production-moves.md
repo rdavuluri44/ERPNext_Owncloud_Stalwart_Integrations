@@ -53,5 +53,74 @@ setting comes from a tested release plus a private profile outside Git.
 
 ## Office editor note
 
-After any restart of Drive (oCIS), restart its collaboration service as well,
-so the editor registers again.
+Drive's service (oCIS) registers one of its own internal addresses in a service
+registry, chosen at random at every start, and the editor bridge
+(collaboration) reaches oCIS at that address. The bridge is therefore put on
+**every network oCIS is on** by the renderer (`NETWORK_PEERS` in
+`tools/prepare_runtime.py`, tested), starts only after oCIS reports healthy,
+and the post-boot check restarts it once if it cannot register. If documents
+download instead of opening: look at the bridge's log for `AddAppProvider
+failed` / `i/o timeout`; the cause is a missing shared network, not the
+editor.
+
+## After a reboot or restart: checklist
+
+The server restarts every container by itself (`restart: unless-stopped`),
+Tailscale is brought up before Docker, and the **boot check** runs once Docker
+is up (`tools/host_check.py boot`; its result is in
+`/var/lib/cloud-host-check/status.json` and the journal:
+`journalctl -u cloud-boot-check`). A restart-count **watch** runs every five
+minutes (`restart-alerts.json`, journal lines starting `ALERT`). Verify by hand
+only when the check reports a problem:
+
+1. `systemctl status cloud-boot-check` is `active (exited)`; otherwise read its
+   journal: it names what stays wrong (a missing container, a host answering
+   with an error, a port not listening, the editor bridge not registered).
+2. All containers running, none restarting: `docker ps --filter
+   status=restarting` is empty.
+3. ERP, sign-in, Drive, Mail, DMS and the editor host answer (the check does
+   this over HTTP; open the portal once in a browser).
+4. **Drive opens a document** in the editor (a download offer means the bridge
+   is not registered).
+5. Tailnet-bound services listen (private DNS, mail on the tailnet and relay
+   addresses): the check tests the ports you list in the private profile.
+6. The next nightly backup finds its containers (names in the backup profile).
+7. Note the cause of the restart in the release record.
+
+## Planned reboot procedure
+
+Reboot for kernel updates deliberately, at night, not by accident:
+
+1. Announce it; pick a time away from the nightly backup (02:34 server time)
+   and from any refresh or deploy.
+2. Take a rollback note (running containers, image tags) and make sure the
+   last backup succeeded.
+3. Check that the boot check and watch units are installed and enabled, and
+   that Docker waits for Tailscale (`systemctl cat docker` shows the drop-in).
+4. `systemctl reboot`; expect one to two minutes of downtime for every app.
+5. Follow the checklist above; record the downtime and any repair the boot
+   check made.
+6. Rehearse on the test host first after changes to these files: reboot it,
+   run the checklist, then restart oCIS five times in a row and check the
+   bridge each time.
+
+## Installing the host checks
+
+On the host, from a checkout of this repository (the profile is private and
+stays outside Git; its optional `host_checks` section lists container prefixes,
+tailnet-bound ports and the tailnet address, see
+`deployment/host-checks.example.json`):
+
+    python3 tools/render_host_checks.py --profile /path/to/profile.private.json --output /tmp/host-checks
+    install -d /opt/cloud-host-check /etc/cloud-host-check
+    install -m 0755 tools/host_check.py /opt/cloud-host-check/host_check.py
+    install -m 0644 /tmp/host-checks/config.json /etc/cloud-host-check/config.json
+    install -m 0644 /tmp/host-checks/cloud-*.service /tmp/host-checks/cloud-*.timer /etc/systemd/system/
+    install -d /etc/systemd/system/docker.service.d
+    install -m 0644 /tmp/host-checks/docker.service.d/10-after-tailscale.conf /etc/systemd/system/docker.service.d/
+    systemctl daemon-reload && systemctl enable cloud-boot-check.service cloud-restart-watch.timer
+    systemctl start cloud-restart-watch.timer
+
+`daemon-reload` does not restart Docker or any container; the Docker drop-in
+takes effect at the next Docker start. Test the boot check without rebooting
+with `python3 /opt/cloud-host-check/host_check.py boot --config /etc/cloud-host-check/config.json`.

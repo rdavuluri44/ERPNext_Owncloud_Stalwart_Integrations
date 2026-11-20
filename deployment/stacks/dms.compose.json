@@ -88,7 +88,8 @@
       "ports": [],
       "networks": {
         "default": {}
-      }
+      },
+      "stop_grace_period": "60s"
     },
     "broker": {
       "image": "redis@sha256:7958cfbb9d152f87dadfbc89f1b0b15938f0b81ff8982feb327476f4911935c3",
@@ -115,7 +116,8 @@
       "ports": [],
       "networks": {
         "default": {}
-      }
+      },
+      "stop_grace_period": "30s"
     }
   },
   "networks": {

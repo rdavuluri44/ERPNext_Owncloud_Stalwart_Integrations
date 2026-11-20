@@ -1,0 +1,28 @@
+{
+  "_comment": "Optional 'host_checks' section of the deployment's private profile (P57). Keep the real file outside Git.",
+  "host_checks": {
+    "containers": [
+      "ocis-",
+      "collaboration-",
+      "db-",
+      "stalwart-",
+      "paperless-"
+    ],
+    "tailnet_ip": "100.64.0.10",
+    "tcp": [
+      {
+        "name": "private-dns",
+        "host": "100.64.0.10",
+        "port": 53
+      },
+      {
+        "name": "mail-imaps",
+        "host": "100.64.0.10",
+        "port": 993
+      }
+    ],
+    "ignore_prefixes": [
+      "configurator-"
+    ]
+  }
+}
