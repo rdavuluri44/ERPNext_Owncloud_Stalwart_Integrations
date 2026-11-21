@@ -361,3 +361,31 @@ before_request`) of a name that does not exist passes every unit test that fakes
 time. Add a static check to `tools/check_repository.py` (or CI) that resolves imports of the project's own modules
 (for example pylint's `no-name-in-module` / `import-error` for `erpnext_drive_integrations`), and the rule that tests
 import the real module under test rather than a fake copy of it.
+
+### P70 — Mail and WhatsApp domain split: `tenant.example` for production, `example.com` for the demo
+
+**App:** general · **Also touches:** mail, test-site, erp, signin · **State:** open
+
+**Status:** owner decision 21 November 2026 ("tomorrow we'll have separate email domain for prod and separate email
+for unformat; separate WhatsApp also"); not started, waits for the owner to take it up. Shared foundation of **P19**
+and **P63**: the three are planned, tested and released together, each keeping its own status.
+
+**Decided:** production mail uses the company domain `tenant.example`; `example.com` becomes the demo's own mail
+identity; a second WhatsApp number is the demo's channel. Demo users send evaluation mail and messages from
+`example.com` and the Unformat WhatsApp number (with the P63 allow list and test/demo marker).
+
+**Scope**
+1. **Production on `tenant.example`:** add the domain to the production mail server (DKIM, SPF, DMARC, MX, autoconfig),
+   create or move the production mailboxes to it; the three Google mailboxes move under P19 (blocked by P12, PTR).
+   Today `tenant.example` MX points at Google and `example.com` at our server; in the production ERP 9 of 10 active users
+   sign in with personal addresses of a public mail provider and 1 with `example.com`, so few accounts change. List every place the old address is
+   used (authentik, ERP users and Email Accounts, Drive, DMS mail import, sender addresses, invitations) and move each.
+2. **`example.com` for the demo:** where its mail runs (recommended: production mail server as a separate domain,
+   because the test site sits on a home connection with poor outgoing delivery; alternative: the test site's own mail
+   server), the demo sending accounts, DNS records; production keeps nothing on it afterwards.
+3. **Second WhatsApp number** for the demo (Meta business number), linked to P04; production WhatsApp stays separate.
+4. **Web addresses:** production websites stay on `example.com` host names unless the owner decides otherwise; only
+   the mail and messaging identities split.
+5. **Order and rollback:** DNS changes, mailbox moves and client reconfiguration in an agreed order with a rollback
+   point; nothing changes until the owner says so.
+

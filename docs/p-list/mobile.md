@@ -84,7 +84,7 @@ for the app title, its sign-in record and its link scheme (`erpmobile`); on test
 
 ### P64 — Native app sign-in on production: latent auth-hook crash and a stale client list
 
-**App:** mobile · **Also touches:** signin, erp · **State:** open
+**App:** mobile · **Also touches:** signin, erp · **State:** in progress
 
 **Status:** open, found 21 November 2026 while connecting the mobile app (PR #15) to the test site.
 - **Flaw:** `portal/mobile.py` (the `auth_hooks` entry) imported `before_request` from `portal/combined.py`, a
@@ -100,3 +100,9 @@ for the app title, its sign-in record and its link scheme (`erpmobile`); on test
 - **To do (normal order):** merge PR #15, ERP release with a rollback point; when the app goes to production (P50),
   create its client and set the native list to it (drop the stale id and the legacy key); browser and phone check after
   promotion. Decide whether Raven Mobile should be a native client.
+
+**Progress (21 November 2026):** the fix is **live on production** (ERP `4a5151f`, merged via PR #15 and #18): a Bearer request
+no longer raises the ImportError. **Remaining:** the stale native client list on production (`psvrvmandb`) is corrected
+when the app goes to production (P50), and whether Raven Mobile should be a native client is decided then.
+
+

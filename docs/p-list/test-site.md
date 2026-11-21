@@ -61,13 +61,18 @@ Needs: PR #3 merged and the first crippled refresh done first.
 
 ### P63 — Demo mode for the test site (`test.example.com`): neutral brand, no tenant traces
 
-**App:** test-site · **Also touches:** portal, signin · **State:** in progress
+**App:** test-site · **Also touches:** portal, signin, mail, erp · **State:** in progress
 
 **Status:** open, owner request 21 November 2026; not started. No earlier P item covered
 this; related: P47 (landing page), P55 (brand mechanism), P51 and P54 (crippled refresh),
 P35 (public sharing). The owner wants `test.example.com` usable as a **demo**. Its data is
 already crippled (names and identities of non-kept users removed, 60 days only); now every
 trace of the tenant goes too.
+
+**Intent (owner restatement, 21 November 2026):** (i) totally clean demo data on the test site, with no trace of
+the tenant after every refresh; (ii) authentik shows its own UN/format brand when signing in to the demo; (iii) test
+mail and messages reach only the people enrolled for testing (scope 5), each marked as test/demo (scope 6).
+**Go:** owner, 21 November 2026 (whole scope).
 
 **Scope**
 1. **Remove the tenant everywhere on the test site:** the name <tenant> and the company logo
@@ -88,19 +93,39 @@ trace of the tenant goes too.
    private assets as `assets/demo-landing/sample-flower-bee-owner-sketch.webp`: a flower with
    orange centre, green stem and leaves, and a small bee). Our own vector artwork, redrawn
    (rights: owner's own sketch and our own drawing), and drawn stroke by stroke like the
-   production landing page; keep the "Employee Zone" entry and the typed line.
+   production landing page. (Owner, 21 November 2026: the entry reads "Apps" as a badge top left and the typed
+   line is dropped on the demo; see the progress notes.)
 4. **Mechanism:** tenant branding already lives in the private runtime profile (`company_logo`,
    `company_favicon_dir`, website title and name, landing assets, P55), so the demo brand is
    a second set of private assets selected by the test profile; production keeps its own. The
    public repository stays tenant-neutral; the UN/format logo and demo art may be published
    as the neutral default.
 
+5. **Outbound mail and messages only to the test group (owner, 21 November 2026; replaces "mute"):** muting
+   e-mail and messages on the test site is not acceptable, because flows such as invitations, approvals, purchase
+   orders and WhatsApp replies must be tested end to end. Instead every outbound channel (ERP mail, Mail/Stalwart
+   relay, WhatsApp and other messaging, push) delivers **only to recipients enrolled in the test group** and drops or
+   holds everything else (with a log line, never a silent loss). **Employees** are enrolled through authentik (a
+   test group, for example the existing Testers group). **Vendors get no login**, so they need a separate enrolment:
+   to decide how (for example a "test recipients" list of vendor mail addresses and phone numbers kept in the private
+   test profile, or a flag on the Supplier record that a refresh keeps), who may add them, and their consent. The
+   refresh must keep the allow list (production data never widens it) and a check must prove that a message to a
+   non-enrolled address is not sent. This changes the documented outbound safeguard: record it in
+   `docs/decisions.md` and the test-refresh module README when adopted.
+6. **Every outgoing message is marked as test/demo (owner, 21 November 2026):** this is an exclusive test setup,
+   so everything it sends carries a visible marker. **E-mail:** a banner at the top of the body ("This is a TEST /
+   DEMO message sent from the evaluation system. It is not a real business communication.") in both the HTML and the
+   plain-text part, a `[TEST]` (or `[DEMO]`) prefix on the subject, and a header (for example `X-Test-Message: yes`).
+   **WhatsApp, SMS and push:** a `[TEST]` prefix on the text. Applied at the last step before a message leaves (the
+   mail relay and each messaging adapter), so no sender, template or app can skip it; production never adds it.
+   A check sends one message per channel to an enrolled recipient and verifies the marker.
+
 **Open questions for planning:** (a) test and production **share one authentik**, and its brand
 is chosen by the request's host name (`sso`), so the sign-in page cannot show the demo logo for test
 only without a separate sign-in host name for the demo (or accepting the shared page); (b) who may
 see the demo (the Testers group, or public with sample accounts) and whether the TEST SITE
 marker stays; (c) demo user accounts and passwords stay out of Git; (d) outbound
-mail and integrations stay quarantined as today.
+mail and integrations: answered by scope 5 (allow list of the test group instead of quarantine); open: how vendors are enrolled.
 
 **Progress (21 November 2026): demo logo live on the test site.** Owner chose option **A, navy and orange**
 (`#1F3A5F` UN, `#E8731A` format) from five combinations (A navy/orange, B graphite/teal, C green/amber, D
@@ -117,27 +142,40 @@ all of this after every data refresh, publishing the neutral brand as the reposi
 deploy skips the ERP image build when an image of the same commit exists, so a brand-only change needed the image tag
 removed first; browsers may also keep the old files because the version stamp is the commit.
 
-### P65 — Relayed test sign-in loses the requested page (X-Forwarded-Uri dropped)
+**Progress (21 November 2026, branch `p63-demo-ui`, on test at `00669d0`, not merged):** owner's eight UI points. Landing
+page: new flower-and-bee drawing after the owner's sketch (outlines drawn, then coloured; bee hovers), no tagline, the
+entry reads "Apps" as a navy (`#1F3A5F`, the colour of "UN") badge top left mirroring the TEST SITE badge. Gateway: `/`
+shows the landing page only without an ERP session, so after sign-in the portal sits at `test.example.com/` with a clean
+address (the portal also rewrites `/place_holder` to `/`); this replaces P60. Portal (same page on test and production):
+logo without the company name; refresh buttons in one row beside the logo, dates under them, status line only while a
+refresh runs. One-click entry: expected to work now that the gateway returns to the requested page (P65); owner to
+confirm. **Remaining:** owner browser check, then PR and merge; company-name masking in refreshed data, sign-in brand.
 
-**App:** test-site · **Also touches:** signin, general · **State:** in progress
+**Paused (owner, 21 November 2026): resume here when P63 is taken up again.** Scope 5 and 6 are not started. Decisions
+waiting for the owner (recommendation first):
+1. **Vendor enrolment** (vendors have no login): (a, recommended) a short list of vendor mail addresses and phone
+   numbers in the test site's private profile, added on the owner's word; survives every refresh and never comes from
+   production; or (b) a "test recipient" tick on the Supplier record in the test ERP, set by staff, which the refresh
+   must preserve.
+2. **How the test ERP sends mail:** today `mute_emails` and the disabled scheduler keep it silent, and the test egress
+   firewall allows only the SSO host and the test form SMTP address. (a, recommended) turn mail on but keep every other
+   scheduled job off; a small **test mail gateway** on the test site flushes the ERP mail queue every minute and is the
+   only way out: it delivers only to the test group (authentik group for employees, plus the vendor list), adds the
+   banner, the `[TEST]` subject prefix and the `X-Test-Message` header, and holds and logs everything else; or (b) run
+   the test ERP's scheduler fully, behind the same gateway (more realistic, more goes out).
+**Design notes:** the gateway sends through the existing dedicated test sending account (`test_form_smtp`), so the
+egress rule stays one address; the test Mail server's own outgoing mail must also go through the gateway; WhatsApp is
+not live yet (P04), so its adapter gets the same allow list and `[TEST]` prefix when built; push stays off on test.
+Branch `p63-demo-ui` (UI points) is on test awaiting the owner's browser check before its PR.
+**Domain split (owner, 21 November 2026; P70):** the demo gets its own identity: `example.com` mail and a second
+WhatsApp number; production moves to `tenant.example`. Effect on P63: (a) demo mail and messages are sent **as
+Unformat**, no longer through a production sending account (`test_form_smtp` is replaced by the demo's own account),
+which also removes the tenant from what the demo sends; (b) scope 5 (only the test group receives) **stays and matters
+more**: the refreshed data still holds real vendors' addresses and numbers, so without the allow list a demo user could
+message a real vendor as Unformat; employees enrol through an authentik group, vendors as decided above; (c) scope 6
+(test/demo marker) applies to all `example.com` mail and Unformat WhatsApp messages; (d) new questions moved to P70:
+where `example.com` mail runs, the second WhatsApp number (P04). P63, P70 and P19 are taken up together.
 
-**Status:** owner decision needed (found 21 November 2026, mobile app on test). The test site reaches the sign-in
-service through the production proxy's private (tailnet) entry point, which does not trust forwarded headers from the
-test VM, so `X-Forwarded-Uri` is dropped and the sign-in gateway returns to `/` after the passkey. Since 20 November `/`
-on the test host is the landing page (P47), so the first sign-in lands there; a second tap works because the gateway
-session exists. Two weeks earlier the test host had its own public address and `/` was the portal, so nobody saw it.
-**Options:** trust forwarded headers on that entry point for the bridge sources only (production proxy setting,
-low exposure: tailnet-only entry point, fixed sources); or accept the second tap. A change of the post-sign-in
-default page would not help (it changes where you land, not the lost request). Test first where possible; a
-production-only setting gets a browser and protocol check right after promotion.
-
-**Decision (owner, 21 November 2026): option (a), as corrected in review:** trust forwarded headers on the SSO host's
-private entry point from the **test VM's exact address only** (all 359 bridge checks in the last 6 hours came from it;
-the Docker gateway `<Docker gateway address>` on the allow list carried 216 unrelated requests and is not trusted; drop it from the
-allow list too); repository first (PR #16: `tools/sso_proxy_trust.py`, `prepare_auth_bridge.py --print-forwarded-trust`),
-then production with a backup, the setting saved in Coolify, and the proxy restart at a quiet moment; production-only
-setting, so browser checks right after it is applied. Also decided: ERP Mobile shows no consent screen (test profile
-`skip_authorization`, applied on test 21 November).
 
 ### P66 — Errors on the test site are invisible: Error Log rows stay queued
 
