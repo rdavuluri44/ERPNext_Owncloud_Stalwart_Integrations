@@ -9,7 +9,7 @@ import json
 from datetime import datetime, time
 import frappe
 from frappe.utils import get_datetime, getdate, now_datetime, nowdate, cint
-from erpnext_drive_integrations.custom_hr.access import require_user, require_site, require_manager, eligible_supervisor, site_access, is_manager, site_ids
+from erpnext_drive_integrations.custom_hr.access import require_user, require_site, require_manager, eligible_supervisor, site_access, is_manager, site_ids, self_sites
 from erpnext_drive_integrations.custom_hr import domain
 
 
@@ -41,14 +41,15 @@ def lock_employee(employee):
     return doc
 
 
-def shift_details(site,shift):
+def shift_details(site,shift,at=None):
+    """The shift and its attendance date for a capture taken `at` (default now; offline captures pass their time)."""
     if shift not in (site.day_shift,site.night_shift):frappe.throw('Choose one of this site’s shifts.')
     d=frappe.get_doc('Shift Type',shift)
     def as_time(value):
         seconds=int(value.total_seconds()) if hasattr(value,'total_seconds') else None
         if seconds is not None:return time(seconds//3600,(seconds//60)%60,seconds%60)
         return get_datetime(f'2000-01-01 {value}').time()
-    day=domain.shift_date(now_datetime(),as_time(d.start_time),as_time(d.end_time))
+    day=domain.shift_date(at or now_datetime(),as_time(d.start_time),as_time(d.end_time))
     return dict(name=d.name,start=as_time(d.start_time).strftime('%H:%M'),end=as_time(d.end_time).strftime('%H:%M'),attendance_date=str(day))
 
 
@@ -148,12 +149,36 @@ def decode_photo(data):
     except (ValueError,binascii.Error,OSError):frappe.throw('The camera photograph is invalid. Please capture it again.')
 
 
+def moment(data,with_gps=False):
+    """Server-clock capture time (and GPS time) for a payload; offline payloads carry `offline`,
+    `device_captured_at` (the phone's clock) and `clock_offset_s` (server minus phone, measured when last online)."""
+    offline=bool(data.get('offline'))
+    device=get_datetime(data.get('device_captured_at')) if offline and data.get('device_captured_at') else None
+    offset=data.get('clock_offset_s',0) if offline else 0
+    if not with_gps:return fail_rule(domain.corrected_time,now_datetime(),offline,device,offset)
+    gps=get_datetime(data.get('gps_captured_at')) if data.get('gps_captured_at') else None
+    return fail_rule(domain.capture_time,now_datetime(),gps,offline,device,offset)
+
+
+def mark_offline(doc,data):
+    offline=bool(data.get('offline'))
+    doc.captured_offline=cint(offline)
+    doc.device_captured_at=get_datetime(data.get('device_captured_at')) if offline else None
+    doc.clock_offset_s=int(data.get('clock_offset_s') or 0) if offline else 0
+
+
+def notify_approvers(doc,user,title='Attendance ready for review'):
+    approvers=frappe.get_all('Field Site Member',filters={'parent':doc.site,'team_role':'Approver','enabled':1},pluck='user')
+    for approver in set(approvers):
+        if approver!=user:notify(approver,title,doc)
+
+
 def capture(data):
     user=require_user()
     site=require_site(data.get('site'),'Supervisor')
     employee=data.get('employee');worker=lock_employee(employee)
-    if worker.user_id==user:frappe.throw('Use My HR to mark your own attendance.')
-    details=shift_details(site,data.get('shift'));day=details['attendance_date']
+    if worker.user_id==user:frappe.throw('Use your own check-in to record your attendance.')
+    details=shift_details(site,data.get('shift'),moment(data));day=details['attendance_date']
     base,extra,effective=assignment(employee,site.name,day,details['name'],lock=True)
     request_id=str(data.get('request_id') or '')
     if not re.fullmatch(r'[A-Za-z0-9_-]{16,80}',request_id):frappe.throw('Missing request identifier. Reopen the capture screen.')
@@ -190,11 +215,9 @@ def capture(data):
     if photo or doc.is_new():
         lat,lon,accuracy=fail_rule(domain.validate_location,data.get('latitude'),data.get('longitude'),data.get('accuracy_m'),
             site.latitude,site.longitude,float(site.radius_m or 0),float(site.maximum_accuracy_m or 200))
-        if not data.get('gps_captured_at'):frappe.throw('Capture a fresh GPS location.')
-        gps_time=get_datetime(data.get('gps_captured_at'))
-        if not gps_time or abs((now_datetime()-gps_time).total_seconds())>300:
-            frappe.throw('The location is older than five minutes. Fetch it again.')
-        doc.latitude=lat;doc.longitude=lon;doc.accuracy_m=accuracy;doc.gps_captured_at=gps_time;doc.captured_at=now_datetime()
+        captured_at,gps_time=moment(data,with_gps=True)
+        doc.latitude=lat;doc.longitude=lon;doc.accuracy_m=accuracy;doc.gps_captured_at=gps_time;doc.captured_at=captured_at
+        mark_offline(doc,data)
     doc.attendance_status=status;doc.work_mode=mode;doc.asset=asset;doc.remarks=remarks
     doc.machine_required=cint(effective['machine_required']);doc.state='Draft';doc.review_remarks=''
     doc.last_capture_id=capture_id;doc.last_capture_digest=digest
@@ -221,10 +244,107 @@ def submit_entry(name):
     elif doc.attendance_status == 'Absent':
         doc.check_in_time = doc.auto_checkout_at = doc.check_out_time = doc.checkout_method = None
     doc.state='Submitted';doc.submitted_at=now_datetime();save(doc)
-    approvers=frappe.get_all('Field Site Member',filters={'parent':doc.site,'team_role':'Approver','enabled':1},pluck='user')
-    for approver in set(approvers):
-        if approver!=user:notify(approver,'Attendance ready for review',doc)
+    if not approve_without_review(doc):notify_approvers(doc,user)
     return {'name':doc.name,'state':doc.state}
+
+
+def self_capture(data):
+    """An employee's own check-in: selfie, location inside the site's fence, server time (or a corrected offline
+    time). It goes straight to the site's approvers; HR attendance is created only when one of them approves, or at
+    once at a site that needs no approval (see approve_without_review)."""
+    user=require_user()
+    employee=frappe.db.get_value('Employee',{'user_id':user,'status':'Active'},'name')
+    if not employee:frappe.throw('Your user is not linked to an active employee. Ask HR.')
+    if frappe.db.exists('Field Worker Assignment',{'employee':employee}):
+        frappe.throw('Your supervisor records your attendance.')
+    if data.get('site') not in self_sites(user):frappe.throw('You cannot check in at this site.',frappe.PermissionError)
+    site=frappe.get_doc('Field Site',data.get('site'));worker=lock_employee(employee)
+    if worker.company!=site.company:frappe.throw('Your company does not match this site.')
+    request_id=str(data.get('request_id') or '')
+    if not re.fullmatch(r'[A-Za-z0-9_-]{16,80}',request_id):frappe.throw('Missing request identifier. Reopen the check-in screen.')
+    details=shift_details(site,data.get('shift'),moment(data));day=details['attendance_date']
+    existing=frappe.db.get_value('Field Attendance Entry',{'attendance_key':key(employee,day,details['name'])},['name','state','request_id'],as_dict=True)
+    if existing:
+        if existing.request_id==request_id:return {'name':existing.name,'state':existing.state}
+        frappe.throw('You have already checked in for this shift.')
+    if frappe.db.exists('Field Attendance Entry',{'request_id':request_id}):frappe.throw('This request identifier is already used.')
+    if not data.get('photo'):frappe.throw('Take a selfie to check in.')
+    photo=decode_photo(data['photo'])
+    lat,lon,accuracy=fail_rule(domain.validate_location,data.get('latitude'),data.get('longitude'),data.get('accuracy_m'),
+        site.latitude,site.longitude,float(site.radius_m or 0),float(site.maximum_accuracy_m or 200))
+    captured_at,gps_time=moment(data,with_gps=True)
+    remarks=str(data.get('remarks') or '').strip()
+    if len(remarks)>2000:frappe.throw('Keep remarks under 2,000 characters.')
+    doc=frappe.get_doc(dict(doctype='Field Attendance Entry',entry_type='Self',attendance_key=key(employee,day,details['name']),
+        request_id=request_id,last_capture_id=request_id,employee=employee,employee_name=worker.employee_name,site=site.name,
+        project=site.project,company=worker.company,attendance_date=day,shift=details['name'],captured_by=user,
+        responsible_supervisor=user,captured_at=captured_at,revision=1,state='Submitted',attendance_status='Present',
+        work_mode='Not applicable',remarks=remarks,latitude=lat,longitude=lon,accuracy_m=accuracy,gps_captured_at=gps_time,
+        check_in_time=captured_at,auto_checkout_at=captured_at+domain.AUTO_CHECKOUT,submitted_at=now_datetime()))
+    mark_offline(doc,data);save(doc)
+    from frappe.utils.file_manager import save_file
+    doc.photo=save_file(f'field-{doc.name}-1.jpg',photo,'Field Attendance Entry',doc.name,is_private=1).file_url;save(doc)
+    if not approve_without_review(doc):notify_approvers(doc,user,'Self check-in ready for review')
+    return {'name':doc.name,'state':doc.state,'check_in_time':str(doc.check_in_time),'captured_offline':doc.captured_offline}
+
+
+def self_checkout(data):
+    """The employee's own check-out: location inside the site's fence and the server's (or corrected) time; no selfie."""
+    user=require_user();doc=lock_doc('Field Attendance Entry',data.get('name'))
+    if doc.get('entry_type')!='Self' or doc.captured_by!=user:frappe.throw('This is not your check-in.',frappe.PermissionError)
+    if doc.check_out_time:return {'name':doc.name,'check_out_time':str(doc.check_out_time),'checkout_method':doc.checkout_method}
+    if doc.attendance_status!='Present' or doc.state not in ('Submitted','Approved'):frappe.throw('There is no open check-in to close.')
+    site=frappe.get_doc('Field Site',doc.site)
+    fail_rule(domain.validate_location,data.get('latitude'),data.get('longitude'),data.get('accuracy_m'),
+        site.latitude,site.longitude,float(site.radius_m or 0),float(site.maximum_accuracy_m or 200))
+    out_at,_=moment(data,with_gps=True)
+    doc.check_out_time=fail_rule(domain.checkout_time,get_datetime(doc.check_in_time),out_at)
+    doc.checkout_method='Self check-out (offline)' if data.get('offline') else 'Self check-out'
+    doc.revision+=1;save(doc)
+    return {'name':doc.name,'check_out_time':str(doc.check_out_time),'checkout_method':doc.checkout_method}
+
+
+def review_many(names,decision,remarks=''):
+    """Approve or return several entries; each is reviewed on its own (all rules apply), one failure does not stop
+    the rest, and the result says per entry what happened."""
+    require_user()
+    names=list(dict.fromkeys(names if isinstance(names,list) else []))
+    if not names or len(names)>200:frappe.throw('Select between 1 and 200 records.')
+    results=[]
+    for name in names:
+        frappe.db.savepoint('review_many')
+        try:
+            results.append(dict(review_entry(name,decision,remarks),ok=True))
+        except (frappe.ValidationError,frappe.PermissionError) as exc:
+            frappe.db.rollback(save_point='review_many');frappe.clear_messages()
+            results.append(dict(name=name,ok=False,error=str(exc)))
+    return results
+
+
+def existing_attendance(doc):
+    # Never reuse or overwrite HR attendance created elsewhere.
+    return frappe.db.exists('Attendance',{'employee':doc.employee,'attendance_date':doc.attendance_date,'shift':doc.shift,'docstatus':['<',2]})
+
+
+def hr_attendance(doc):
+    """Create and submit the HR Attendance for an entry and mark the entry approved (the caller saves it)."""
+    attendance=frappe.get_doc(dict(doctype='Attendance',employee=doc.employee,company=doc.company,
+        attendance_date=doc.attendance_date,shift=doc.shift,status=doc.attendance_status,custom_field_entry=doc.name,custom_field_project=doc.project))
+    if attendance.meta.has_field('project'):attendance.project=doc.project
+    attendance.flags.field_service=True;attendance.insert(ignore_permissions=True)
+    attendance.flags.ignore_permissions=True;attendance.submit()
+    doc.attendance=attendance.name;doc.state='Approved'
+
+
+def approve_without_review(doc):
+    """Sites that need no approval (for example head office; owner, 22 November 2026): a submitted online entry
+    becomes HR attendance at once. Offline entries still go to the site's approvers, and so does a clash with HR
+    attendance created elsewhere. Returns True when approved here."""
+    if doc.captured_offline or frappe.db.get_value('Field Site',doc.site,'approval_required') or existing_attendance(doc):
+        return False
+    lock_employee(doc.employee);hr_attendance(doc)
+    doc.review_remarks='No approval required at this site.';doc.reviewed_at=now_datetime();doc.revision+=1;save(doc)
+    return True
 
 
 def review_entry(name,decision,remarks=''):
@@ -238,15 +358,8 @@ def review_entry(name,decision,remarks=''):
     if decision=='Return' and not remarks:frappe.throw('Explain what needs correcting.')
     if decision=='Approve':
         lock_employee(doc.employee)
-        # Never reuse or overwrite HR attendance created elsewhere.
-        existing=frappe.db.exists('Attendance',{'employee':doc.employee,'attendance_date':doc.attendance_date,'shift':doc.shift,'docstatus':['<',2]})
-        if existing:frappe.throw('HR attendance already exists for this worker and shift. Ask HR to resolve the conflict; nothing was overwritten.')
-        attendance=frappe.get_doc(dict(doctype='Attendance',employee=doc.employee,company=doc.company,
-            attendance_date=doc.attendance_date,shift=doc.shift,status=doc.attendance_status,custom_field_entry=doc.name,custom_field_project=doc.project))
-        if attendance.meta.has_field('project'):attendance.project=doc.project
-        attendance.flags.field_service=True;attendance.insert(ignore_permissions=True)
-        attendance.flags.ignore_permissions=True;attendance.submit()
-        doc.attendance=attendance.name;doc.state='Approved'
+        if existing_attendance(doc):frappe.throw('HR attendance already exists for this worker and shift. Ask HR to resolve the conflict; nothing was overwritten.')
+        hr_attendance(doc)
     else:doc.state='Returned'
     doc.review_remarks=remarks;doc.reviewed_by=user;doc.reviewed_at=now_datetime();doc.revision+=1;save(doc)
     notify(doc.captured_by,f'Attendance {doc.state.lower()}',doc)

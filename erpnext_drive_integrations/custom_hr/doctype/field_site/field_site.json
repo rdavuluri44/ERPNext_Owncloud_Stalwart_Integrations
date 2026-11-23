@@ -14,6 +14,7 @@
     "radius_m",
     "maximum_accuracy_m",
     "enabled",
+    "approval_required",
     "members",
     "assets"
   ],
@@ -79,6 +80,13 @@
       "label": "Enabled",
       "fieldtype": "Check",
       "default": "1"
+    },
+    {
+      "fieldname": "approval_required",
+      "label": "Attendance needs approval",
+      "fieldtype": "Check",
+      "default": "1",
+      "description": "Ticked (project sites): the site's approvers approve every attendance. Unticked (for example head office): an online check-in inside the fence becomes HR attendance at once; offline check-ins still go to the approvers."
     },
     {
       "fieldname": "members",

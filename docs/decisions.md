@@ -427,6 +427,23 @@ discussion that led to a decision is not repeated here.
   app is easier to manage, review and upgrade than several. **Where:** `erpnext_drive_integrations/custom_hr/`,
   `erpnext_drive_integrations/patches.txt`, `tests/test_custom_hr.py`, `modules.json`.
 
+### Self check-in with a selfie, approved by the project manager like team attendance; one attendance path
+- **Decision:** employees with a login check in themselves through `custom_hr` (selfie, location inside the site's
+  fence, the server's time), and every attendance, team or self, is approved by the site's approvers, singly or in
+  bulk; HR attendance is created only on approval. Offline captures (self and team) carry the phone's clock and its
+  measured difference to the server, are accepted for at most one day and are marked for the approver; an exact
+  native clock follows with a development build. Sites can be set to need no approval (for example head office):
+  there an online entry becomes HR attendance at once, while offline entries still go to the approvers. One
+  attendance path, left to the administrator: a box in HR Settings (ticked on first install) blocks Frappe HR's own
+  check-in on the server for everyone except the roles listed there, and keeps its button and automatic attendance
+  on our sites' shifts off; unticked, our app leaves those settings alone.
+- **Why:** owner, 22 November 2026: the project manager's approval is required for all attendance; Frappe HR has no
+  selfie, no approval step for check-ins, takes the phone's clock and has no offline capture. Head-office staff
+  need no approval, and the admin, not the code, decides who may still use Frappe HR's check-in (owner, same
+  day). **Where:**
+  `erpnext_drive_integrations/custom_hr/` (service, api, domain, setup, the Field Attendance Entry and Field Site
+  Member DocTypes), `tests/test_custom_hr.py`, `custom_hr/integration_tests.py`.
+
 ### Contributor access to the test site: own key, deploy-only, never the owner's key
 - **Decision:** a contributor who needs to install a branch on the test site gets their own SSH key (they send only
   the public half), bound to a dedicated account whose forced command can only deploy a branch of the public

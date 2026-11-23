@@ -1,6 +1,6 @@
 import frappe
 from frappe.utils import now_datetime, nowdate, cint
-from erpnext_drive_integrations.custom_hr.access import require_user, require_site, require_manager, site_ids, site_access, is_manager, entry_access
+from erpnext_drive_integrations.custom_hr.access import require_user, require_site, require_manager, site_ids, site_access, is_manager, entry_access, self_sites
 from erpnext_drive_integrations.custom_hr import service
 
 
@@ -19,8 +19,17 @@ def bootstrap():
             supervisors=[dict(user=m.user,label=frappe.db.get_value('User',m.user,'full_name') or m.user)
                 for m in doc.members if m.enabled and m.team_role=='Supervisor'],
             assets=[dict(name=r.asset,label=frappe.db.get_value('Asset',r.asset,'asset_name') or r.asset) for r in doc.assets]))
+    employee=frappe.db.get_value('Employee',{'user_id':user,'status':'Active'},'name')
+    # Sites for the person's own check-in, with the fence so the app can warn before sending (the server decides).
+    check_in_sites=[]
+    if employee and not frappe.db.exists('Field Worker Assignment',{'employee':employee}):
+        for name in self_sites(user):
+            doc=frappe.get_doc('Field Site',name)
+            check_in_sites.append(dict(name=name,label=doc.site_name,project=doc.project,latitude=doc.latitude,longitude=doc.longitude,
+                radius_m=doc.radius_m,maximum_accuracy_m=doc.maximum_accuracy_m,
+                shifts=[dict(service.shift_details(doc,s),label=label) for s,label in [(doc.day_shift,'Day'),(doc.night_shift,'Night')]]))
     return dict(user=user,full_name=frappe.db.get_value('User',user,'full_name'),manager=is_manager(user),
-        sites=sites,server_now=str(now_datetime()),employee=frappe.db.get_value('Employee',{'user_id':user,'status':'Active'},'name'),version='0.1.0')
+        sites=sites,check_in_sites=check_in_sites,server_now=str(now_datetime()),employee=employee,version='0.2.0')
 
 
 @frappe.whitelist()
@@ -69,7 +78,8 @@ def approvals(site,shift=None):
     if shift:
         details=service.shift_details(location,shift);filters.update(shift=shift,attendance_date=details['attendance_date'])
     docs=frappe.get_all('Field Attendance Entry',filters=filters,
-        fields=['name','employee','employee_name','attendance_date','shift','attendance_status','work_mode','asset','captured_by','submitted_at'],order_by='submitted_at asc',limit=200)
+        fields=['name','employee','employee_name','attendance_date','shift','attendance_status','work_mode','asset','captured_by','submitted_at',
+                'entry_type','captured_offline','check_in_time','accuracy_m'],order_by='submitted_at asc',limit=200)
     for d in docs:
         d.can_review=d.captured_by!=user and frappe.db.get_value('Employee',d.employee,'user_id')!=user
     return docs
@@ -85,6 +95,29 @@ def submit(name):return service.submit_entry(name)
 
 @frappe.whitelist(methods=['POST'])
 def review(name,decision,remarks=''):return service.review_entry(name,decision,remarks)
+
+
+@frappe.whitelist(methods=['POST'])
+def review_many(names,decision,remarks=''):return service.review_many(data(names),decision,remarks)
+
+
+@frappe.whitelist(methods=['POST'])
+def self_check_in(payload):return service.self_capture(data(payload))
+
+
+@frappe.whitelist(methods=['POST'])
+def self_check_out(payload):return service.self_checkout(data(payload))
+
+
+@frappe.whitelist(methods=['GET'])
+def my_attendance():
+    """The person's own check-ins (newest first), for My HR."""
+    user=require_user()
+    employee=frappe.db.get_value('Employee',{'user_id':user,'status':'Active'},'name')
+    if not employee:return []
+    return frappe.get_all('Field Attendance Entry',filters={'employee':employee,'entry_type':'Self'},
+        fields=['name','site','shift','attendance_date','state','check_in_time','check_out_time','checkout_method','captured_offline',
+                'review_remarks','attendance'],order_by='attendance_date desc, check_in_time desc',limit=100)
 
 
 @frappe.whitelist(methods=['POST'])

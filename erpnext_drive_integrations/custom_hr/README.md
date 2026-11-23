@@ -40,6 +40,39 @@ Site config `cloud_features` key `custom_hr` (the former key `field` is still ho
 created on install. Permissions are enforced on the server in `custom_hr/permissions.py`, `custom_hr/access.py` and
 `custom_hr/guards.py`.
 
+### Self check-in, offline captures and approval (owner decisions of 22 November 2026)
+
+- **Who checks in themselves:** employees with a login who are listed on a Field Site with the member role
+  **Staff** (Supervisors and Approvers of a site may also check in there). People recorded by a supervisor (a Field
+  Worker Assignment) cannot check in themselves.
+- **Self check-in** (`api.self_check_in`): a **selfie** is required; the location must lie inside the site's fence
+  and be accurate enough (`radius_m`, `maximum_accuracy_m`); the time is the server's. The entry is a Field
+  Attendance Entry with **entry type "Self"**, submitted straight to the site's approvers. One check-in per person
+  and shift; a retry with the same request ID returns the same entry.
+- **Self check-out** (`api.self_check_out`): inside the fence, no selfie, before the automatic 12-hour check-out.
+- **Offline** (self and team captures): the phone sends `offline`, its own clock reading `device_captured_at` and
+  `clock_offset_s` (server minus phone, measured at its last connection, for example from `bootstrap`'s
+  `server_now`). The server uses the corrected time, accepts it only within the last day and not in the future, and
+  marks the entry **"Captured offline"** for the approver. A later development build will add an exact native clock.
+- **Approval:** every entry, team or self, is approved by the site's approvers (the project manager); nobody approves
+  their own attendance or their own submission. `api.review_many` approves or returns up to 200 entries, each under
+  all the rules, and reports per entry what happened. Approval creates the HR Attendance, as before.
+- **Sites without approval** (for example head office): each Field Site has the box **"Attendance needs
+  approval"**, ticked by default and for every existing site. Where an administrator unticks it, an online entry
+  (self or team) becomes HR attendance as soon as it is submitted. Offline entries still go to the site's
+  approvers, and so does a clash with HR attendance created elsewhere; so such a site also keeps an approver.
+- **One attendance path, the administrator's choice:** HR Settings has **"Block Frappe HR check-ins (use the
+  company app)"** (ticked on first install) and **"Roles that may still create check-ins"** (first "System
+  Manager"; one role per line, for example for an attendance machine). While ticked:
+  - the server refuses any new or changed Employee Checkin from users without a listed role, whatever screen or
+    route it comes from (background jobs running as Administrator pass);
+  - on install and every migrate, Frappe HR's check-in button ("Allow Employee Checkin from Mobile App") and
+    automatic attendance on the Shift Types our sites use are switched off.
+  Unticked, this module leaves Frappe HR's check-in settings alone; the administrator manages them.
+- **For the mobile app:** `bootstrap` (now also `check_in_sites` with each site's fence and shifts, and
+  `server_now`), `self_check_in`, `self_check_out`, `my_attendance`, `save_capture`, `submit`, `approvals`,
+  `entry`, `review`, `review_many`. Writes are POST only.
+
 **Upgrading a site from the former name:** `bench migrate` runs `custom_hr/patches/rename_module.py` before the
 DocTypes are synced; it renames "Cloud Field" to "Custom HR". When Frappe has already registered
 the new module for this app, the patch merges the old module's links into that record. Records and

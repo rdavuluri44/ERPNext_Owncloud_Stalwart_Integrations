@@ -21,7 +21,8 @@
       "label": "Team role",
       "fieldtype": "Select",
       "reqd": 1,
-      "options": "Supervisor\nApprover"
+      "options": "Supervisor\nApprover\nStaff",
+      "description": "Supervisor: records their team. Approver: approves the site's attendance (the project manager). Staff: an employee with a login who checks in themselves at this site."
     },
     {
       "fieldname": "enabled",
