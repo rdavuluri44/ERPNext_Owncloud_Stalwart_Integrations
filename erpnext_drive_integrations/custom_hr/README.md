@@ -41,7 +41,8 @@ created on install. Permissions are enforced on the server in `custom_hr/permiss
 `custom_hr/guards.py`.
 
 **Upgrading a site from the former name:** `bench migrate` runs `custom_hr/patches/rename_module.py` before the
-DocTypes are synced; it renames the Module Def "Cloud Field" to "Custom HR" with Frappe's own rename. Records and
+DocTypes are synced; it renames "Cloud Field" to "Custom HR". When Frappe has already registered
+the new module for this app, the patch merges the old module's links into that record. Records and
 tables are not touched. The scheduled checkout job moves to its new name during the same migrate.
 
 ## Tests

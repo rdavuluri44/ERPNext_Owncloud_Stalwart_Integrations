@@ -90,11 +90,11 @@ class Rename(unittest.TestCase):
 
 
 class RenamePatch(unittest.TestCase):
-    def run_patch(self, existing):
+    def run_patch(self, existing, target=None):
         calls = []
         db = types.SimpleNamespace(
             exists=lambda doctype, name: name in existing,
-            get_value=lambda doctype, name, field: 0,
+            get_value=lambda doctype, name, field, **kwargs: target if name == 'Custom HR' else 0,
             set_value=lambda doctype, name, *a, **k: calls.append(('set', name, a)))
         frappe = types.SimpleNamespace(db=db, rename_doc=lambda *a, **k: calls.append(('rename', a, k)),
                                        clear_cache=lambda: calls.append(('clear',)))
@@ -112,15 +112,28 @@ class RenamePatch(unittest.TestCase):
     def test_renames_once_with_frappes_own_rename_and_restores_the_flag(self):
         calls = self.run_patch({'Cloud Field'})
         renames = [c for c in calls if c[0] == 'rename']
-        self.assertEqual(renames, [('rename', ('Module Def', 'Cloud Field', 'Custom HR'), {'force': True})])
+        self.assertEqual(renames, [('rename', ('Module Def', 'Cloud Field', 'Custom HR'), {'force': True, 'merge': False})])
         self.assertEqual(calls[-2], ('set', 'Custom HR', ({'custom': 0, 'app_name': 'erpnext_drive_integrations'},)))
 
     def test_does_nothing_when_already_renamed(self):
         self.assertEqual(self.run_patch({'Custom HR'}), [])
 
-    def test_refuses_when_both_names_exist(self):
-        with self.assertRaises(ValueError):
-            self.run_patch({'Cloud Field', 'Custom HR'})
+    def test_merges_into_frappe_registered_module(self):
+        target = types.SimpleNamespace(custom=0, app_name='erpnext_drive_integrations')
+        calls = self.run_patch({'Cloud Field', 'Custom HR'}, target)
+        self.assertIn(
+            ('rename', ('Module Def', 'Cloud Field', 'Custom HR'), {'force': True, 'merge': True}),
+            calls,
+        )
+        self.assertEqual(calls[-2], ('set', 'Custom HR', ({'custom': 0, 'app_name': 'erpnext_drive_integrations'},)))
+
+    def test_refuses_a_custom_or_differently_owned_target(self):
+        for target in (
+            types.SimpleNamespace(custom=1, app_name='erpnext_drive_integrations'),
+            types.SimpleNamespace(custom=0, app_name='another_app'),
+        ):
+            with self.subTest(target=target), self.assertRaises(ValueError):
+                self.run_patch({'Cloud Field', 'Custom HR'}, target)
 
 
 if __name__ == '__main__':
