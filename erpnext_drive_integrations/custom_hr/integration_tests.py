@@ -126,8 +126,12 @@ def run():
             company=company,status='Active',user_id=staff,custom_field_attendance_required=0)).insert(ignore_permissions=True)
         site.reload();site.latitude=17;site.longitude=78;site.radius_m=500
         site.append('members',{'user':staff,'team_role':'Staff','enabled':1});site.save(ignore_permissions=True)
+        # Use a different image from the supervisor evidence. Frappe deduplicates by content and
+        # refuses a staff user permission to attach a supervisor's existing private file.
+        selfie_buffer=io.BytesIO();Image.new('RGB',(160,160),(187,209,224)).save(selfie_buffer,'JPEG')
+        selfie='data:image/jpeg;base64,'+base64.b64encode(selfie_buffer.getvalue()).decode()
         def self_payload(**kw):
-            p=dict(site=site.name,shift=day.name,request_id=uuid.uuid4().hex,photo=photo,latitude=17,longitude=78,accuracy_m=10,gps_captured_at=str(now_datetime()))
+            p=dict(site=site.name,shift=day.name,request_id=uuid.uuid4().hex,photo=selfie,latitude=17,longitude=78,accuracy_m=10,gps_captured_at=str(now_datetime()))
             p.update(kw);return p
         frappe.set_user(staff)
         check('staff see their check-in site',[s['name'] for s in api.bootstrap()['check_in_sites']]==[site.name])
