@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the drift check every night (P59); also run it by hand after every promotion
+
+[Timer]
+OnCalendar=*-*-* 03:30
+RandomizedDelaySec=10m
+Persistent=true
+Unit=drift-check.service
+
+[Install]
+WantedBy=timers.target

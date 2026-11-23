@@ -125,3 +125,30 @@ profile used has no Drive project but the server runs Drive, see
 `daemon-reload` does not restart Docker or any container; the Docker drop-in
 takes effect at the next Docker start. Test the boot check without rebooting
 with `python3 /opt/cloud-host-check/host_check.py boot --config /etc/cloud-host-check/config.json`.
+
+## Releasing a merged change: no stack left behind (P59)
+
+1. **Plan.** `python3 tools/promotion_plan.py <commit production runs> origin/main` lists
+   every stack, setup step, live setting and restart the release reaches, and what the test
+   site could not cover. The pull request carries the same list; the release record keeps it.
+2. **Rollback point** for every stack in the list (image tags, compose and profile copies).
+3. **Promote every stack in the list**, not only the ERP: build where the plan says, render
+   and redeploy, run the setup steps, apply the live settings, restart what it names.
+4. **Check what test could not cover** right after promotion (browser and protocol checks).
+5. **Drift check.** `python3 /opt/cloud-drift-check/repository/tools/drift_check.py --config
+   /etc/cloud-drift-check/config.json` must report every stack clean (exit 0). The release
+   is not finished while it reports drift.
+
+Install the nightly check on the production host: a read-only clone of this repository in
+`/opt/cloud-drift-check/repository`, the settings from `deployment/drift-check.example.json`
+in `/etc/cloud-drift-check/config.json` (root only), and `deployment/drift-check.service.example`
+plus `deployment/drift-check.timer.example` in `/etc/systemd/system/` (without `.example`),
+then `systemctl enable --now drift-check.timer`.
+
+**The ERP core image and the nightly cleanup.** The ERP add-on image is built on the core
+image (`cloud-integrations/erp-core:<version>`). No container runs the core image itself, so
+Coolify's scheduled Docker cleanup, which removes unused images, deletes it, and the next ERP
+release first rebuilds it (about 20 minutes). Until P71 (build once, keep every build in a
+registry) removes the problem, plan that time into ERP releases. Before relying on any
+workaround (for example excluding the image from the cleanup), check which cleanup commands
+the installed Coolify version runs.

@@ -61,6 +61,7 @@ For later code updates: fetch/review the chosen Git commit, render outside Git, 
 
 ## Tests
 
+- `tests/test_promotion_plan.py`
 - `tests/test_rebuild_templates.py`
 - `tests/test_realtime_origin.py`
 - `tests/test_module_manifest.py`
@@ -75,6 +76,32 @@ Run all suites offline with `python tools/run_unit_tests.py` in the matching ERP
 - nginx — BSD-2-Clause — https://nginx.org
 
 Upstream licenses are as published by each project; verify them at the pinned version before redistributing (LICENSES.md). This module's own code: open-source license not yet chosen by the owner (P35).
+
+## Promotion plan and drift check (P59)
+
+No stack is left behind at a release (on 21 November 2026 the website stack missed a fix
+because production stacks are promoted one by one and nothing listed what a merge reached).
+
+- **`deployment/promotion-map.json`** says, for every tracked file, which stacks, setup
+  steps, live settings (authentik) and restarts it reaches when it changes, and what the
+  test site cannot cover (production-only route files; sign-in, which test shares with
+  production). A test fails when a file matches no rule, and checks the map against the
+  files `tools/prepare_runtime.py` mounts into each stack.
+- **`tools/promotion_plan.py FROM TO`** (or `--files ...`) prints that list as Markdown for
+  the pull request (template section "Promotion plan") and the release record; exit 1 when
+  a file is unclassified.
+- **`tools/drift_check.py --config ...`** on production, read-only: for each stack it finds
+  the commit it runs (Coolify's "Source commit" record written by `tools/coolify_native.py`,
+  a profile or receipt with a `commit`, or a container's image tag or revision label) and
+  reports the stack as **behind** when a file it owns changed between that commit and
+  `main`, **not on main** when it runs another branch, and **unknown** when its commit
+  cannot be read. It also compares served pages with local files (for example the landing
+  page script and the ERP favicon). Signals: exit 0 clean, 1 a check could not run, 2 drift;
+  `/var/lib/cloud-drift-check/status.json`; one journal line. Settings example:
+  `deployment/drift-check.example.json`; nightly timer `deployment/drift-check.*.example`;
+  also run it by hand after every promotion (`AGENTS.md`).
+- Not compared yet: Coolify's stored compose definition against the rendered one (Coolify
+  adds its own labels, so they are never equal byte for byte).
 
 ## Reboot resilience (P57)
 

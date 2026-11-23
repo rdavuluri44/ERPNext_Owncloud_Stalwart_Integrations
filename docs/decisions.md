@@ -458,7 +458,21 @@ discussion that led to a decision is not repeated here.
   under test imports; and the repository checks resolve imports of the project's own names.
 - **Why:** a test that replaced `portal/combined.py` with a fake copy hid a leftover import of a function that does
   not exist, so every native app request failed with HTTP 500 on the test site (21 November 2026). **Where:**
-  `tests/portal/test_mobile.py` (PR #15), P64, P68.
+  `tests/portal/test_mobile.py` (PR #15), P64, P68; the import check is `check_imports` in
+  `tools/check_repository.py` (every import of the project's own modules, also inside functions, must name an
+  existing module and name; it finds the P64 import when run on the code before its fix), rule in `AGENTS.md`.
+
+### The native app: owner decisions, one build guide, and a review workflow for agents (P50)
+- **Decision:** the app's tabs are Today, Inbox, My HR and Menu; Chat, Mail and Drive stay separate apps and are
+  not linked; every person can do in the app what their roles allow on the web. Incidents go to Raven threads the
+  person chooses; approvals and their limits come from ERPNext workflows; English only for now; self check-in
+  outside a site fence is refused by the server; remote wipe and at most one day of offline data; TestFlight for
+  iPhones. Agents build from `mobile/BUILD-GUIDE.md` with a fixed workflow: explore, design with the data path of
+  every feature, owner go, build, review agents and security review, tests, pull request, test site. Only
+  vetted official plugins and skills are used (Anthropic, Expo, Callstack), read before installing.
+- **Why:** owner, 22 November 2026: the app must be built like a production app, not "vibe-coded", and an
+  externally written build guide contradicted the working sign-in, the one-app rule and existing modules.
+  **Where:** `mobile/BUILD-GUIDE.md`, `mobile/AGENTS.md`, `mobile/README.md`, `tests/test_mobile_app.py`.
 
 ### Only open work stays in the P list
 - **Decision:** a P item is removed from its app list as soon as the task is completed, or becomes redundant or
@@ -490,6 +504,18 @@ discussion that led to a decision is not repeated here.
   renders the page as production sees it and checks that every site-specific part sits inside its setting.
   **Where:** `erpnext_drive_integrations/www/place_holder.*`, `public/test-refresh.css`, `tools/prepare_test_profiles.py`,
   `tests/test_portal_site_look.py`.
+
+### Every release lists the stacks it reaches and ends with a clean drift check (P59)
+- **Decision:** a map in the repository says which stacks, setup steps, live settings and restarts each file
+  reaches; every pull request carries the resulting promotion plan, and a promotion is finished only when the drift
+  check on production reports every stack clean for the promoted commit (also run nightly). The drift check only
+  reads: each stack's recorded commit against `main`, and served pages against local files. The ERP core image's loss
+  to the nightly cleanup is documented; the fix comes with P71 (build once, registry).
+- **Why:** owner, 21 November 2026: a production ERP release missed the website stack, and an earlier statement that
+  one ERP swap carried the fix was wrong; production stacks are promoted one by one and nothing listed what a merge
+  reached. **Where:** `deployment/promotion-map.json`, `tools/promotion_plan.py`, `tools/drift_check.py`,
+  `deployment/drift-check.*`, `AGENTS.md`, `.github/pull_request_template.md`, `docs/production-moves.md`,
+  `tests/test_promotion_plan.py`.
 
 ### Security before features and deployments
 - **Decision:** every production promotion, upgrade or new dependency starts with a check of the official security
