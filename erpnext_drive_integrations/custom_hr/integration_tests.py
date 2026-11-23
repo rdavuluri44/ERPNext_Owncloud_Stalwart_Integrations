@@ -2,9 +2,10 @@
 Creates synthetic users/employees; never uses real photographs or marks real attendance.
 """
 import base64,io,uuid,os
+from datetime import timedelta
 from pathlib import Path
 import frappe
-from frappe.utils import now_datetime,nowdate,add_days
+from frappe.utils import now_datetime,nowdate,add_days,get_datetime
 from erpnext_drive_integrations.custom_hr import service,api
 from erpnext_drive_integrations.custom_hr.access import entry_access
 
@@ -117,9 +118,69 @@ def run():
         check('supervisor roster excludes peers',all(r.supervisor==b for r in api.team(site.name,day.name)['workers']))
         frappe.set_user('Administrator')
         check('assignment audit preserved',frappe.db.count('Field Assignment Event',{'site':site.name})>=7)
+        # Self check-in (owner, 22 November 2026): Staff members check in themselves with a selfie inside the
+        # site's fence; the site's approvers approve, one by one or in bulk; offline captures keep a corrected time.
+        frappe.set_user('Administrator')
+        staff=user('staff',[])
+        frappe.get_doc(dict(doctype='Employee',first_name='FIELD TEST staff',gender=gender,date_of_birth='1990-01-01',date_of_joining=add_days(nowdate(),-10),
+            company=company,status='Active',user_id=staff,custom_field_attendance_required=0)).insert(ignore_permissions=True)
+        site.reload();site.latitude=17;site.longitude=78;site.radius_m=500
+        site.append('members',{'user':staff,'team_role':'Staff','enabled':1});site.save(ignore_permissions=True)
+        def self_payload(**kw):
+            p=dict(site=site.name,shift=day.name,request_id=uuid.uuid4().hex,photo=photo,latitude=17,longitude=78,accuracy_m=10,gps_captured_at=str(now_datetime()))
+            p.update(kw);return p
+        frappe.set_user(staff)
+        check('staff see their check-in site',[s['name'] for s in api.bootstrap()['check_in_sites']]==[site.name])
+        denied('self check-in needs a selfie',lambda:service.self_capture(self_payload(photo=None)))
+        denied('self check-in outside the fence is refused',lambda:service.self_capture(self_payload(latitude=17.1)))
+        old=str(now_datetime()-timedelta(days=2))
+        denied('offline check-in older than a day is refused',lambda:service.self_capture(self_payload(offline=1,device_captured_at=old,clock_offset_s=0,gps_captured_at=old)))
+        sp=self_payload();mine=service.self_capture(sp)
+        sdoc=frappe.get_doc('Field Attendance Entry',mine['name']);files.append(sdoc.photo)
+        check('self check-in goes straight to approval',sdoc.state=='Submitted' and sdoc.entry_type=='Self' and not sdoc.attendance)
+        check('self check-in retry is idempotent',service.self_capture(sp)['name']==sdoc.name)
+        denied('second check-in for the same shift is refused',lambda:service.self_capture(self_payload()))
+        check('own check-in is visible to its owner',entry_access(sdoc,staff))
+        denied('nobody approves their own check-in',lambda:service.review_entry(sdoc.name,'Approve'))
+        frappe.set_user(boss)
+        results=service.review_many([sdoc.name,'does-not-exist'],'Approve')
+        check('bulk approval reports each record',results[0]['ok'] and not results[1]['ok'])
+        check('approved self check-in creates HR attendance',frappe.db.get_value('Attendance',results[0]['attendance'],'docstatus')==1)
+        frappe.set_user(staff)
+        out=service.self_checkout(dict(name=sdoc.name,latitude=17,longitude=78,accuracy_m=10,gps_captured_at=str(now_datetime())))
+        check('self check-out recorded',out['checkout_method']=='Self check-out')
+        check('my attendance lists the check-in',[r.name for r in api.my_attendance()]==[sdoc.name])
+        frappe.set_user(a)
+        then=now_datetime()-timedelta(hours=3);q=payload(w3.name)
+        q.update(offline=1,device_captured_at=str(then),clock_offset_s=60,gps_captured_at=str(then))
+        odoc=frappe.get_doc('Field Attendance Entry',service.capture(q)['name']);files.append(odoc.photo)
+        check('offline team capture keeps its corrected time',odoc.captured_offline==1 and odoc.entry_type=='Team'
+              and abs((get_datetime(odoc.captured_at)-(then+timedelta(seconds=60))).total_seconds())<1)
+        # Head office (owner, 22 November 2026): a site that needs no approval; offline entries still go to approvers.
+        frappe.set_user('Administrator');frappe.db.set_value('Field Site',site.name,'approval_required',0);w5=worker('five')
+        frappe.set_user(a)
+        check('offline entry still needs approval where approval is off',service.submit_entry(odoc.name)['state']=='Submitted')
+        fdoc=frappe.get_doc('Field Attendance Entry',service.capture(payload(w5.name))['name']);files.append(fdoc.photo)
+        out=service.submit_entry(fdoc.name);fdoc.reload()
+        check('online entry where approval is off becomes HR attendance at once',out['state']=='Approved'
+              and frappe.db.get_value('Attendance',fdoc.attendance,'docstatus')==1)
+        # Frappe HR's own check-in: blocked on the server while HR Settings says so, except for the listed roles.
+        from erpnext_drive_integrations.custom_hr import guards
+        frappe.set_user('Administrator')
+        check('Frappe HR check-in guard is installed','erpnext_drive_integrations.custom_hr.guards.block_frappe_hr_checkin'
+              in frappe.get_hooks('doc_events').get('Employee Checkin',{}).get('validate',[]))
+        frappe.db.set_single_value('HR Settings',{'custom_block_frappe_hr_checkin':1,'custom_checkin_allowed_roles':'System Manager'})
+        frappe.clear_document_cache('HR Settings','HR Settings')
+        log=frappe.get_doc(dict(doctype='Employee Checkin',employee=frappe.db.get_value('Employee',{'user_id':staff},'name'),log_type='IN',time=now_datetime()))
+        frappe.set_user(staff)
+        denied('Frappe HR check-in is refused while blocked',lambda:guards.block_frappe_hr_checkin(log))
+        frappe.set_user('Administrator')
+        frappe.db.set_single_value('HR Settings','custom_block_frappe_hr_checkin',0);frappe.clear_document_cache('HR Settings','HR Settings')
+        frappe.set_user(staff);guards.block_frappe_hr_checkin(log);check('Frappe HR check-in is open once the admin unticks the box',True)
         print('FIELD_INTEGRATION_PASS',len(checks),checks)
     finally:
         frappe.db.rollback()
+        frappe.clear_document_cache('HR Settings','HR Settings')  # the cached copy would keep the test's values
         frappe.set_user(original)
         for url in files:
             path=Path(frappe.get_site_path('private','files',url.rsplit('/',1)[-1]))

@@ -33,7 +33,12 @@ class FieldSiteBase(Document):
             pair=(member.user,member.team_role)
             if pair in seen:frappe.throw('A team member is listed twice.')
             seen.add(pair)
-            if member.enabled:
+            if member.enabled and member.team_role=='Staff':
+                # Self check-in staff need no role, only an active employee record of this site's company.
+                if not frappe.db.get_value('User',member.user,'enabled') or not frappe.db.exists('Employee',
+                        {'user_id':member.user,'status':'Active','company':self.company}):
+                    frappe.throw(f'{member.user} must be enabled and linked to an active employee of {self.company}.')
+            elif member.enabled:
                 role='Field Supervisor' if member.team_role=='Supervisor' else 'Field Attendance Approver'
                 if not frappe.db.get_value('User',member.user,'enabled') or role not in frappe.get_roles(member.user):
                     frappe.throw(f'{member.user} must be enabled and have the {role} role first.')
@@ -136,3 +141,13 @@ def on_employee_update(doc,method=None):
     assignment=lock_doc('Field Worker Assignment',name)
     assignment.machine_required=doc.get('custom_field_machine_required') or 0
     save(assignment)
+
+
+def block_frappe_hr_checkin(doc,method=None):
+    """One attendance path: while HR Settings blocks Frappe HR check-ins, only the roles listed there may create or
+    change Employee Checkin records, from any screen or route (the hidden button alone is not enough)."""
+    from erpnext_drive_integrations.custom_hr.domain import checkin_allowed
+    settings=frappe.get_cached_doc('HR Settings')
+    if not checkin_allowed(settings.get('custom_block_frappe_hr_checkin'),settings.get('custom_checkin_allowed_roles'),
+                           frappe.get_roles(),frappe.session.user):
+        frappe.throw('Check in with the company app. Frappe HR check-ins are switched off by your administrator.',frappe.PermissionError)

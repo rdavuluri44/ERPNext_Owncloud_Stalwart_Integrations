@@ -16,6 +16,7 @@ doc_events = {
     "Employee": {"validate": "erpnext_drive_integrations.custom_hr.guards.validate_employee", "after_insert": "erpnext_drive_integrations.custom_hr.guards.after_employee_insert", "on_update": "erpnext_drive_integrations.custom_hr.guards.on_employee_update"},
     "User": {"validate": "erpnext_drive_integrations.custom_hr.guards.validate_user", "on_trash": "erpnext_drive_integrations.custom_hr.guards.validate_user"},
     "File": {"validate": "erpnext_drive_integrations.custom_hr.guards.protect_file", "on_trash": "erpnext_drive_integrations.custom_hr.guards.protect_file"},
+    "Employee Checkin": {"validate": "erpnext_drive_integrations.custom_hr.guards.block_frappe_hr_checkin"},
     "Attendance": {"before_cancel": "erpnext_drive_integrations.custom_hr.guards.before_cancel_attendance", "validate": "erpnext_drive_integrations.custom_hr.guards.validate_attendance"},
 }
 permission_query_conditions = {

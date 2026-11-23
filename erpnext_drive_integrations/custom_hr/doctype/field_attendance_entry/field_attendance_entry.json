@@ -25,6 +25,10 @@
     "longitude",
     "accuracy_m",
     "captured_at",
+    "entry_type",
+    "captured_offline",
+    "device_captured_at",
+    "clock_offset_s",
     "gps_captured_at",
     "captured_by",
     "responsible_supervisor",
@@ -171,6 +175,39 @@
       "label": "Server capture time",
       "fieldtype": "Datetime",
       "reqd": 1
+    },
+    {
+      "fieldname": "entry_type",
+      "fieldtype": "Select",
+      "label": "Entry type",
+      "options": "Team\nSelf",
+      "default": "Team",
+      "read_only": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "Team: recorded by the worker's supervisor. Self: the employee's own check-in."
+    },
+    {
+      "fieldname": "captured_offline",
+      "fieldtype": "Check",
+      "label": "Captured offline",
+      "read_only": 1,
+      "in_standard_filter": 1,
+      "description": "Taken without a connection and sent later; the time is the phone's, corrected by its measured clock difference."
+    },
+    {
+      "fieldname": "device_captured_at",
+      "fieldtype": "Datetime",
+      "label": "Phone time at capture",
+      "read_only": 1,
+      "depends_on": "eval:doc.captured_offline"
+    },
+    {
+      "fieldname": "clock_offset_s",
+      "fieldtype": "Int",
+      "label": "Phone clock difference (seconds)",
+      "read_only": 1,
+      "depends_on": "eval:doc.captured_offline"
     },
     {
       "fieldname": "gps_captured_at",

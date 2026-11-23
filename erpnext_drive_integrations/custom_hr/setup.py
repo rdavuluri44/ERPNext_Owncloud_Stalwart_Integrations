@@ -16,10 +16,34 @@ def install():
             dict(fieldname='custom_field_initial_site',label='Initial Field Site (for new employee import)',fieldtype='Link',options='Field Site',insert_after='custom_field_attendance_required',depends_on='eval:doc.custom_field_attendance_required'),
             dict(fieldname='custom_field_initial_supervisor',label='Initial Field Supervisor (for new employee import)',fieldtype='Link',options='User',insert_after='custom_field_initial_site',depends_on='eval:doc.custom_field_attendance_required'),
             dict(fieldname='custom_field_machine_required',label='Machine or standby required (operator / driver)',fieldtype='Check',insert_after='custom_field_initial_supervisor')],
+        'HR Settings':[
+            dict(fieldname='custom_block_frappe_hr_checkin',label='Block Frappe HR check-ins (use the company app)',fieldtype='Check',default='1',insert_after='allow_geolocation_tracking',
+                 description="While ticked: Frappe HR's check-in button stays hidden, automatic attendance stays off on the Field Sites' shifts, and only the roles below may create check-ins. Untick to manage Frappe HR check-ins yourself."),
+            dict(fieldname='custom_checkin_allowed_roles',label='Roles that may still create check-ins',fieldtype='Small Text',insert_after='custom_block_frappe_hr_checkin',
+                 depends_on='eval:doc.custom_block_frappe_hr_checkin',description='One role per line, for example System Manager (an attendance machine signs in with such a role).')],
         'Attendance':[dict(fieldname='custom_field_project',label='Field Project',fieldtype='Link',options='Project',read_only=1,no_copy=1,insert_after='shift'),dict(fieldname='custom_field_entry',label='Approved field attendance evidence',fieldtype='Link',options='Field Attendance Entry',read_only=1,no_copy=1,insert_after='shift')],
     },update=True)
     integrate_hr_navigation()
+    one_attendance_path()
     frappe.clear_cache()
+
+
+def one_attendance_path():
+    """Owner, 22 November 2026: attendance goes through this module, not through Frappe HR's own check-in. The
+    administrator decides in HR Settings ("Block Frappe HR check-ins"): ticked on first install; while ticked, Frappe
+    HR's check-in button is switched off, and so is automatic attendance on the shifts our sites use; unticked, this
+    module leaves those settings alone. Runs on install and every migrate."""
+    if not frappe.db.exists('DocType','HR Settings'):return
+    if not frappe.db.sql("SELECT 1 FROM `tabSingles` WHERE doctype='HR Settings' AND field='custom_block_frappe_hr_checkin'"):
+        frappe.db.set_single_value('HR Settings',{'custom_block_frappe_hr_checkin':1,'custom_checkin_allowed_roles':'System Manager'})
+    if not frappe.db.get_single_value('HR Settings','custom_block_frappe_hr_checkin'):return
+    if frappe.get_meta('HR Settings').has_field('allow_employee_checkin_from_mobile_app'):
+        frappe.db.set_single_value('HR Settings','allow_employee_checkin_from_mobile_app',0)
+    shifts={s for row in frappe.get_all('Field Site',filters={'enabled':1},fields=['day_shift','night_shift'])
+            for s in (row.day_shift,row.night_shift) if s}
+    for shift in sorted(shifts):
+        if frappe.db.get_value('Shift Type',shift,'enable_auto_attendance'):
+            frappe.db.set_value('Shift Type',shift,'enable_auto_attendance',0)
 
 
 def integrate_hr_navigation():

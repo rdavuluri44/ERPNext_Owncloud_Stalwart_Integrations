@@ -68,4 +68,14 @@ def entry_access(doc, user=None):
         return True
     if doc.captured_by == user and site_access(doc.site, 'Supervisor', user):
         return True
+    if doc.get('entry_type') == 'Self' and doc.captured_by == user:
+        return True
     return doc.state != 'Draft' and site_access(doc.site, 'Approver', user)
+
+
+def self_sites(user=None):
+    """Sites where the user may check in themselves: any enabled membership (Staff, Supervisor or Approver)."""
+    user = user or require_user()
+    return frappe.db.sql('''SELECT DISTINCT m.parent FROM `tabField Site Member` m
+        JOIN `tabField Site` s ON s.name=m.parent
+        WHERE m.user=%s AND m.enabled=1 AND s.enabled=1''', (user,), pluck=True)
