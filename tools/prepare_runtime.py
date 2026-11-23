@@ -28,6 +28,31 @@ def write_private(path, value):
 NETWORK_PEERS={'drive':[('collaboration','ocis')]}
 
 
+BRAND_WORD = re.compile(r'\b(?:Cloud|CLOUD)\b')
+
+
+def brand_invitations(folder, brand='Cloud', prefix='cloud-'):
+    """P49: the invitation pages and e-mail templates carry the deployment's brand name, and the templates its
+    file names: authentik's database refers to e-mail templates by file name, so an installation keeps its own
+    names (profile settings identity_brand and identity_template_prefix; defaults leave the files unchanged)."""
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 .&'-]{0,39}", brand):
+        raise ValueError("identity_brand: letters, digits, spaces and . & ' - only, up to 40 characters")
+    if not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*-', prefix):
+        raise ValueError('identity_template_prefix: lowercase words joined by hyphens, ending with a hyphen')
+    if (brand, prefix) == ('Cloud', 'cloud-'):
+        return
+    for path in sorted(Path(folder).rglob('*')):
+        if path.is_file() and path.suffix in {'.html', '.txt', '.mjs'}:
+            text = path.read_text(encoding='utf-8')
+            new = BRAND_WORD.sub(lambda m: brand.upper() if m.group() == 'CLOUD' else brand, text)
+            new = new.replace('email/cloud-', 'email/' + prefix)
+            if new != text:
+                path.write_text(new, encoding='utf-8', newline='')
+    for path in sorted(Path(folder).rglob('cloud-*'), reverse=True):
+        if path.is_file():
+            os.replace(path, path.with_name(prefix + path.name[len('cloud-'):]))
+
+
 def missing_peer_networks(compose,project):
     """Networks a follower service lacks compared with its leader (must be empty)."""
     missing=[]
@@ -280,6 +305,9 @@ def prepare(source, output, profile):
             shutil.copytree(origin,path,dirs_exist_ok=True)
             if target == '/srv/site':
                 brand_website(path)
+            if target in ('/templates', '/srv/public'):
+                brand_invitations(path, profile.get('identity_brand', 'Cloud'),
+                                  profile.get('identity_template_prefix', 'cloud-'))
         elif target == '/etc/ocis':
             path.mkdir(exist_ok=True,mode=0o750)
             for origin in (build/'integrations/drive/config').iterdir():
@@ -354,7 +382,9 @@ def prepare(source, output, profile):
             if not re.fullmatch(r'https://[A-Za-z0-9.-]+/[A-Za-z0-9._/?=-]*', favicon):
                 raise ValueError('favicon_url must be an https URL')
             webmail['environment'].update({'FAVICON_URL':favicon,'LOGIN_LOGO_LIGHT_URL':logo,
-                'LOGIN_LOGO_DARK_URL':logo,'APP_LOGO_LIGHT_URL':'','APP_LOGO_DARK_URL':'','APP_NAME':'Mail'})
+                'LOGIN_LOGO_DARK_URL':logo,'APP_LOGO_LIGHT_URL':'','APP_LOGO_DARK_URL':'',
+                # P49: the webmail product name; an explicit CI_MAIL_WEBMAIL_APP_NAME in the profile wins
+                'APP_NAME':profile.get('settings',{}).get('CI_MAIL_WEBMAIL_APP_NAME') or 'Mail'})
         for name, folder in existing_mounts.items():
             rendered = str(output/'mounts'/name) + ':'
             for service in compose['services'].values():

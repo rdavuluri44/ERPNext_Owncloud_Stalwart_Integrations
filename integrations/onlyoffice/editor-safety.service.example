@@ -1,0 +1,11 @@
+[Unit]
+Description=Editor file safety watch: failed saves, parked edits rescued, disk and cache (P61)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# Root: it uses docker exec in the editor container. It never deletes a document.
+ExecStart=/usr/bin/python3 /opt/cloud-integrations/repository/tools/editor_safety.py --config /etc/cloud-editor-safety/config.json watch
+UMask=0077
+TimeoutStartSec=600

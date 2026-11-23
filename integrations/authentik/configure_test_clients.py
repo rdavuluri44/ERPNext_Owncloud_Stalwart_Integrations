@@ -26,10 +26,13 @@ def configure(profile_path, output_path):
     group=Group.objects.get(name=profile['approved_group'])
     results={}
     approval_name=prefix+'approved-user'
+    # P49: the claim name the ERP requires (portal/sso.py APPROVED_CLAIM, or the site's cloud_approved_claim)
+    claim=profile.get('approved_claim','cloud_approved')
+    if not re.fullmatch(r'[a-z][a-z0-9_]*',claim):raise ValueError('Invalid approved_claim')
     with transaction.atomic():
         approval,_=ScopeMapping.objects.update_or_create(name=approval_name,defaults={
             'scope_name':'profile','description':'Approved test workspace identity',
-            'expression':'return {"cloud_approved": bool(request.user.is_active and request.user.ak_groups.filter(pk='+repr(str(group.pk))+').exists())}'})
+            'expression':'return {'+repr(claim)+': bool(request.user.is_active and request.user.ak_groups.filter(pk='+repr(str(group.pk))+').exists())}'})
         for key,settings in profile['applications'].items():
             callbacks = list(settings.get('callbacks', []))
             if key == 'office-mail':

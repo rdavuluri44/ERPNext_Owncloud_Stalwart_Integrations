@@ -18,7 +18,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 EJS = (ROOT / "integrations/onlyoffice/editor-wopi.ejs").read_text()
 CHROME = next((p for p in ("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-                           shutil.which("google-chrome") or "", shutil.which("chromium") or "") if p and Path(p).exists()), None)
+                           shutil.which("google-chrome") or "", shutil.which("chromium") or "",
+                           "C:/Program Files/Google/Chrome/Application/chrome.exe") if p and Path(p).exists()), None)
 
 OLD = """var makeOld = function (api, name, w) { var ensure = function () { try {
   var views = api.asc_getNamedSheetViews() || [];
@@ -32,7 +33,7 @@ OLD = """var makeOld = function (api, name, w) { var ensure = function () { try 
 HARNESS = """<script>
 %s
 %s
-function fakeEditor() {
+function fakeEditor(existing) {
   var views = [], n = 0, listeners = [];
   var mk = function (name) { var v = { name: name, active: true, visible: name };
     v.asc_getName = function () { return v.visible; }; v.asc_getIsActive = function () { return v.active; };
@@ -45,18 +46,21 @@ function fakeEditor() {
     asc_setActiveNamedSheetView: function (name) { views.forEach(function (v) { v.active = v.visible === name; }); },
     asc_registerCallback: function (e, f) { listeners.push(f); }
   };
+  for (var i = 0; i < (existing || 0); i++) { var o = mk('Private - Person ' + i); o.active = false; views.push(o); }
   return { api: api, views: views };
 }
-function simulate(factory) {
-  var ed = fakeEditor(), k = factory(ed.api, 'Private - Rajesh', window);
+function simulate(factory, existing) {
+  var ed = fakeEditor(existing), k = factory(ed.api, 'Private - Rajesh', window);
   ed.api.asc_registerCallback('asc_onActiveSheetChanged', k.schedule);
   k.run();
   return ed;
 }
 var a = simulate(makeOld), b = simulate(makePrivateViewKeeper);
+var full = simulate(makePrivateViewKeeper, MAX_VIEWS), below = simulate(makePrivateViewKeeper, MAX_VIEWS - 1);
 setTimeout(function () {
   var names = function (ed) { return ed.views.map(function (v) { return v.visible; }); };
-  document.title = JSON.stringify({ old: names(a).length, fixed: names(b) });
+  document.title = JSON.stringify({ old: names(a).length, fixed: names(b), cap: MAX_VIEWS,
+    full: names(full).length, below: names(below).filter(function (x) { return x.indexOf('Person') < 0; }) });
 }, 9000);
 </script>"""
 
@@ -76,6 +80,12 @@ class PrivateSheetViewTests(unittest.TestCase):
         result = self.run_simulation()
         self.assertGreater(result["old"], 3, "the simulation must reproduce the loop with the old algorithm")
         self.assertEqual(result["fixed"], ["Private - Rajesh"])
+
+    def test_a_sheet_with_many_views_gets_no_new_one(self):
+        result = self.run_simulation()
+        self.assertEqual(result["cap"], 20)
+        self.assertEqual(result["full"], 20, "no view is added to a sheet that already has the cap")
+        self.assertEqual(result["below"], ["Private - Rajesh"], "below the cap the person still gets one")
 
     def test_the_block_is_what_the_editor_page_uses(self):
         self.assertIn("var keeper = makePrivateViewKeeper(api, name, w);", EJS)

@@ -24,6 +24,22 @@ LANDING = "https://www.example.com/"
 # authentik may reuse a login from the last FRESH_WINDOW seconds.
 FRESH_WINDOW = 600
 EVENT = "http://schemas.openid.net/event/backchannel-logout"
+# P49: the one claim that says "approved for the workspace". The sign-in provider's scope mapping must send
+# exactly this name (integrations/authentik/configuration.json, tested). A deployment whose provider sends
+# another name sets it in site config as cloud_approved_claim.
+APPROVED_CLAIM = "cloud_approved"
+
+
+def approved_claim():
+    name = frappe.conf.get("cloud_approved_claim") or APPROVED_CLAIM
+    if not (isinstance(name, str) and name.replace("_", "").isalnum() and name[0].isalpha()):
+        raise frappe.AuthenticationError("Invalid approval claim setting")
+    return name
+
+
+def is_approved(claims):
+    """Only a literal true counts; a missing, misspelled or string claim refuses the sign-in."""
+    return claims.get(approved_claim()) is True
 
 
 def enabled():
@@ -123,7 +139,7 @@ def callback(code, state):
     response.raise_for_status()
     info = response.json()
     email = str(info.get("email", "")).lower()
-    if claims.get("cloud_approved") is not True or not email or info.get("sub") != claims["sub"]:
+    if not is_approved(claims) or not email or info.get("sub") != claims["sub"]:
         raise frappe.AuthenticationError("This identity is not approved")
     bid = browser_id()
     if bid:
@@ -152,7 +168,7 @@ def ensure_app_user(email, info, claims):
         return
     if (frappe.local.site != "suite.internal"
             or not frappe.conf.get("cloud_sso_auto_provision")
-            or claims.get("cloud_approved") is not True
+            or not is_approved(claims)
             or info.get("sub") != claims.get("sub")
             or info.get("email_verified") is not True
             or str(info.get("email", "")).lower() != email):

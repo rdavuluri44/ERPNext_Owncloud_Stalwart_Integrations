@@ -32,7 +32,8 @@
           ]
         }
       },
-      "mem_limit": "4g"
+      "mem_limit": "4g",
+      "stop_grace_period": "5m"
     }
   },
   "networks": {

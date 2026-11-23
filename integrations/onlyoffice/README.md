@@ -47,6 +47,7 @@ Editor (this module, `editor-wopi.ejs`):
   do not change what others see; protected sheets are skipped; no green
   "Sheet View mode" headers.
   Loop guard (21 Nov 2026): one creation attempt per person, sheet and visit; no second attempt while one is in flight; the fresh view is renamed once. Before, creating a view fired the sheet-changed event before the rename showed in the list, so another view was created each time (22 "Temporary View N" in one shared workbook). Tested by a headless-Chrome simulation (`tests/test_onlyoffice_private_views.py`). Stray "Temporary View N" views already in a file are removed by hand in View manager.
+  View cap (P61, 22 Nov 2026): no view is added to a sheet that already has 20 views (`MAX_VIEWS`); the person then works in the sheet's normal view, and an existing own view is still used. Tested in the same simulation.
 - **Licence notice:** the About panel keeps ONLYOFFICE's notices and adds that
   this is a modified version based on ONLYOFFICE by Ascensio System SIA
   (additional terms 2 and 3). About is the only place these notices appear
@@ -83,6 +84,8 @@ and within seconds of closing (`deployment/config/onlyoffice-local-production-li
 - `integrations/onlyoffice/editor-wopi.original.ejs`: the unmodified page from the pinned image, for review and diff
 - `deployment/stacks/editor-onlyoffice.compose.json`, `deployment/config/onlyoffice-local-production-linux.json`
 - `tests/test_onlyoffice_editor.py`
+- `tools/editor_safety.py`, `integrations/onlyoffice/editor-safety.{service,timer}.example`,
+  `integrations/onlyoffice/editor-safety.example.json`, `tests/test_editor_safety.py` (file safety, P61)
 
 ## Requirements
 
@@ -103,6 +106,7 @@ in `deployment/config/onlyoffice-local-production-linux.json`.
 ## Tests
 
 - `tests/test_onlyoffice_editor.py`
+- `tests/test_editor_safety.py` (file safety tool, see below)
 
 ## Licenses
 
@@ -137,4 +141,77 @@ everyone who opens it. It happened to the shared SRN workbook between 15:32 and 
   the result as a new file or a new version. `IN.xlsx` alone only reports.
 - Tests: `tests/test_onlyoffice_sheetview_filter.py` (reproduces the exact error with the
   editor's original method in headless Chrome).
+
+## File safety (P61)
+
+Aim: a failed save is seen within minutes, no edit is lost, and a stuck file is
+recovered without deleting it. Nothing guarantees that a save never fails.
+
+`tools/editor_safety.py` runs as root on the editor's Docker host. It reaches ONLYOFFICE
+only through `docker exec` in the editor container: the command service
+(`http://localhost/command`), signed with the container's own JWT secret (read from the
+container, kept in memory, never printed or put on a command line), and the editor's log
+files. It never deletes a parked document or a Drive file.
+
+- `forgotten`: lists the documents ONLYOFFICE parked because their save to Drive failed.
+- `rescue`: copies every parked document to the recovery folder (root-only, one folder per
+  document key, `manifest.jsonl` with time, size and checksum); content already copied is
+  skipped.
+- `unstick KEY`: shows how many people have the document open, forces a save to Drive and
+  rescues parked edits. With `--yes` it then closes the document for everyone (the next
+  opening loads Drive's latest version) and rescues again.
+- `watch` (systemd timer every five minutes): counts new editor log lines for failed saves
+  to Drive (`PutFile` errors, also from the Drive editor bridge), edits the editor could
+  not apply (`changesError`) and parked documents (`storeForgotten`); names the document
+  keys concerned; runs the rescue; checks disk use of the editor and Drive volumes
+  (alarm at 80 percent) and the editor cache (alarm at 2048 MB). Signals only, delivery
+  is P72: exit code 0 fine, 1 a check could not run, 2 an alarm;
+  `/var/lib/cloud-editor-safety/status.json`; one journal line per run
+  (`journalctl -u editor-safety`).
+
+The cache is not pruned by this tool: ONLYOFFICE deletes cached document folders older than
+one day itself every hour (`services.CoAuthoring.expire.files` 86400 s, `filesCron` hourly,
+pinned build's defaults). Deleting cache files by hand could destroy unsaved edits.
+
+**Restarts.** The editor container gets five minutes to stop (`stop_grace_period` in
+`deployment/stacks/editor-onlyoffice.compose.json`): on every stop the image's own start
+script runs ONLYOFFICE's `documentserver-prepare4shutdown`, which saves every open document
+to Drive and parks what it cannot save. Docker's default of ten seconds cut it short. For a
+host reboot, stop the editor first (`docker stop -t 300 <editor container>`), because
+Docker gives containers only fifteen seconds when the host shuts down; see the planned
+reboot procedure in `docs/production-moves.md`. The watch rescues anything parked after
+the restart.
+
+**Install** (same host as the editor): copy `editor-safety.example.json` to
+`/etc/cloud-editor-safety/config.json` and adjust the container prefixes; copy
+`editor-safety.service.example` and `editor-safety.timer.example` to `/etc/systemd/system/`
+(without `.example`; the service expects the repository checkout in
+`/opt/cloud-integrations/repository`); `systemctl enable --now editor-safety.timer`. Make
+sure the recovery folder is inside the backed-up area or copied there.
+
+### A file will not open: do not delete it
+
+For everyone: **do not delete the file and do not upload a copy.** Deleting loses its version
+history and links; a copy splits the work in two. Close the editor and tell the
+administrator the file name and the time.
+
+For the administrator:
+1. Look at `/var/lib/cloud-editor-safety/status.json` (or run
+   `tools/editor_safety.py watch`): `documents` names the document keys with failed saves or
+   edits that could not be applied; the editor log around that time names the file.
+2. `tools/editor_safety.py unstick KEY`: forced save and rescue; read what it says.
+3. If the file still does not open: `tools/editor_safety.py unstick KEY --yes` closes it for
+   everyone (warn the people who have it open), then open it again from Drive.
+4. If it still shows a blank grid: in Drive, download the latest version; run
+   `sheetview_sanitize.py FILE.xlsx` to see whether it holds the unreadable sheet views; if
+   so, `sheetview_sanitize.py FILE.xlsx FIXED.xlsx` and upload `FIXED.xlsx` under the same
+   name, so it becomes a new version. A bad save can also be undone by restoring an earlier
+   version from Drive's version list.
+5. Parked edits rescued into the recovery folder are complete copies of the document as it
+   was being edited. Open a copy locally, compare it with Drive's version and decide with
+   the owner of the file what to keep. Parked documents stay in the editor until someone
+   removes them deliberately; this tool never does.
+
+Tests: `tests/test_editor_safety.py` (a fake Docker plays the editor, with sample log lines
+shaped like the incident of 20 November 2026).
 

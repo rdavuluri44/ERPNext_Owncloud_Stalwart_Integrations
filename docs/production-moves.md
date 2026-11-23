@@ -97,7 +97,11 @@ Reboot for kernel updates deliberately, at night, not by accident:
    last backup succeeded.
 3. Check that the boot check and watch units are installed and enabled, and
    that Docker waits for Tailscale (`systemctl cat docker` shows the drop-in).
-4. `systemctl reboot`; expect one to two minutes of downtime for every app.
+4. Stop the editor first so it saves every open document to Drive
+   (`docker stop -t 300 <editor container>`; Docker gives containers only 15 s
+   when the host shuts down), then `systemctl reboot`; expect one to two minutes
+   of downtime for every app. The editor file safety watch rescues anything
+   parked after the restart (P61, `integrations/onlyoffice/README.md`).
 5. Follow the checklist above; record the downtime and any repair the boot
    check made.
 6. Rehearse on the test host first after changes to these files: reboot it,

@@ -306,14 +306,16 @@
         "deployment/scope-mappings.example.json",
         "tools/authentik_blueprint.py",
         "tests/test_invitation_configuration.py",
-        "tests/test_authentik_card_corners.py"
+        "tests/test_authentik_card_corners.py",
+        "tests/test_signin_settings.py"
       ],
       "depends_on": [],
       "tests": [
         "tests/test_invitation_configuration.py",
         "tests/test_restore_identity.py",
         "integrations/authentik/invite-recovery/test_native.py",
-        "tests/test_authentik_card_corners.py"
+        "tests/test_authentik_card_corners.py",
+        "tests/test_signin_settings.py"
       ],
       "upstream": [
         {
@@ -520,12 +522,15 @@
         "tests/test_onlyoffice_editor.py",
         "deployment/config/onlyoffice-local-production-linux.json",
         "tests/test_onlyoffice_private_views.py",
-        "tests/test_onlyoffice_sheetview_filter.py"
+        "tests/test_onlyoffice_sheetview_filter.py",
+        "tools/editor_safety.py",
+        "tests/test_editor_safety.py"
       ],
       "tests": [
         "tests/test_onlyoffice_editor.py",
         "tests/test_onlyoffice_private_views.py",
-        "tests/test_onlyoffice_sheetview_filter.py"
+        "tests/test_onlyoffice_sheetview_filter.py",
+        "tests/test_editor_safety.py"
       ],
       "depends_on": [
         "deployment"

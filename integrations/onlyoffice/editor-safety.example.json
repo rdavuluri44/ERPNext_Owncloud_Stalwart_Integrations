@@ -1,0 +1,11 @@
+{
+  "_comment": "Settings of tools/editor_safety.py (P61), kept outside Git as /etc/cloud-editor-safety/config.json. Container names are matched by prefix (exactly one running container each). No secrets: the editor's JWT secret is read from its own container. recovery_dir holds copies of parked documents (business data): root-only, inside the backed-up area or copied there.",
+  "editor_container": "onlyoffice-",
+  "bridge_container": "collaboration-",
+  "drive_container": "ocis-",
+  "drive_paths": ["/var/lib/ocis"],
+  "state_dir": "/var/lib/cloud-editor-safety",
+  "recovery_dir": "/var/lib/cloud-editor-safety/recovery",
+  "disk_alert_percent": 80,
+  "cache_alert_mb": 2048
+}

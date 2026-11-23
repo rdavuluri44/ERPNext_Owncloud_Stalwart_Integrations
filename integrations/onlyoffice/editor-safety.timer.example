@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the editor file safety watch every five minutes (P61)
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+Unit=editor-safety.service
+
+[Install]
+WantedBy=timers.target

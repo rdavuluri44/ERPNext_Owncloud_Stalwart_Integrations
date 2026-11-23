@@ -395,6 +395,10 @@
     "kind": "setting",
     "default": "0"
   },
+  "CI_IDENTITY_SERVER_AUTHENTIK_WEB__MAX_REQUESTS": {
+    "kind": "setting",
+    "default": "1000"
+  },
   "CI_IDENTITY_SERVER_AUTHENTIK_EMAIL__HOST": {
     "kind": "setting",
     "default": "mx.example.com"

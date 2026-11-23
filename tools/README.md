@@ -26,6 +26,10 @@ refresh worker) do not change; this index groups them by module.
 
 - `authentik_blueprint.py` — Render the retained native authentik graph, without exporting any users/keys.
 
+## ONLYOFFICE editor (`onlyoffice-editor`)
+
+- `editor_safety.py` — Editor file safety (P61): list and rescue parked edits, unstick a document, and a five-minute watch for failed saves, disk and cache; never deletes a document.
+
 ## Reproducible build and deployment (`deployment`)
 
 - `build_erp_core.py` — Build the prepared public ERP core with the pinned official apps_json input.

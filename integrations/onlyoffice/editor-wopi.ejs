@@ -496,6 +496,9 @@ div {
                    again then failed and created another view, in a loop (22 "Temporary View N"
                    in one workbook). So: one creation attempt per sheet per visit, no new
                    attempt while one is in flight, and the fresh view is renamed once. */
+                /* Cap (P61 g): never add a view to a sheet that already has MAX_VIEWS views; the
+                   person then works in the sheet's normal view. An existing own view is still used. */
+                var MAX_VIEWS = 20;
                 var makePrivateViewKeeper = function (api, name, w) {
                     var busy = false, attempted = {}, pending = null;
                     var views = function () { return api.asc_getNamedSheetViews() || []; };
@@ -509,6 +512,7 @@ div {
                             if (api.asc_isProtectedSheet && api.asc_isProtectedSheet()) return;
                             var mine = views().filter(function (v) { return v.asc_getName() === name; })[0];
                             if (mine) { if (!mine.asc_getIsActive()) api.asc_setActiveNamedSheetView(name); return; }
+                            if (views().length >= MAX_VIEWS) return;
                             var key = sheetKey();
                             if (attempted[key]) return;
                             attempted[key] = true; busy = true;

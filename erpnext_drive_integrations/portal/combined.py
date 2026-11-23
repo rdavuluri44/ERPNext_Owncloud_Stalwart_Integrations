@@ -9,7 +9,8 @@ def new_central_user(doc, method=None):
   doc.set('roles', [r for r in doc.roles if r.role == 'Desk User'])
 
 def ensure_user(email,info,claims):
- if (claims.get('cloud_approved') is not True or info.get('email_verified') is not True
+ from .sso import is_approved
+ if (not is_approved(claims) or info.get('email_verified') is not True
      or info.get('sub')!=claims.get('sub') or str(info.get('email','')).lower()!=email):
   raise frappe.AuthenticationError('This identity is not approved')
  if not frappe.db.exists('User',email):
