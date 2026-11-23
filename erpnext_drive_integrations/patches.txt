@@ -1,2 +1,4 @@
 [pre_model_sync]
 erpnext_drive_integrations.custom_hr.patches.rename_module
+
+[post_model_sync]

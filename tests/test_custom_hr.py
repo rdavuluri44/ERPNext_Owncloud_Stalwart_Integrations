@@ -87,6 +87,7 @@ class Rename(unittest.TestCase):
     def test_patch_runs_before_the_doctypes_are_synced(self):
         patches = (APP / 'patches.txt').read_text(encoding='utf-8').split('\n')
         self.assertEqual(patches[:2], ['[pre_model_sync]', 'erpnext_drive_integrations.custom_hr.patches.rename_module'])
+        self.assertIn("[post_model_sync]", patches)
 
 
 class RenamePatch(unittest.TestCase):
