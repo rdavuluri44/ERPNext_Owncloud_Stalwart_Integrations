@@ -211,10 +211,15 @@ div {
                         clearInterval(t);
                         cloudInstallViewFilterGuard.done = true;
                         if (P.IU.cloudSafe || String(P.IU).indexOf('.filter).IU()') < 0) return;
+                        /* In place: the editor's own code may hold this list while it works. Method names
+                           checked against the pinned build's sdkjs/cell/sdk-all.js (23 Nov 2026): zq =
+                           fromStream (file), Eh = Read_FromBinary2 (changes from co-editors), vD = toStream
+                           (file), xh = Write_ToBinary2 (changes sent), clone; IU = isApplyAutoFilter. */
                         var drop = function (view) {
                             if (view && view.wB && view.wB.length) {
-                                var kept = view.wB.filter(function (entry) { return entry && entry.filter; });
-                                if (kept.length !== view.wB.length) view.wB = kept;
+                                for (var i = view.wB.length - 1; i >= 0; i--) {
+                                    if (!(view.wB[i] && view.wB[i].filter)) view.wB.splice(i, 1);
+                                }
                             }
                         };
                         ['zq', 'Eh', 'clone'].forEach(function (name) {   /* read and copy: drop afterwards */
@@ -491,53 +496,118 @@ div {
                 clearInterval(timer);
                 var name = 'Private - ' + (user.fullname || user.name || 'user');
                 /* PRIVATE-VIEWS-BEGIN */
-                /* One private view per person and sheet. Creating a view fires the sheet-changed
-                   event again before the rename is visible in the list; looking up the name
-                   again then failed and created another view, in a loop (22 "Temporary View N"
-                   in one workbook). So: one creation attempt per sheet per visit, no new
-                   attempt while one is in flight, and the fresh view is renamed once. */
+                /* Owner (23 November 2026): a private view isolates each person's filters and sorting from
+                   everyone else's work; others may see the views. One private view per person and sheet.
+                   - Creating a view fires the sheet-changed event before the rename shows in the list; looking
+                     the name up again then created another view, in a loop (22 "Temporary View N" in one
+                     workbook). So: no new attempt while one is in flight, and a view this visit created is
+                     renamed again, never created twice.
+                   - ONLYOFFICE refuses to create or rename a view while another person has View manager open or
+                     is changing views (LockedEditView). The first keeper tried once and gave up, leaving the
+                     person in the shared Default view, where their filters change what everyone sees. Now it
+                     tries again every few seconds, a bounded number of times per sheet and visit, and a notice
+                     tells the person when they are not in their own view (with a button back to it). */
                 /* Cap (P61 g): never add a view to a sheet that already has MAX_VIEWS views; the
                    person then works in the sheet's normal view. An existing own view is still used. */
                 var MAX_VIEWS = 20;
                 var makePrivateViewKeeper = function (api, name, w) {
-                    var busy = false, attempted = {}, pending = null;
+                    var MAX_TRIES = 10, RETRY_MS = 4000;
+                    var busy = false, created = {}, tries = {}, pending = null;
                     var views = function () { return api.asc_getNamedSheetViews() || []; };
+                    var mineIn = function (list) { return list.filter(function (v) { return v.asc_getName() === name; })[0]; };
                     var sheetKey = function () {
                         try { return String(api.asc_getActiveWorksheetIndex ? api.asc_getActiveWorksheetIndex() : 'sheet'); }
                         catch (e) { return 'sheet'; }
+                    };
+                    var later = function (ms) {
+                        if (pending) w.clearTimeout(pending);
+                        pending = w.setTimeout(run, ms);
                     };
                     var run = function () {
                         try {
                             if (busy) return;
                             if (api.asc_isProtectedSheet && api.asc_isProtectedSheet()) return;
-                            var mine = views().filter(function (v) { return v.asc_getName() === name; })[0];
-                            if (mine) { if (!mine.asc_getIsActive()) api.asc_setActiveNamedSheetView(name); return; }
-                            if (views().length >= MAX_VIEWS) return;
-                            var key = sheetKey();
-                            if (attempted[key]) return;
-                            attempted[key] = true; busy = true;
+                            var list = views(), mine = mineIn(list), key = sheetKey();
+                            if (mine) { delete created[key]; if (!mine.asc_getIsActive()) api.asc_setActiveNamedSheetView(name); return; }
+                            if ((tries[key] || 0) >= MAX_TRIES) return;
+                            tries[key] = (tries[key] || 0) + 1;
+                            var own = created[key];
+                            if (own && list.indexOf(own) >= 0) {    /* created earlier, the rename was refused: rename again */
+                                own.asc_setName(name);
+                                later(RETRY_MS);
+                                return;
+                            }
+                            if (list.length >= MAX_VIEWS) return;
+                            busy = true;
                             api.asc_addNamedSheetView(null, true);
-                            var tries = 0, renamed = false;
+                            var ticks = 0;
                             var timer = w.setInterval(function () {
-                                tries++;
-                                var finished = tries >= 40;
+                                ticks++;
+                                var finished = ticks >= 40;
                                 try {
-                                    var list = views();
-                                    if (list.some(function (v) { return v.asc_getName() === name; })) finished = true;
-                                    else if (!renamed) {
-                                        var fresh = list.filter(function (v) { return v.asc_getIsActive() && /^Temporary View \d+$/.test(v.asc_getName()); })[0];
-                                        if (fresh) { fresh.asc_setName(name); renamed = true; }
+                                    var now = views();
+                                    if (mineIn(now)) finished = true;
+                                    else if (!created[key]) {
+                                        var fresh = now.filter(function (v) { return v.asc_getIsActive() && /^Temporary View \d+$/.test(v.asc_getName()); })[0];
+                                        if (fresh) { created[key] = fresh; fresh.asc_setName(name); }
                                     }
                                 } catch (e) {}
-                                if (finished) { w.clearInterval(timer); busy = false; }
+                                if (finished) {
+                                    w.clearInterval(timer); busy = false;
+                                    try { if (!mineIn(views())) later(RETRY_MS); } catch (e) {}
+                                }
                             }, 250);
                         } catch (e) { busy = false; }
                     };
-                    var schedule = function () {
-                        if (pending) w.clearTimeout(pending);
-                        pending = w.setTimeout(run, 300);
+                    return {
+                        run: run,
+                        schedule: function () { later(300); },
+                        /* "Back to my view": a fresh round of attempts on this sheet */
+                        back: function () { tries[sheetKey()] = 0; run(); },
+                        isMine: function (v) { return v.asc_getName() === name || v === created[sheetKey()]; }
                     };
-                    return { run: run, schedule: schedule };
+                };
+                /* A notice while the person works in a view that is not their own (the shared Default view or
+                   another person's view), so filtering there is a choice and not an accident. It waits a few
+                   seconds first, because the keeper switches people to their own view when a file opens. View
+                   names are user text: shown with textContent only. */
+                var makeViewNotice = function (api, keeper, doc) {
+                    var bar = null, misses = 0;
+                    var hide = function () { misses = 0; if (bar) bar.style.display = 'none'; };
+                    var show = function (text) {
+                        if (!bar) {
+                            bar = doc.createElement('div');
+                            bar.id = 'cloud-view-notice';
+                            bar.setAttribute('role', 'status');
+                            bar.style.cssText = 'position:fixed;left:50%;bottom:44px;transform:translateX(-50%);z-index:10000;' +
+                                'max-width:92vw;width:max-content;display:flex;gap:12px;align-items:center;background:#FFF4CE;' +
+                                'color:#1F1F1F;border:1px solid #8A6D00;border-radius:6px;padding:8px 12px;' +
+                                'font:13px/1.4 system-ui,sans-serif;box-shadow:0 2px 8px rgba(0,0,0,.2)';
+                            var label = doc.createElement('span');
+                            var button = doc.createElement('button');
+                            button.type = 'button';
+                            button.textContent = 'Back to my view';
+                            button.style.cssText = 'flex:none;min-height:32px;padding:6px 12px;border:0;border-radius:4px;' +
+                                'background:#1F1F1F;color:#FFFFFF;font:inherit;cursor:pointer';
+                            button.onclick = function () { keeper.back(); hide(); };
+                            bar.appendChild(label);
+                            bar.appendChild(button);
+                            doc.body.appendChild(bar);
+                        }
+                        bar.firstChild.textContent = text;
+                        bar.style.display = 'flex';
+                    };
+                    var check = function () {
+                        try {
+                            if (api.asc_isProtectedSheet && api.asc_isProtectedSheet()) return hide();
+                            var active = (api.asc_getNamedSheetViews() || []).filter(function (v) { return v.asc_getIsActive(); })[0];
+                            if (active && keeper.isMine(active)) return hide();
+                            if (++misses < 3) return;
+                            show(active ? 'You are in "' + active.asc_getName() + '", another person’s view: filters and sorting you change here change it for them.'
+                                        : 'You are in the shared Default view: filters and sorting you change here change it for everyone.');
+                        } catch (e) {}
+                    };
+                    return { check: check };
                 };
                 /* PRIVATE-VIEWS-END */
                 var keeper = makePrivateViewKeeper(api, name, w);
@@ -572,6 +642,8 @@ div {
                 neutralHeaders();
                 ensure();
                 api.asc_registerCallback && api.asc_registerCallback('asc_onActiveSheetChanged', keeper.schedule);
+                var notice = makeViewNotice(api, keeper, doc);
+                w.setInterval(notice.check, 1500);
             }, 500);
         };
 

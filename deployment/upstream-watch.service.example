@@ -1,0 +1,22 @@
+[Unit]
+Description=Daily upstream watch: releases, advisories, end of life (P62); never upgrades anything
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Run on a host without production credentials (for example the test VM).
+# The checkout is a read-only clone of the public repository's main branch; "+" runs only this pull as root.
+ExecStartPre=+/usr/bin/git -C /opt/upstream-watch/repository pull --ff-only --quiet
+ExecStart=/usr/bin/python3 /opt/upstream-watch/repository/tools/upstream_watch.py --source /opt/upstream-watch/repository --profile /etc/upstream-watch/profile.json --output /var/lib/upstream-watch --github-token-file ${CREDENTIALS_DIRECTORY}/github-token
+# Optional read-only GitHub token (root-only file, 0600); delete this line to run without one.
+LoadCredential=github-token:/etc/upstream-watch/github-token
+DynamicUser=yes
+StateDirectory=upstream-watch
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+TimeoutStartSec=1800

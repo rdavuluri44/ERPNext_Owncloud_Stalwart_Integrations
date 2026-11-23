@@ -1,0 +1,23 @@
+{
+  "_comment": "Private profile of the upstream watch (P62), kept outside Git (/etc/upstream-watch/profile.json). versions: the components that are not in this repository, as installed on the servers (sample values here). exposure: override the catalog's exposure per component (public, tailnet, internal, build). ignore: the false-positive list; an entry matches a finding id from a digest or an advisory id (GHSA, CVE, OSV), with the reason. No secrets: the optional GitHub token is a separate root-only file.",
+  "versions": {
+    "coolify": "4.0.0",
+    "traefik": "3.6.0",
+    "docker": "29.0.0",
+    "tailscale": "1.90.0",
+    "truenas": "25.10.0",
+    "ubuntu": "24.04",
+    "linux": "6.8.0",
+    "restic": "0.18.0",
+    "rustfs": "1.0.0"
+  },
+  "exposure": {
+    "coredns/coredns": "tailnet"
+  },
+  "ignore": [
+    {
+      "id": "eol:linux@6.8.0:6.8",
+      "reason": "Ubuntu maintains its 6.8 kernel for 24.04 LTS beyond the upstream line"
+    }
+  ]
+}

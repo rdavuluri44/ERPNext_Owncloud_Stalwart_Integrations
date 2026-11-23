@@ -9,6 +9,10 @@ refresh worker) do not change; this index groups them by module.
 - `host_check.py` — Post-boot check, crash-loop watch and tailnet wait for a Docker host (P57).
 - `render_host_checks.py` — Render its config, systemd units and the Docker start-after-Tailscale drop-in from the private profile.
 
+## Upstream watch (`deployment`)
+
+- `upstream_watch.py` — Daily digest of new releases, security advisories, end of life and licence changes for every pinned component, from public sources only; never upgrades anything (P62).
+
 ## Drive (ownCloud Infinite Scale) adapters (`drive`)
 
 - `prepare_native_drive_clients.py` — Populate private fresh-identity inputs from pinned official native defaults.

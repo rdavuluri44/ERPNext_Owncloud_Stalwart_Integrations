@@ -24,6 +24,7 @@ import sheetview_sanitize as tool  # noqa: E402
 
 EJS = (ROOT / "integrations/onlyoffice/editor-wopi.ejs").read_text()
 CHROME = next((p for p in ("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+                           "C:/Program Files/Google/Chrome/Application/chrome.exe",
                            shutil.which("google-chrome") or "", shutil.which("chromium") or "") if p and Path(p).exists()), None)
 
 # Exact source of CT_NsvFilter.prototype.IU in sdkjs/cell/sdk-all.js of 10.0.0-25b1e290...
@@ -105,7 +106,8 @@ class GuardTests(unittest.TestCase):
                 "var a=new Ctor();a.Eh();out.eh_len=a.wB.length;out.eh_nulls=nulls(a);"
                 "var b=new Ctor();b.zq();out.zq_len=b.wB.length;out.zq_nulls=nulls(b);"
                 "var c=new Ctor();c.wB=[{filter:null},real()];out.xh_written=c.xh();out.vD_written=c.vD();"
-                "var d=new Ctor();d.wB=[{filter:null},real()];var e=d.clone();out.clone_nulls=nulls(e);"
+                "var d=new Ctor();d.wB=[{filter:null},real()];var list=d.wB;var e=d.clone();out.clone_nulls=nulls(e);"
+                "out.same_list=d.wB===list&&list.length===1;"
                 "var f=new Ctor();f.wB=[{filter:null}];try{out.iu_empty=String(f.IU())}catch(x){out.iu_empty='THROWS '+x.message}"
                 "var g=new Ctor();g.wB=[real()];out.iu_real=String(g.IU());"
                 "out.guarded=P.IU.cloudSafe===true;document.title=JSON.stringify(out)},1500);")
@@ -117,6 +119,7 @@ class GuardTests(unittest.TestCase):
         self.assertEqual((result["zq_len"], result["zq_nulls"]), (1, 0))
         self.assertEqual((result["xh_written"], result["vD_written"]), (1, 1))  # write: nothing empty is saved or sent
         self.assertEqual(result["clone_nulls"], 0)                              # copy
+        self.assertTrue(result["same_list"], "cleaned in place: the editor may hold the list while it works")
         self.assertEqual(result["iu_empty"], "null")                            # IU() itself never throws
         self.assertEqual(result["iu_real"], "true")                             # a real filter is still reported
 

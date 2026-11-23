@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the upstream watch once a day (P62)
+
+[Timer]
+OnCalendar=*-*-* 06:30
+RandomizedDelaySec=15m
+Persistent=true
+Unit=upstream-watch.service
+
+[Install]
+WantedBy=timers.target

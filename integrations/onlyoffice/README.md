@@ -46,7 +46,14 @@ Editor (this module, `editor-wopi.ejs`):
   per sheet ("Private - <name>"), reused on reopening, so filters and sorting
   do not change what others see; protected sheets are skipped; no green
   "Sheet View mode" headers.
-  Loop guard (21 Nov 2026): one creation attempt per person, sheet and visit; no second attempt while one is in flight; the fresh view is renamed once. Before, creating a view fired the sheet-changed event before the rename showed in the list, so another view was created each time (22 "Temporary View N" in one shared workbook). Tested by a headless-Chrome simulation (`tests/test_onlyoffice_private_views.py`). Stray "Temporary View N" views already in a file are removed by hand in View manager.
+  Loop guard (21 Nov 2026): one created view per person, sheet and visit; no second attempt while one is in flight. Before, creating a view fired the sheet-changed event before the rename showed in the list, so another view was created each time (22 "Temporary View N" in one shared workbook). Tested by a headless-Chrome simulation (`tests/test_onlyoffice_private_views.py`). Stray "Temporary View N" views already in a file are removed by hand in View manager.
+  Isolation (23 Nov 2026, P61): a private view exists to keep each person's filters and sorting out of
+  everyone else's work (others may see the views; their cursors stay visible, they only show where someone
+  is). ONLYOFFICE refuses to create or rename a view while another person has View manager open or is
+  changing views; the keeper used to try once and give up, leaving the person in the shared Default view.
+  Now a refused creation or rename is tried again every 4 s (at most 10 times per sheet and visit; a view
+  this visit created is renamed again, never created twice), and a notice with **Back to my view** shows
+  when a person stays a few seconds in a view that is not their own (Default or another person's).
   View cap (P61, 22 Nov 2026): no view is added to a sheet that already has 20 views (`MAX_VIEWS`); the person then works in the sheet's normal view, and an existing own view is still used. Tested in the same simulation.
 - **Licence notice:** the About panel keeps ONLYOFFICE's notices and adds that
   this is a modified version based on ONLYOFFICE by Ascensio System SIA

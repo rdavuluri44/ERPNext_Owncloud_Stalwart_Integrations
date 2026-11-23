@@ -509,6 +509,20 @@ discussion that led to a decision is not repeated here.
   the production look. **Where:** `tools/prepare_ingress.py`, `tools/prepare_runtime.py`,
   `integrations/website/`, `erpnext_drive_integrations/www/place_holder.*`, `public/test-refresh.*`.
 
+### A daily upstream watch reports releases and flaws; it never upgrades (P62)
+- **Decision:** once a day a watch compares every pinned component (locks, image digests, host components from a
+  private profile) with public sources only (GitHub releases and advisories, OSV.dev, NVD, endoflife.date, the CISA
+  list of actively exploited flaws) and writes a digest into a folder on the server: a baseline, a daily digest only
+  when something is new, a weekly roll-up. Each finding carries severity, whether our version is affected, exposure,
+  the fixed version and a rule-based recommendation (upgrade now, schedule, ignore); the owner decides. It runs on a
+  host without production credentials, as an unprivileged user, with an optional read-only GitHub token; it never
+  upgrades, commits, pushes or sends messages (alerts come with P72). The version behind each pinned image digest is
+  recorded in the repository, because the images carry no reliable version.
+- **Why:** owner, 21 November 2026: new releases and advisories reached us only by chance (the ONLYOFFICE sheet-view
+  crash of 20 to 21 November had an upstream side). An upgrade stays a normal branch, test, merge and production
+  change. **Where:** `tools/upstream_watch.py`, `deployment/upstream-watch.json`, `deployment/upstream-watch.*.example`,
+  `deployment/upstream-watch.example.json`, `tests/test_upstream_watch.py`, `deployment/README.md`.
+
 ### Production and test have separate asset sets
 - **Decision:** each site's look (logo, favicons, names, landing page options and the portal page's look) comes from
   that site's own private settings and assets; shared code carries no site-specific look. The portal page reads its
@@ -531,6 +545,18 @@ discussion that led to a decision is not repeated here.
   reached. **Where:** `deployment/promotion-map.json`, `tools/promotion_plan.py`, `tools/drift_check.py`,
   `deployment/drift-check.*`, `AGENTS.md`, `.github/pull_request_template.md`, `docs/production-moves.md`,
   `tests/test_promotion_plan.py`.
+
+### Private sheet views isolate filters; every person is kept in their own view (P61)
+- **Decision:** a private sheet view exists only to keep each person's filters and sorting out of everyone
+  else's work. Others may see the views, and other people's cursors stay visible (they only show where someone
+  is working; data is shared, the last value entered in a cell wins). The editor keeps every person in their own
+  view: a create or rename that ONLYOFFICE refuses (another person in View manager) is tried again, and a notice
+  with "Back to my view" shows when someone stays in the Default view or another person's view.
+- **Why:** owner, 23 November 2026, after filters reached other people. The first keeper (PR #12) tried once and
+  gave up, so a refused attempt left the person in the shared Default view. The crash guard of PR #12 was checked
+  against the pinned build (its method names are right) and now cleans the list in place. **Where:**
+  `integrations/onlyoffice/editor-wopi.ejs`, `tests/test_onlyoffice_private_views.py`,
+  `tests/test_onlyoffice_sheetview_filter.py`.
 
 ### Security before features and deployments
 - **Decision:** every production promotion, upgrade or new dependency starts with a check of the official security

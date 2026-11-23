@@ -385,7 +385,9 @@
         "tools/host_check.py",
         "tools/render_host_checks.py",
         "tests/test_reboot_resilience.py",
-        "tests/test_host_checks.py"
+        "tests/test_host_checks.py",
+        "tools/upstream_watch.py",
+        "tests/test_upstream_watch.py"
       ],
       "exclude": [
         "deployment/config/onlyoffice-local-production-linux.json",
@@ -412,7 +414,8 @@
         "tests/test_brand_assets.py",
         "tests/test_sso_proxy_trust.py",
         "tests/test_reboot_resilience.py",
-        "tests/test_host_checks.py"
+        "tests/test_host_checks.py",
+        "tests/test_upstream_watch.py"
       ],
       "upstream": [
         {

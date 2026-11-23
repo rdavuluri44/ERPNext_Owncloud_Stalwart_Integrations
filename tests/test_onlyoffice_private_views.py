@@ -18,8 +18,8 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 EJS = (ROOT / "integrations/onlyoffice/editor-wopi.ejs").read_text()
 CHROME = next((p for p in ("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-                           shutil.which("google-chrome") or "", shutil.which("chromium") or "",
-                           "C:/Program Files/Google/Chrome/Application/chrome.exe") if p and Path(p).exists()), None)
+                           "C:/Program Files/Google/Chrome/Application/chrome.exe",
+                           shutil.which("google-chrome") or "", shutil.which("chromium") or "") if p and Path(p).exists()), None)
 
 OLD = """var makeOld = function (api, name, w) { var ensure = function () { try {
   var views = api.asc_getNamedSheetViews() || [];
@@ -63,6 +63,102 @@ setTimeout(function () {
     full: names(full).length, below: names(below).filter(function (x) { return x.indexOf('Person') < 0; }) });
 }, 9000);
 </script>"""
+
+
+# The keeper before 23 Nov 2026: one creation attempt and one rename per sheet and visit, then it gave up.
+ONCE = """var makeOnce = function (api, name, w) { var attempted = false, renamed = false;
+  var run = function () { var mine = api.asc_getNamedSheetViews().filter(function (v) { return v.asc_getName() === name; })[0];
+    if (mine || attempted) return; attempted = true; api.asc_addNamedSheetView(null, true);
+    var t = 0, timer = w.setInterval(function () { t++;
+      var fresh = api.asc_getNamedSheetViews().filter(function (v) { return v.asc_getIsActive() && /^Temporary View \\d+$/.test(v.asc_getName()); })[0];
+      if (fresh && !renamed) { fresh.asc_setName(name); renamed = true; } if (t >= 40) w.clearInterval(timer); }, 250); };
+  return { run: run, schedule: function () { w.setTimeout(run, 300); } }; };"""
+
+# ONLYOFFICE refuses to create or rename a view while another person has View manager open
+# (LockedEditView); the fake editor refuses for the first `createLock` / `renameLock` milliseconds.
+LOCKED = """<script>
+%s
+%s
+function lockingEditor(createLock, renameLock) {
+  var views = [], n = 0, listeners = [], canCreate = !createLock, canRename = !renameLock;
+  setTimeout(function () { canCreate = true; }, createLock); setTimeout(function () { canRename = true; }, renameLock);
+  var mk = function (name) { var v = { visible: name, active: true };
+    v.asc_getName = function () { return v.visible; }; v.asc_getIsActive = function () { return v.active; };
+    v.asc_setName = function (x) { if (canRename) setTimeout(function () { v.visible = x; }, 300); }; return v; };
+  var api = {
+    asc_getNamedSheetViews: function () { return views.slice(); },
+    asc_isProtectedSheet: function () { return false; },
+    asc_addNamedSheetView: function () { if (!canCreate) return; views.forEach(function (v) { v.active = false; });
+      views.push(mk('Temporary View ' + (++n))); setTimeout(function () { listeners.forEach(function (f) { f(); }); }, 0); },
+    asc_setActiveNamedSheetView: function (name) { views.forEach(function (v) { v.active = v.visible === name; }); },
+    asc_registerCallback: function (e, f) { listeners.push(f); }
+  };
+  return { api: api, views: views };
+}
+function start(factory, createLock, renameLock) {
+  var ed = lockingEditor(createLock, renameLock), k = factory(ed.api, 'Private - Test User', window);
+  ed.api.asc_registerCallback('asc_onActiveSheetChanged', k.schedule); k.run(); ed.keeper = k; return ed;
+}
+var names = function (ed) { return ed.views.map(function (v) { return v.visible + (v.active ? '*' : ''); }); };
+var out = {};
+var c1 = start(makePrivateViewKeeper, 6000, 0), c0 = start(makeOnce, 6000, 0);       /* creation refused at first */
+var r1 = start(makePrivateViewKeeper, 0, 9000), r0 = start(makeOnce, 0, 9000);       /* rename refused at first */
+/* while the rename is refused the person is in their own (still unnamed) view: no notice */
+var frame = document.createElement('iframe'); document.body.appendChild(frame);
+var rn = makeViewNotice(r1.api, r1.keeper, frame.contentDocument); setInterval(rn.check, 1500);
+/* the notice, in the real page: person works in their own view, then picks Default */
+var nv = start(makePrivateViewKeeper, 0, 0), notice = makeViewNotice(nv.api, nv.keeper, document);
+setInterval(notice.check, 1500);
+var bar = function () { var b = document.getElementById('cloud-view-notice'); return b && b.style.display !== 'none' ? b.firstChild.textContent : ''; };
+setTimeout(function () { out.own_view_bar = bar(); nv.views.forEach(function (v) { v.active = false; }); }, 4000);
+setTimeout(function () { out.default_bar = bar(); document.querySelector('#cloud-view-notice button').click(); }, 11000);
+setTimeout(function () { out.after_back = names(nv); out.after_back_bar = bar(); }, 13000);
+setTimeout(function () { out.r1_early = names(r1); var b = frame.contentDocument.getElementById('cloud-view-notice');
+  out.r1_early_bar = b && b.style.display !== 'none' ? b.firstChild.textContent : ''; }, 8000);
+setTimeout(function () {
+  out.create_new = names(c1); out.create_old = names(c0); out.rename_new = names(r1); out.rename_old = names(r0);
+  document.title = JSON.stringify(out);
+}, 30000);
+</script>"""
+
+
+@unittest.skipUnless(CHROME, "Chrome is not installed")
+class RefusedViewChangeTests(unittest.TestCase):
+    """When ONLYOFFICE refuses a create or rename (another person in View manager), the keeper tries again
+    instead of leaving the person in the shared Default view; a notice shows when they are not in their own view."""
+
+    @classmethod
+    def setUpClass(cls):
+        block = re.search(r"/\* PRIVATE-VIEWS-BEGIN \*/(.*?)/\* PRIVATE-VIEWS-END \*/", EJS, re.S).group(1)
+        with tempfile.TemporaryDirectory() as tmp:
+            page = Path(tmp) / "locked.html"
+            page.write_text("<!doctype html><title>x</title><body></body>" + LOCKED % (ONCE, block), encoding="utf-8")
+            out = subprocess.run([CHROME, "--headless=new", "--disable-gpu", "--virtual-time-budget=40000",
+                                  "--dump-dom", page.as_uri()], capture_output=True, text=True, timeout=120).stdout
+        cls.result = json.loads(re.search(r"<title>(\{.*?\})</title>", out, re.S).group(1).replace("&quot;", '"'))
+
+    def test_refused_creation_is_retried_and_the_old_keeper_gave_up(self):
+        self.assertEqual(self.result["create_old"], [], "the simulation must reproduce the bug: nobody's own view")
+        self.assertEqual(self.result["create_new"], ["Private - Test User*"])
+
+    def test_refused_rename_is_retried_on_the_same_view_never_a_second_one(self):
+        self.assertEqual(self.result["rename_old"], ["Temporary View 1*"], "old keeper left an unnamed view")
+        self.assertEqual(self.result["rename_new"], ["Private - Test User*"])
+
+    def test_no_notice_in_ones_own_view_even_before_it_is_renamed(self):
+        self.assertEqual(self.result["r1_early"], ["Temporary View 1*"])
+        self.assertEqual(self.result["r1_early_bar"], "")
+        self.assertEqual(self.result["own_view_bar"], "")
+
+    def test_notice_in_the_shared_view_and_its_button_returns_to_ones_own(self):
+        self.assertIn("shared Default view", self.result["default_bar"])
+        self.assertEqual(self.result["after_back"], ["Private - Test User*"])
+        self.assertEqual(self.result["after_back_bar"], "")
+
+    def test_the_page_starts_the_notice(self):
+        self.assertIn("var notice = makeViewNotice(api, keeper, doc);", EJS)
+        self.assertIn("w.setInterval(notice.check, 1500);", EJS)
+        self.assertNotIn("innerHTML", re.search(r"var makeViewNotice = (.*?)return \{ check: check \};", EJS, re.S).group(1))
 
 
 @unittest.skipUnless(CHROME, "Chrome is not installed")

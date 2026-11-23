@@ -65,6 +65,7 @@ For later code updates: fetch/review the chosen Git commit, render outside Git, 
 - `tests/test_rebuild_templates.py`
 - `tests/test_realtime_origin.py`
 - `tests/test_module_manifest.py`
+- `tests/test_upstream_watch.py`
 
 Run all suites offline with `python tools/run_unit_tests.py` in the matching ERP Python environment.
 
@@ -117,6 +118,54 @@ five-minute watch for containers that keep restarting. Checklist, planned
 reboot procedure and install commands: `docs/production-moves.md`; private
 section example: `deployment/host-checks.example.json`; tests:
 `tests/test_reboot_resilience.py`, `tests/test_host_checks.py`.
+
+## Upstream watch (P62)
+
+`tools/upstream_watch.py` runs once a day and reports what is new upstream for
+everything we pin. It never upgrades anything: an upgrade is a normal branch,
+test, merge and production change that the owner takes up.
+
+- **Inventory:** the locks (`upstream-lock.json`, `build-lock.json`,
+  `native-clients-lock.json`, `integrations/mail/upstream.json`) and every
+  image digest in the stack files, build lock and Dockerfiles. Images are
+  pinned by digest only, so `upstream-watch.json` records the version behind
+  each digest (a test fails when a digest changes without it) and where each
+  component publishes releases and advisories. Components that are not in the
+  repository (Coolify, Traefik, Docker, Tailscale, TrueNAS, Ubuntu, the kernel,
+  restic, RustFS) take their versions from the private profile
+  (`upstream-watch.example.json`).
+- **Public sources only:** GitHub releases (tags where a project has none),
+  repository advisories and licence; OSV.dev; NVD (product name plus our
+  version, spaced to NVD's limit); endoflife.date; the CISA list of actively
+  exploited flaws. Optional read-only GitHub token from a root-only file
+  (without one GitHub allows 60 requests an hour, which a full run nearly uses up).
+- **Each finding:** component and our version, what changed, severity,
+  whether our version is affected (yes, or "unknown, check by hand" when a
+  published range cannot be read), exposure (public, tailnet, internal, build),
+  fixed version, exploited or not, notes from the release notes (breaking
+  changes, security fixes), our workaround it may retire, where the image is
+  used, and a recommendation (upgrade now, schedule, ignore) with the reason.
+  An exploited, or critical and affected, flaw on a public component is urgent.
+- **Output, only into the folder given as `--output` (refused inside the
+  checkout):** a baseline on the first run, `YYYY-MM-DD.md` only when something
+  is new, `YYYY-Www.md` as the weekly roll-up of everything still open,
+  `state.json`, `status.json`, and one summary line. Exit code 0 fine, 1 a
+  source failed, 2 an urgent finding is open. It sends no messages and never
+  commits or pushes; delivering alerts is P72. `--dry-run` writes nothing.
+- **False positives:** the profile's `ignore` list (finding id or advisory id
+  plus the reason); ignored findings stay visible in the roll-up.
+- **Install** on a host without production credentials (for example the test
+  VM): a read-only clone of `main` in `/opt/upstream-watch/repository`, the
+  profile in `/etc/upstream-watch/profile.json`, the optional token in
+  `/etc/upstream-watch/github-token` (0600), then
+  `upstream-watch.service.example` and `upstream-watch.timer.example` into
+  `/etc/systemd/system/` (without `.example`) and
+  `systemctl enable --now upstream-watch.timer`. The service runs as a
+  temporary unprivileged user; digests land in `/var/lib/upstream-watch`.
+- **Not yet:** open upstream issues matching our versions, vendor notices
+  outside these sources, and the Ubuntu security notices for host packages.
+
+Tests: `tests/test_upstream_watch.py` (sample answers, no network).
 
 ## AI-assisted development
 
