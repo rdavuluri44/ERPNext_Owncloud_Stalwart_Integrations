@@ -1,3 +1,4 @@
+/* P71 test-only deployment and reset drill marker. */
 /* Test-only status panel. Production never renders or loads this module.
    Two actions (owner decision, 19 November 2026):
    - "Refresh code" resets the test site to the tested release (main).
