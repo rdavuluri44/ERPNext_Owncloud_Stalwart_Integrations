@@ -54,6 +54,14 @@ private repository; agents working here follow them. The essentials, binding in 
 2. **Never print secret values** (profiles, env files, secret JSON, container environments): show
    key names or "same / different" only, redact nested values too, and report any exposure at once.
 3. **Report honestly**: what was done, what was tested, what was not; correct earlier wrong statements.
+4. **Security before features and deployments**: before any production promotion, upgrade or new
+   dependency, check the official security advisories (GitHub Security Advisories, OSV) and release
+   notes of every component the change ships or touches against the pinned versions, and record
+   "advisories checked: none open / list" in the pull request and the release record. A known high
+   or critical flaw in what we ship blocks the release unless the owner accepts it in writing. Before
+   adopting new software, check licence, maintenance, security history and how fixes are published,
+   and record it in `docs/decisions.md`. Read the latest upstream-watch digest (P62) when it exists;
+   security fixes for what we run come before new features unless the owner decides otherwise.
 
 # Project principles (owner, 17 November 2026)
 

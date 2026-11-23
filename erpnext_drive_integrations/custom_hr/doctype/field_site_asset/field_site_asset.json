@@ -1,0 +1,21 @@
+{
+  "doctype": "DocType",
+  "name": "Field Site Asset",
+  "module": "Custom HR",
+  "engine": "InnoDB",
+  "field_order": [
+    "asset"
+  ],
+  "fields": [
+    {
+      "fieldname": "asset",
+      "label": "Machine / asset",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Asset"
+    }
+  ],
+  "track_changes": 0,
+  "permissions": [],
+  "istable": 1
+}

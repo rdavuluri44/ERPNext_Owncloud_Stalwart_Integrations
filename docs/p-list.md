@@ -121,6 +121,13 @@ until the owner says; the table only fixes the order to take them up.
 | **P40** remainder (offline USB copy, test VM settings backup, tailnet rule) | hardening; backups already live |
 | **P35** presentation polish and upstream sharing | module READMEs, forum and tracker posts |
 
+**Long-term plans** (category tag `**Category:** long-term plan` at the end of an item's tag line: ideas kept on record,
+not ranked or scheduled; the owner decides if and when one starts)
+
+| Item | Note |
+|---|---|
+| **P73** Matrix as federated messaging between tenants | owner idea 22 Nov; comparison with Raven recorded in the item |
+
 **Tier 3: low or later**
 
 | Item | Note |
@@ -144,7 +151,7 @@ its app's list (copy the `**App:**` line from a neighbour), then run `python3 to
 
 | App | List | Items | Not done |
 |---|---|---|---|
-| General | [pending/general.md](p-list/general.md) | 19 | 19 |
+| General | [pending/general.md](p-list/general.md) | 20 | 20 |
 | DMS | [pending/dms.md](p-list/dms.md) | 1 | 1 |
 | Drive | [pending/drive.md](p-list/drive.md) | 1 | 1 |
 | Editor | [pending/editor.md](p-list/editor.md) | 1 | 1 |
@@ -179,7 +186,7 @@ its app's list (copy the `**App:**` line from a neighbour), then run `python3 to
 | P19 | Three Google Workspace mailboxes to Stalwart | [Mail](p-list/mail.md) | general · **State:** open | open |
 | P20 | Paperless document links on ERP transactions | [DMS](p-list/dms.md) | erp · **State:** open | open |
 | P21 | Client/project correspondence register and DMS integration | [ERP](p-list/erp.md) | dms · **State:** open | open |
-| P22 | Permission-controlled ERP AI assistant | [ERP](p-list/erp.md) | none · **State:** open | open |
+| P22 | Permission-controlled ERP AI assistant and business automation (Activepieces) | [ERP](p-list/erp.md) | raven, mail, drive, dms, general · **State:** open | open |
 | P23 | PWA offline and poor-connectivity behavior | [Mobile](p-list/mobile.md) | portal · **State:** open | open |
 | P24 | Field attendance pilot and correction acceptance | [ERP](p-list/erp.md) | none · **State:** open | open |
 | P25 | Invitation, passkey enrollment and recovery acceptance | [Sign-in](p-list/signin.md) | none · **State:** open | open |
@@ -215,4 +222,5 @@ its app's list (copy the `**App:**` line from a neighbour), then run `python3 to
 | P70 | Mail and WhatsApp domain split: `tenant.example` for production, `example.com` for the demo | [General](p-list/general.md) | mail, test-site, erp, signin · **State:** open | open |
 | P71 | GitHub CI/CD and central secrets management: Actions deploy test and production; "Refresh code" button removed | [General](p-list/general.md) | test-site, erp, mail, drive, dms, signin · **State:** open | open |
 | P72 | Monitoring and alerting: know when something breaks (on the TrueNAS, watched from outside) | [General](p-list/general.md) | erp, drive, mail, dms, signin, editor, test-site · **State:** open | open |
+| P73 | Matrix as federated messaging between tenants | [General](p-list/general.md) | none · **State:** open · **Category:** long-term plan | open |
 <!-- APP-INDEX-END -->

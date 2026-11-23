@@ -356,6 +356,17 @@ a baseline report of everything that is behind its latest stable release; dry-ru
 week before any message is sent; keep a short false-positive list. Related: P59 (drift
 check), P57, P61, P42.
 
+**First run and finding (22 November 2026):** the colleague's tool (PR #30, branch `p62-upstream-watch`, `a33dd47`, checks
+green; review and test-site run pending) found, and our session confirmed at the source, that production's **Frappe
+v16.56.0 is affected by GHSA-vwqr-4mjv-ffrm** (high, "Unauthorised sending of email in email communication due to
+missing validation", published 19 November, affects >= 16.0.0 < 16.60.1, fix 16.60.1). All other recent Frappe
+advisories were fixed before 16.56.0. **How it slipped through:** releases on 21 November were promoted without an
+advisory check (the watch was still a plan); the owner's rule "security before features and deployments" now requires
+that check for every promotion (working agreements, `AGENTS.md`, decision log). **Upgrade:** the colleague's agent was
+asked to prepare the Frappe upgrade on a branch (release notes and advisories reviewed, compatible app versions,
+tests); building the ERP image, the test site and production stay with the maintainers, each on the owner's go.
+
+
 ### P67 — Test deployments: one complete step, no hand-run pieces or drifting profiles
 
 **App:** general · **Also touches:** test-site · **State:** open
@@ -554,4 +565,33 @@ TrueNAS answers.
 1 to 2 GB of memory plus storage on the TrueNAS; dashboards and alert channels are reachable only over the tailnet;
 no secrets in dashboards or alert texts; licences of Grafana, Loki (AGPL) and Prometheus (Apache) recorded; set up from
 this repository as a module (stack files, config, README), branch, test, owner go, like every other stack.
+
+### P73 — Matrix as federated messaging between tenants
+
+**App:** general · **Also touches:** none · **State:** open · **Category:** long-term plan
+
+**Status:** owner idea, 22 November 2026; recorded as a long-term plan, not scheduled. Nothing starts until the owner
+decides.
+
+**Idea:** Matrix is a federated, open messaging standard: users on different organisations' servers can share rooms.
+One day, separate tenants of this platform could talk to each other directly, which the current chat (Raven, inside
+one ERP site) cannot do.
+
+**Comparison made on 22 November 2026 (summary):**
+- **Raven:** AGPL-3.0, now maintained by Frappe; deep ERPNext integration (same users and roles, share any ERP document,
+  document-change messages, AI agents on ERP data); no federation; no end-to-end encryption (company can keep and
+  search messages); mobile app younger (iPhone app, Android via app or the v3 PWA); almost no running cost here.
+- **Matrix:** open standard (Matrix Foundation) with several servers (Synapse; lighter continuwuity and Tuwunel) and
+  very polished apps (Element X, FluffyChat); federation built in; end-to-end encryption by default (privacy, but
+  company records cannot be kept or searched in encrypted rooms unless configured); single sign-on with authentik
+  needs the Matrix Authentication Service for Element X; group calls need a call server (LiveKit); bridges to other
+  networks exist (WhatsApp bridging uses personal accounts: terms-of-service risk); no ready-made ERPNext integration
+  (one-way notifications through a webhook bot or n8n); a full new stack to run, secure and back up; federation is an
+  internet-facing service; the server software cannot be switched after installation.
+- **Recommendation at the time:** keep Raven as the office chat; when federation between tenants becomes a real goal,
+  pilot Matrix on the test site (light server, Element X, authentik sign-in) and decide its role (between companies
+  only, or replacing Raven); a Raven-Matrix bridge would be custom work.
+
+**To decide when taken up:** the goal (between tenants only, or the default chat), the server software, encryption
+policy for company rooms, calls, bridges, where it runs, and the effect on mobile plans.
 

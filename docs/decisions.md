@@ -416,6 +416,17 @@ discussion that led to a decision is not repeated here.
   who work on one app. **Where:** `docs/p-list.md` (index) and `docs/p-list/<app>.md`; the private source is
   `docs/pending.md` and `docs/pending/` in the operations repository.
 
+### HR additions live in the one app as `custom_hr` (formerly the field-attendance part)
+- **Decision:** our customisations stay in the single app `erpnext_drive_integrations`. Everything Frappe HR lacks
+  for our HR work, and every HR function the mobile app needs, is built in its `custom_hr` part (the former `field`
+  part, module "Cloud Field", renamed "Custom HR"). Frappe HR's own features are used as they are. The part adds no
+  desk app icon (no `add_to_apps_screen`, no workspace; tested). DocType, role and page names stay unchanged; a
+  migration patch renames the Module Def with Frappe's own rename before the DocTypes are synced, without touching
+  records; the former `cloud_features` key `field` is still honoured.
+- **Why:** owner, 22 November 2026: more HR functions will be built into this part than field attendance, and one
+  app is easier to manage, review and upgrade than several. **Where:** `erpnext_drive_integrations/custom_hr/`,
+  `erpnext_drive_integrations/patches.txt`, `tests/test_custom_hr.py`, `modules.json`.
+
 ### Contributor access to the test site: own key, deploy-only, never the owner's key
 - **Decision:** a contributor who needs to install a branch on the test site gets their own SSH key (they send only
   the public half), bound to a dedicated account whose forced command can only deploy a branch of the public
@@ -462,4 +473,13 @@ discussion that led to a decision is not repeated here.
   renders the page as production sees it and checks that every site-specific part sits inside its setting.
   **Where:** `erpnext_drive_integrations/www/place_holder.*`, `public/test-refresh.css`, `tools/prepare_test_profiles.py`,
   `tests/test_portal_site_look.py`.
+
+### Security before features and deployments
+- **Decision:** every production promotion, upgrade or new dependency starts with a check of the official security
+  advisories and release notes of what it ships, against the pinned versions; the result is recorded in the pull
+  request and the release record, and a known high or critical flaw blocks the release unless the owner accepts it in
+  writing. New software is adopted only after a licence, maintenance and security-history check recorded here.
+- **Why:** on 21 November 2026 releases were promoted with Frappe v16.56.0 although a high-severity advisory
+  (GHSA-vwqr-4mjv-ffrm, unauthorised sending of email, fixed in 16.60.1) had been published on 19 November; it was found
+  only on 22 November by the first run of the upstream watch (P62). **Where:** `AGENTS.md`, the release log, P62.
 

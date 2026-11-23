@@ -1,0 +1,98 @@
+{
+  "doctype": "DocType",
+  "name": "Field Worker Assignment",
+  "module": "Custom HR",
+  "engine": "InnoDB",
+  "field_order": [
+    "employee",
+    "site",
+    "supervisor",
+    "machine_required",
+    "locked_by",
+    "lock_reason",
+    "assigned_by",
+    "effective_at"
+  ],
+  "fields": [
+    {
+      "fieldname": "employee",
+      "label": "Employee",
+      "fieldtype": "Link",
+      "unique": 1,
+      "reqd": 1,
+      "options": "Employee"
+    },
+    {
+      "fieldname": "site",
+      "label": "Site",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Field Site"
+    },
+    {
+      "fieldname": "supervisor",
+      "label": "Responsible supervisor",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "User"
+    },
+    {
+      "fieldname": "machine_required",
+      "label": "Machine / standby required",
+      "fieldtype": "Check"
+    },
+    {
+      "fieldname": "locked_by",
+      "label": "Assigned by approver",
+      "fieldtype": "Link",
+      "options": "User"
+    },
+    {
+      "fieldname": "lock_reason",
+      "label": "Assignment instruction",
+      "fieldtype": "Small Text"
+    },
+    {
+      "fieldname": "assigned_by",
+      "label": "Last assigned by",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "User"
+    },
+    {
+      "fieldname": "effective_at",
+      "label": "Effective from",
+      "fieldtype": "Datetime",
+      "reqd": 1
+    }
+  ],
+  "track_changes": 1,
+  "permissions": [
+    {
+      "role": "Field Attendance Manager",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "report": 1
+    },
+    {
+      "role": "Field Supervisor",
+      "read": 1
+    },
+    {
+      "role": "Field Attendance Approver",
+      "read": 1
+    }
+  ],
+  "autoname": "hash",
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

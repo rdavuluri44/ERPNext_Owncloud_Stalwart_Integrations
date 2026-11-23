@@ -57,13 +57,36 @@ Existing checks cover PAN syntax, GSTIN/PAN consistency, and whether the PAN typ
 
 Agree client/project, incoming/outgoing direction, reference/date/subject, responsible employee, response deadline/status, reply chains, transaction/DMS links and physical-original location fields, numbering, workflow and roles. Coordinate with P20, preserve privacy and test an incoming letter/outgoing reply and outstanding-response pilot. Existing vendor response forms and OCR search are not a completed correspondence register. See [register scope](../roadmap.md#7-clientproject-correspondence-register).
 
-### P22 — Permission-controlled ERP AI assistant
+### P22 — Permission-controlled ERP AI assistant and business automation (Activepieces)
 
-**App:** erp · **Also touches:** none · **State:** open
+**App:** erp · **Also touches:** raven, mail, drive, dms, general · **State:** open
 
 **Status:** planned read-only-first evaluation/development; no model, provider data sharing, public tool endpoint or write authority is selected/enabled.
 
 Agree pilot project reports, approvals and attendance summaries; evaluate installed native Frappe tool interfaces; enforce caller-bound native roles/document/field access and a server-side tool allowlist. Require source links, audit/revocation and untrusted-content protections. No shared Administrator, unrestricted database/SQL/shell or arbitrary RPC access. Decide provider/data/cost policy before sending business data. Drafts and consequential writes are later separately controlled phases; DMS/Drive retrieval depends on validated connectors. See [assistant scope](../roadmap.md#8-permission-controlled-erp-ai-assistant).
+
+**Scope added (owner, 22 November 2026): business automation and notifications.**
+- **Tool: Activepieces** (owner's preference over n8n): MIT-licensed core (a paid enterprise folder aside), visual
+  workflows with AI steps; n8n was set aside because its Sustainable Use License is not open source and restricts
+  offering it to other organisations (future tenants). Single sign-on is paid in both, so the Activepieces admin screen
+  sits behind the authentik gateway instead.
+- **Channels (owner decision): Raven inside the company, WhatsApp for outside vendors.** Activepieces can post to
+  Raven through Raven's incoming webhook / REST API (generic HTTP step) and to WhatsApp through the WhatsApp Business
+  Cloud API; WhatsApp needs the Meta business number (P04's blocker), approved templates for messages vendors did not
+  start, and has per-conversation charges. One sender per event, so vendors never get duplicates (Activepieces or the
+  ERP's own WhatsApp connector from P04, chosen per event).
+- **Step 1, no new tool:** ERP-native notifications for events inside the ERP: Raven document notifications (for
+  example a Purchase Order submitted, posted to a channel with the document linked) and ERPNext Notifications (for
+  example a Payment Entry to a vendor: mail now, WhatsApp once P04 is live). Through the test site first.
+- **Step 2, pilot Activepieces on the test site** for work that crosses systems or runs on a schedule: supplier
+  invoices from mail read by AI, filed in the DMS and drafted in the ERP; weekly overdue-payment summaries; GSTIN checks
+  when a vendor is created; Drive folder processing; routing monitoring alerts (P72) to Raven or the phone; human
+  approval steps.
+- **Rules:** workflows exported to git and promoted test to production like every other change; credentials in the
+  secrets manager (P71) and never in workflow exports; AI steps only under the provider and data policy decided in this
+  item (business data must not go to an AI provider before that); test-site messages follow the demo safeguards
+  (allow list and test marker); every workflow names an owner and has a way to switch it off.
+
 
 ### P24 — Field attendance pilot and correction acceptance
 

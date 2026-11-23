@@ -58,7 +58,7 @@ def prepare(source,runtime,receipts,profile,output):
         'issuer':clients['erpnext']['issuer'],'client_id':clients['erpnext']['client_id'],
         'client_secret':clients['erpnext']['client_secret'],'administrator_email':owner,
         'administrator_name':profile.get('administrator_name','Administrator'),
-        'features':{'portal':True,'field':True,'onboarding':True},'refresh_ready':profile.get('refresh_ready') is True,
+        'features':{'portal':True,'custom_hr':True,'onboarding':True},'refresh_ready':profile.get('refresh_ready') is True,
         'refresh_users':profile.get('refresh_users',[owner]),'site_settings':{'hov_respond_host':hosts['respond']}}
     if profile.get('test_oauth_clients'):
         # P38: app OAuth clients blocked on production, re-enabled on test.

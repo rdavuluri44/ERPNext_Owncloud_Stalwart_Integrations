@@ -17,11 +17,12 @@ def boot_session(bootinfo):
         if entry.get("app") != "erpnext_drive_integrations":
             continue
         module = entry.get("module") or entry.get("name")
-        entry["app"] = {"Onboarding": "onboarding", "Cloud Field": "hrms",
+        entry["app"] = {"Onboarding": "onboarding", "Custom HR": "hrms",
                         "Cloud Integrations": "frappe"}.get(module, "onboarding")
-    if features.get("field", True):
-        from erpnext_drive_integrations.field.web import boot_session as field_boot
-        field_boot(bootinfo)
+    from erpnext_drive_integrations.hooks import _feature_enabled
+    if _feature_enabled("custom_hr", features):
+        from erpnext_drive_integrations.custom_hr.web import boot_session as hr_boot
+        hr_boot(bootinfo)
     if features.get("onboarding", True):
         from erpnext_drive_integrations.onboarding.access import boot_session as onboarding_boot
         onboarding_boot(bootinfo)

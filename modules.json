@@ -113,21 +113,22 @@
       ]
     },
     {
-      "id": "field-operations",
-      "title": "Field operations",
-      "summary": "Field sites, assets, members, worker assignments, shift allocation, attendance and checkout, with the field team web page.",
-      "readme": "erpnext_drive_integrations/field/README.md",
+      "id": "custom-hr",
+      "title": "Custom HR",
+      "summary": "Our HR additions to Frappe HR: field sites and members, supervisor-recorded team attendance with photo and location, PM approval, checkout, and the functions the mobile app uses.",
+      "readme": "erpnext_drive_integrations/custom_hr/README.md",
       "paths": [
-        "erpnext_drive_integrations/field/**",
-        "erpnext_drive_integrations/cloud_field/**",
-        "erpnext_drive_integrations/public/field/**",
-        "erpnext_drive_integrations/www/field_team.*"
+        "erpnext_drive_integrations/custom_hr/**",
+        "erpnext_drive_integrations/public/custom_hr/**",
+        "erpnext_drive_integrations/www/field_team.*",
+        "tests/test_custom_hr.py"
       ],
       "depends_on": [
         "erp-addon-shell"
       ],
       "tests": [
-        "erpnext_drive_integrations/field/test_checkout.py"
+        "erpnext_drive_integrations/custom_hr/test_checkout.py",
+        "tests/test_custom_hr.py"
       ],
       "upstream": [
         {

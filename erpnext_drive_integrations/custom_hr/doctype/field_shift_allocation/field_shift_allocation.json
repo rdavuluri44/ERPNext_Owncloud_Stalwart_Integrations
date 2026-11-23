@@ -1,0 +1,108 @@
+{
+  "doctype": "DocType",
+  "name": "Field Shift Allocation",
+  "module": "Custom HR",
+  "engine": "InnoDB",
+  "field_order": [
+    "allocation_key",
+    "employee",
+    "site",
+    "attendance_date",
+    "shift",
+    "supervisor",
+    "locked_by",
+    "assigned_by",
+    "effective_at"
+  ],
+  "fields": [
+    {
+      "fieldname": "allocation_key",
+      "label": "Unique shift key",
+      "fieldtype": "Data",
+      "unique": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "employee",
+      "label": "Employee",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Employee"
+    },
+    {
+      "fieldname": "site",
+      "label": "Site",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Field Site"
+    },
+    {
+      "fieldname": "attendance_date",
+      "label": "Shift date",
+      "fieldtype": "Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "shift",
+      "label": "Shift",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Shift Type"
+    },
+    {
+      "fieldname": "supervisor",
+      "label": "Supervisor",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "User"
+    },
+    {
+      "fieldname": "locked_by",
+      "label": "Assigned by approver",
+      "fieldtype": "Link",
+      "options": "User"
+    },
+    {
+      "fieldname": "assigned_by",
+      "label": "Assigned by",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "User"
+    },
+    {
+      "fieldname": "effective_at",
+      "label": "Effective from",
+      "fieldtype": "Datetime",
+      "reqd": 1
+    }
+  ],
+  "track_changes": 1,
+  "permissions": [
+    {
+      "role": "Field Attendance Manager",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "report": 1
+    },
+    {
+      "role": "Field Supervisor",
+      "read": 1
+    },
+    {
+      "role": "Field Attendance Approver",
+      "read": 1
+    }
+  ],
+  "autoname": "hash",
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

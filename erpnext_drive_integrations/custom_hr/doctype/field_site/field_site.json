@@ -1,0 +1,127 @@
+{
+  "doctype": "DocType",
+  "name": "Field Site",
+  "module": "Custom HR",
+  "engine": "InnoDB",
+  "field_order": [
+    "site_name",
+    "company",
+    "project",
+    "day_shift",
+    "night_shift",
+    "latitude",
+    "longitude",
+    "radius_m",
+    "maximum_accuracy_m",
+    "enabled",
+    "members",
+    "assets"
+  ],
+  "fields": [
+    {
+      "fieldname": "site_name",
+      "label": "Site name",
+      "fieldtype": "Data",
+      "reqd": 1
+    },
+    {
+      "fieldname": "company",
+      "label": "Company",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Company"
+    },
+    {
+      "fieldname": "project",
+      "label": "Project",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Project"
+    },
+    {
+      "fieldname": "day_shift",
+      "label": "Day shift",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Shift Type"
+    },
+    {
+      "fieldname": "night_shift",
+      "label": "Night shift",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Shift Type"
+    },
+    {
+      "fieldname": "latitude",
+      "label": "Site latitude",
+      "fieldtype": "Float"
+    },
+    {
+      "fieldname": "longitude",
+      "label": "Site longitude",
+      "fieldtype": "Float"
+    },
+    {
+      "fieldname": "radius_m",
+      "label": "Allowed radius (metres; 0 disables)",
+      "fieldtype": "Float",
+      "default": "0"
+    },
+    {
+      "fieldname": "maximum_accuracy_m",
+      "label": "Maximum GPS uncertainty (metres)",
+      "fieldtype": "Float",
+      "default": "200"
+    },
+    {
+      "fieldname": "enabled",
+      "label": "Enabled",
+      "fieldtype": "Check",
+      "default": "1"
+    },
+    {
+      "fieldname": "members",
+      "label": "Supervisors and approvers",
+      "fieldtype": "Table",
+      "reqd": 1,
+      "options": "Field Site Member"
+    },
+    {
+      "fieldname": "assets",
+      "label": "Permitted machines",
+      "fieldtype": "Table",
+      "options": "Field Site Asset"
+    }
+  ],
+  "track_changes": 1,
+  "permissions": [
+    {
+      "role": "Field Attendance Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "report": 1
+    },
+    {
+      "role": "Field Supervisor",
+      "read": 1
+    },
+    {
+      "role": "Field Attendance Approver",
+      "read": 1
+    }
+  ],
+  "title_field": "site_name",
+  "autoname": "hash",
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

@@ -1,0 +1,290 @@
+{
+  "doctype": "DocType",
+  "name": "Field Attendance Entry",
+  "module": "Custom HR",
+  "engine": "InnoDB",
+  "field_order": [
+    "attendance_key",
+    "request_id",
+    "last_capture_id",
+    "last_capture_digest",
+    "employee",
+    "employee_name",
+    "site",
+    "project",
+    "company",
+    "attendance_date",
+    "shift",
+    "attendance_status",
+    "state",
+    "work_mode",
+    "asset",
+    "remarks",
+    "photo",
+    "latitude",
+    "longitude",
+    "accuracy_m",
+    "captured_at",
+    "gps_captured_at",
+    "captured_by",
+    "responsible_supervisor",
+    "machine_required",
+    "review_remarks",
+    "reviewed_by",
+    "reviewed_at",
+    "submitted_at",
+    "attendance",
+    "revision",
+    "check_in_time",
+    "auto_checkout_at",
+    "check_out_time",
+    "checkout_method"
+  ],
+  "fields": [
+    {
+      "fieldname": "attendance_key",
+      "label": "Unique worker / shift key",
+      "fieldtype": "Data",
+      "unique": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "request_id",
+      "label": "Retry key",
+      "fieldtype": "Data",
+      "unique": 1,
+      "reqd": 1
+    },
+    {
+      "fieldname": "last_capture_id",
+      "label": "Last capture retry identifier",
+      "fieldtype": "Data"
+    },
+    {
+      "fieldname": "last_capture_digest",
+      "label": "Last capture request digest",
+      "fieldtype": "Data"
+    },
+    {
+      "fieldname": "employee",
+      "label": "Employee",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Employee"
+    },
+    {
+      "fieldname": "employee_name",
+      "label": "Worker name",
+      "fieldtype": "Data"
+    },
+    {
+      "fieldname": "site",
+      "label": "Site",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Field Site"
+    },
+    {
+      "fieldname": "project",
+      "label": "Project",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Project"
+    },
+    {
+      "fieldname": "company",
+      "label": "Company",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Company"
+    },
+    {
+      "fieldname": "attendance_date",
+      "label": "Shift date",
+      "fieldtype": "Date",
+      "reqd": 1
+    },
+    {
+      "fieldname": "shift",
+      "label": "Shift",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Shift Type"
+    },
+    {
+      "fieldname": "attendance_status",
+      "label": "Attendance status",
+      "fieldtype": "Select",
+      "default": "Present",
+      "reqd": 1,
+      "options": "Present\nAbsent"
+    },
+    {
+      "fieldname": "state",
+      "label": "Review state",
+      "fieldtype": "Select",
+      "default": "Draft",
+      "reqd": 1,
+      "options": "Draft\nSubmitted\nReturned\nApproved"
+    },
+    {
+      "fieldname": "work_mode",
+      "label": "Machine status",
+      "fieldtype": "Select",
+      "default": "Not applicable",
+      "reqd": 1,
+      "options": "Not applicable\nOperating\nStandby"
+    },
+    {
+      "fieldname": "asset",
+      "label": "Machine",
+      "fieldtype": "Link",
+      "options": "Asset"
+    },
+    {
+      "fieldname": "remarks",
+      "label": "Supervisor remarks",
+      "fieldtype": "Small Text"
+    },
+    {
+      "fieldname": "photo",
+      "label": "Worker photograph",
+      "fieldtype": "Attach Image"
+    },
+    {
+      "fieldname": "latitude",
+      "label": "Latitude",
+      "fieldtype": "Float"
+    },
+    {
+      "fieldname": "longitude",
+      "label": "Longitude",
+      "fieldtype": "Float"
+    },
+    {
+      "fieldname": "accuracy_m",
+      "label": "GPS uncertainty (metres)",
+      "fieldtype": "Float"
+    },
+    {
+      "fieldname": "captured_at",
+      "label": "Server capture time",
+      "fieldtype": "Datetime",
+      "reqd": 1
+    },
+    {
+      "fieldname": "gps_captured_at",
+      "label": "GPS captured at",
+      "fieldtype": "Datetime"
+    },
+    {
+      "fieldname": "captured_by",
+      "label": "Captured by",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "User"
+    },
+    {
+      "fieldname": "responsible_supervisor",
+      "label": "Responsible supervisor at capture",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "User"
+    },
+    {
+      "fieldname": "machine_required",
+      "label": "Machine requirement at capture",
+      "fieldtype": "Check"
+    },
+    {
+      "fieldname": "review_remarks",
+      "label": "Review remarks",
+      "fieldtype": "Small Text"
+    },
+    {
+      "fieldname": "reviewed_by",
+      "label": "Reviewed by",
+      "fieldtype": "Link",
+      "options": "User"
+    },
+    {
+      "fieldname": "reviewed_at",
+      "label": "Reviewed at",
+      "fieldtype": "Datetime"
+    },
+    {
+      "fieldname": "submitted_at",
+      "label": "Submitted at",
+      "fieldtype": "Datetime"
+    },
+    {
+      "fieldname": "attendance",
+      "label": "Approved HR attendance",
+      "fieldtype": "Link",
+      "options": "Attendance"
+    },
+    {
+      "fieldname": "revision",
+      "label": "Revision",
+      "fieldtype": "Int",
+      "default": "1"
+    },
+    {
+      "fieldname": "check_in_time",
+      "label": "Check-in time",
+      "fieldtype": "Datetime",
+      "read_only": 1,
+      "no_copy": 1
+    },
+    {
+      "fieldname": "auto_checkout_at",
+      "label": "Automatic checkout due",
+      "fieldtype": "Datetime",
+      "read_only": 1,
+      "no_copy": 1
+    },
+    {
+      "fieldname": "check_out_time",
+      "label": "Checkout time",
+      "fieldtype": "Datetime",
+      "read_only": 1,
+      "no_copy": 1
+    },
+    {
+      "fieldname": "checkout_method",
+      "label": "Checkout method",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "no_copy": 1
+    }
+  ],
+  "track_changes": 1,
+  "permissions": [
+    {
+      "role": "Field Attendance Manager",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "report": 1
+    },
+    {
+      "role": "Field Supervisor",
+      "read": 1
+    },
+    {
+      "role": "Field Attendance Approver",
+      "read": 1
+    }
+  ],
+  "autoname": "hash",
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

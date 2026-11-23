@@ -24,8 +24,12 @@ _configured = frappe.conf.get("cloud_features") or {}
 def _values(value):
     return list(value) if isinstance(value, (tuple, list)) else [value]
 
-for _feature in ("portal", "field", "onboarding"):
-    if _configured.get(_feature, True) is False:
+def _feature_enabled(name, configured):
+    """cloud_features switch for one feature; `custom_hr` was called `field` before, and that key still counts."""
+    return configured.get(name, configured.get("field", True) if name == "custom_hr" else True) is not False
+
+for _feature in ("portal", "custom_hr", "onboarding"):
+    if not _feature_enabled(_feature, _configured):
         continue
     _fragment = import_module(f"erpnext_drive_integrations.{_feature}.hooks")
     for _key in _list_hooks:

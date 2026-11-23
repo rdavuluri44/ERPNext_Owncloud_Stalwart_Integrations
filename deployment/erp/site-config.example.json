@@ -2,7 +2,7 @@
   "host_name": "https://erp.example.com",
   "cloud_features": {
     "portal": true,
-    "field": true,
+    "custom_hr": true,
     "onboarding": true
   },
   "cloud_sso_enforced": false,

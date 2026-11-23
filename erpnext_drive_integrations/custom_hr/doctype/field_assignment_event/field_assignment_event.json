@@ -1,0 +1,118 @@
+{
+  "doctype": "DocType",
+  "name": "Field Assignment Event",
+  "module": "Custom HR",
+  "engine": "InnoDB",
+  "field_order": [
+    "employee",
+    "site",
+    "previous_supervisor",
+    "new_supervisor",
+    "changed_by",
+    "effective_at",
+    "scope",
+    "attendance_date",
+    "shift",
+    "approver_locked",
+    "remarks"
+  ],
+  "fields": [
+    {
+      "fieldname": "employee",
+      "label": "Employee",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Employee"
+    },
+    {
+      "fieldname": "site",
+      "label": "Site",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "Field Site"
+    },
+    {
+      "fieldname": "previous_supervisor",
+      "label": "Previous supervisor",
+      "fieldtype": "Link",
+      "options": "User"
+    },
+    {
+      "fieldname": "new_supervisor",
+      "label": "New supervisor",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "User"
+    },
+    {
+      "fieldname": "changed_by",
+      "label": "Changed by",
+      "fieldtype": "Link",
+      "reqd": 1,
+      "options": "User"
+    },
+    {
+      "fieldname": "effective_at",
+      "label": "Effective from",
+      "fieldtype": "Datetime",
+      "reqd": 1
+    },
+    {
+      "fieldname": "scope",
+      "label": "Scope",
+      "fieldtype": "Select",
+      "reqd": 1,
+      "options": "Ongoing\nThis shift"
+    },
+    {
+      "fieldname": "attendance_date",
+      "label": "Shift date",
+      "fieldtype": "Date"
+    },
+    {
+      "fieldname": "shift",
+      "label": "Shift",
+      "fieldtype": "Link",
+      "options": "Shift Type"
+    },
+    {
+      "fieldname": "approver_locked",
+      "label": "Approver instruction",
+      "fieldtype": "Check"
+    },
+    {
+      "fieldname": "remarks",
+      "label": "Transfer remarks",
+      "fieldtype": "Small Text"
+    }
+  ],
+  "track_changes": 1,
+  "permissions": [
+    {
+      "role": "Field Attendance Manager",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "report": 1,
+      "export": 1
+    },
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 0,
+      "create": 0,
+      "report": 1
+    },
+    {
+      "role": "Field Supervisor",
+      "read": 1
+    },
+    {
+      "role": "Field Attendance Approver",
+      "read": 1
+    }
+  ],
+  "autoname": "hash",
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}
