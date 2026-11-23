@@ -29,7 +29,7 @@ refresh worker) do not change; this index groups them by module.
 ## Reproducible build and deployment (`deployment`)
 
 - `build_erp_core.py` — Build the prepared public ERP core with the pinned official apps_json input.
-- `check_repository.py` — Offline syntax, schema and publication checks. Never reads a live site.
+- `check_repository.py` — Offline syntax, schema, import (P68: imports of our own modules and names must exist) and publication checks. Never reads a live site.
 - `coolify_native.py` — Register a prepared Compose service through local Coolify's native models.
 - `initialize_erp.py` — Initialize one empty ERP site using the pinned native installer.
 - `migrate_asset_references.py` — Rewrite retired addon asset prefixes in system settings, never business text.
@@ -41,6 +41,8 @@ refresh worker) do not change; this index groups them by module.
 - `prepare_erp_image.py` — Prepare an ERP build entirely from pinned public sources, with no private image.
 - `prepare_ingress.py` — Render complete workspace ingress for a controller's existing Traefik proxy.
 - `prepare_runtime.py` — Prepare portable native service mounts/configuration from a Git checkout.
+- `promotion_plan.py` — List the stacks, steps, live settings and restarts a change reaches, and what test cannot cover (P59).
+- `drift_check.py` — Read-only check on production that every stack runs what `main` says, and that served pages match (P59).
 - `render_runtime.py` — Render public deployment URLs into a build tree; never edit the Git checkout.
 - `run_unit_tests.py` — Run mock-based rules/security suites in separate processes, without a live site.
 - `test_host_aliases.py` — Resolve this test host's own HTTPS services locally, retaining TLS checks.

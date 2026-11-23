@@ -20,11 +20,14 @@ person may see or do, exactly as on the web.
   with icon and text, Indian number format (1,50,000.00). Tablets get a list and detail side by side.
 
 Not built yet: field attendance with offline capture, approvals with push notifications, Live Activities.
-The Approvals and Inbox tabs are placeholders until then.
+The Approvals and Inbox tabs are placeholders until then. **What comes next, and how it is built, is in
+[`BUILD-GUIDE.md`](BUILD-GUIDE.md)** (owner decisions of 22 November 2026, rules, agent workflow, data paths,
+phases).
 
 ## Contents
 
-- `mobile/**`: the Expo project (`src/` screens and logic, `scripts/` checks, `assets/` placeholder icons).
+- `mobile/**`: the Expo project (`src/` screens and logic, `scripts/` checks, `assets/` placeholder icons),
+  `BUILD-GUIDE.md` (the build guide for agents and developers).
 - `tests/test_mobile_app.py`: tenant-neutral source and server API checks.
 
 ## Requirements

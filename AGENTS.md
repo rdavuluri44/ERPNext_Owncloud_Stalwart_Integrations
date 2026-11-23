@@ -19,7 +19,9 @@ is deployed to the test site and validated there, and the tested commit is
 recorded. Only then does the owner merge it to `main`, and production receives
 that same tested content from `main`, never from a branch. The unit tests and
 repository checks are a gate before the test deployment, not a substitute for
-it. Files that exist only in production (route files, port bindings, host
+it. Unit tests may fake Frappe and outside services, but import the project's
+own modules for real (never a fake copy of them); the repository check refuses
+an import of a module or name that does not exist (P68). Files that exist only in production (route files, port bindings, host
 entries) cannot be exercised on the test site: for them, record a browser and
 protocol check of the affected apps immediately after promotion, and say in the
 release record that test could not cover them. GitHub cannot verify that a
@@ -42,6 +44,11 @@ revision being promoted. Update the repository documentation whenever retained
 behavior or deployment procedures change. An unavailable or failing test
 environment blocks production promotion until it is restored and validation
 passes.
+
+Every pull request carries its promotion plan (`tools/promotion_plan.py`: the
+stacks, steps, live settings and restarts the change reaches, and what the test
+site cannot cover). A promotion is not finished until `tools/drift_check.py` on
+production reports every stack clean for the promoted commit.
 
 # Working agreements for every agent (owner, 22 November 2026)
 

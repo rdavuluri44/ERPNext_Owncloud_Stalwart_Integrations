@@ -1,5 +1,8 @@
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
+**Read `BUILD-GUIDE.md` in this folder first.** It holds the owner's decisions, the hard rules, the agent workflow
+and the data path of every feature; it and the repository's `AGENTS.md` win over this file.
+
 ## Expo has changed — do not trust your training data
 
 Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
@@ -31,7 +34,7 @@ Run lint and typecheck before declaring any task done.
 
 ## Building with EAS
 
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
+Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as the version pinned in this project's dev dependencies (`pnpm exec eas <command>`), never `npx eas-cli@latest`; substitute that for bare `eas` in docs examples. Builds, submissions and updates only with the owner's explicit go (`BUILD-GUIDE.md`, section 2).
 Docs: https://docs.expo.dev/eas/index.md
 
 ## Rules

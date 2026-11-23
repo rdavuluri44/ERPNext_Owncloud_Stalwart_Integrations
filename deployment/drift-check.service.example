@@ -1,0 +1,11 @@
+[Unit]
+Description=Drift check: every stack against main, served content (P59); read-only
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Root: it reads Coolify's service records (docker exec, SELECT only) and the deployment profiles.
+ExecStart=/usr/bin/python3 /opt/cloud-drift-check/repository/tools/drift_check.py --config /etc/cloud-drift-check/config.json
+UMask=0077
+TimeoutStartSec=600

@@ -3,6 +3,9 @@
 ## Module(s) touched
 <!-- from modules.json -->
 
+## Promotion plan
+<!-- output of `python tools/promotion_plan.py <commit production runs> <this branch>`: stacks, steps, live settings, restarts, what test cannot cover -->
+
 ## How it was tested
 - [ ] `python tools/check_repository.py`
 - [ ] `python tools/run_unit_tests.py`

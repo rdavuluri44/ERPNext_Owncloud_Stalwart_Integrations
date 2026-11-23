@@ -1,0 +1,135 @@
+{
+  "_comment": "P59: which stacks, setup steps, live settings and restarts each repository file reaches when it changes (tools/promotion_plan.py, tools/drift_check.py). Every tracked file must match at least one rule (tested); all matching rules apply. Globs as in modules.json: ** any path, * within one folder. 'stacks' are the stacks in deployment/stacks plus 'proxy' (route files on the production proxy), 'host' (tools installed on a server), 'test' (the test site only) and 'mobile'. Markdown files reach no stack. 'not_covered' names what the test site cannot validate: record a browser and protocol check right after promotion (AGENTS.md).",
+  "rules": [
+    {
+      "name": "ERP add-on",
+      "paths": ["erpnext_drive_integrations/**", "pyproject.toml", "MANIFEST.in", "deployment/erp/Dockerfile.addon", "integrations/insights/**"],
+      "stacks": ["erp"],
+      "steps": ["build the ERP add-on image for this commit", "deploy that one image to every ERP service", "bench migrate (runs the add-on's after_migrate setup)", "check the assets (tools/verify_erp_assets.py)"],
+      "restart": ["every ERP service"]
+    },
+    {
+      "name": "ERP core and pinned apps",
+      "paths": ["deployment/upstream-lock.json", "deployment/build-lock.json", "deployment/python-constraints.txt", "tools/prepare_erp_image.py", "tools/build_erp_core.py"],
+      "stacks": ["erp"],
+      "steps": ["build the ERP core image (tools/prepare_erp_image.py, tools/build_erp_core.py), then the add-on image on it", "deploy that one image to every ERP service", "bench migrate", "check the assets (tools/verify_erp_assets.py)"],
+      "restart": ["every ERP service"]
+    },
+    {
+      "name": "ERP runtime files",
+      "paths": ["deployment/erp/backend_start.py", "deployment/erp/netbird_realtime.cjs", "deployment/erp/frappe.conf.template", "deployment/erp/site-config.example.json", "deployment/stacks/erp.compose.json"],
+      "stacks": ["erp"],
+      "steps": ["render the ERP stack (tools/prepare_runtime.py) and redeploy it"],
+      "restart": ["every ERP service"]
+    },
+    {
+      "name": "Company website",
+      "paths": ["integrations/website/**", "deployment/stacks/website.compose.json"],
+      "stacks": ["website"],
+      "steps": ["render the website stack and redeploy it"],
+      "restart": ["website"]
+    },
+    {
+      "name": "Drive",
+      "paths": ["integrations/drive/**", "deployment/stacks/drive.compose.json", "deployment/drive-clients.example.json", "deployment/native-clients-lock.json", "tools/prepare_native_drive_clients.py"],
+      "stacks": ["drive"],
+      "steps": ["render the Drive stack (web assets and configuration) and redeploy it"],
+      "restart": ["Drive (oCIS) and the editor bridge"]
+    },
+    {
+      "name": "Office editor",
+      "paths": ["integrations/onlyoffice/editor-wopi.ejs", "deployment/config/onlyoffice-local-production-linux.json", "deployment/stacks/editor-onlyoffice.compose.json"],
+      "stacks": ["editor"],
+      "steps": ["render the editor stack and redeploy it", "people reload the editor page (the browser may keep the old start page)"],
+      "restart": ["editor (it saves open documents first; up to five minutes)"]
+    },
+    {
+      "name": "Mail",
+      "paths": ["integrations/mail/**", "deployment/stacks/mail.compose.json", "tools/prepare_mail.py"],
+      "stacks": ["mail"],
+      "steps": ["build the Mail image (tools/prepare_mail.py) when the overlay or pin changed", "render the Mail stack and redeploy it"],
+      "restart": ["webmail and, for stack changes, the mail server"]
+    },
+    {
+      "name": "DMS",
+      "paths": ["integrations/dms/**", "deployment/stacks/dms.compose.json"],
+      "stacks": ["dms"],
+      "steps": ["render the DMS stack and redeploy it"],
+      "restart": ["Paperless"]
+    },
+    {
+      "name": "Document worker",
+      "paths": ["integrations/document-worker/**", "deployment/stacks/processing.compose.json"],
+      "stacks": ["processing"],
+      "steps": ["render the processing stack and redeploy it"],
+      "restart": ["document worker"]
+    },
+    {
+      "name": "Private DNS",
+      "paths": ["deployment/stacks/private-dns.compose.json"],
+      "stacks": ["private-dns"],
+      "steps": ["render the private DNS stack and redeploy it"],
+      "restart": ["private DNS"]
+    },
+    {
+      "name": "Sign-in server",
+      "paths": ["deployment/stacks/identity.compose.json", "integrations/authentik/invite-recovery/templates/**"],
+      "stacks": ["identity"],
+      "steps": ["render the identity stack and redeploy it"],
+      "restart": ["authentik server and worker"],
+      "not_covered": "the test site uses production's sign-in: these changes reach production sign-in directly"
+    },
+    {
+      "name": "Sign-in companions (gateway, invitation pages)",
+      "paths": ["deployment/stacks/identity-support.compose.json", "integrations/authentik/identity-support/**", "integrations/authentik/invite-recovery/**"],
+      "stacks": ["identity-support"],
+      "steps": ["render the identity-support stack and redeploy it", "run the invitation install scripts in integrations/authentik/invite-recovery when they changed"],
+      "live": ["authentik invitation and recovery flows, brand and admin navigation (install scripts)"],
+      "restart": ["identity gateway and invitation pages"],
+      "not_covered": "the test site uses production's sign-in: these changes reach production sign-in directly"
+    },
+    {
+      "name": "Sign-in configuration",
+      "paths": ["integrations/authentik/configuration.json", "integrations/authentik/configure_test_clients.py", "tools/authentik_blueprint.py", "tools/restore_identity.py", "deployment/scope-mappings.example.json"],
+      "stacks": [],
+      "live": ["authentik providers, flows, scope mappings and brand: apply the change in authentik (blueprint or by hand)"],
+      "not_covered": "the test site uses production's sign-in: these changes reach production sign-in directly"
+    },
+    {
+      "name": "Production proxy routes",
+      "paths": ["deployment/config/proxy/**", "deployment/config/proxy-inputs.json", "deployment/production/**", "tools/prepare_auth_bridge.py", "tools/sso_proxy_trust.py", "tools/coolify_proxy_hosts.py", "tools/coolify_proxy_http3.py"],
+      "stacks": ["proxy"],
+      "steps": ["install the changed route or proxy files on the production proxy (keep a copy of the old ones)"],
+      "not_covered": "production-only route and proxy files: browser and protocol check right after promotion"
+    },
+    {
+      "name": "Rendering of every stack",
+      "paths": ["tools/prepare_runtime.py", "tools/render_runtime.py", "tools/coolify_native.py", "deployment/stacks/inputs.json", "deployment/stacks/mounts.json"],
+      "stacks": ["erp", "website", "drive", "editor", "mail", "dms", "processing", "private-dns", "identity", "identity-support"],
+      "steps": ["render every stack and compare the result with what runs; redeploy the stacks whose rendered files changed"]
+    },
+    {
+      "name": "Host checks and watches",
+      "paths": ["tools/host_check.py", "tools/render_host_checks.py", "deployment/host-checks.example.json", "tools/editor_safety.py", "integrations/onlyoffice/editor-safety.*", "tools/upstream_watch.py", "deployment/upstream-watch*", "tools/drift_check.py", "deployment/drift-check.*", "integrations/backup/**", "tools/export_snapshot.py", "tools/backup_to_snapshot.py", "tools/snapshot_archive.py"],
+      "stacks": ["host"],
+      "steps": ["update the installed copy on each server that runs it (host checks, editor safety, upstream watch, drift check, backup, snapshot export)"]
+    },
+    {
+      "name": "Test site and refresh",
+      "paths": ["tools/prepare_test_profiles.py", "tools/prepare_test_relay.py", "tools/prepare_ingress.py", "tools/test_*.py", "tools/activate_test_refresh.py", "tools/verify_test_*.py", "tools/restore_test_data.py", "tools/rehearse_*.py", "tools/cripple_snapshot.py", "tools/enroll_worker.py", "tools/retarget_worker.py", "deployment/test-refresh-worker.*", "deployment/test-runtime.example.json"],
+      "stacks": ["test"],
+      "steps": ["deploy to the test site (its deploy step re-renders it)"]
+    },
+    {
+      "name": "Mobile app",
+      "paths": ["mobile/**"],
+      "stacks": ["mobile"],
+      "steps": ["build and distribute the app (no server stack)"]
+    },
+    {
+      "name": "No running stack (documents, tests, checks, operator tools)",
+      "paths": ["*.md", "**/*.md", "LICENSE", ".github/**", ".gitignore", ".gitattributes", ".dockerignore", "modules.json", "docs/**", "tests/**", "tools/check_repository.py", "tools/run_unit_tests.py", "tools/promotion_plan.py", "tools/initialize_erp.py", "tools/migrate_asset_references.py", "tools/verify_erp_assets.py", "deployment/runtime.example.json", "deployment/promotion-map.json", "integrations/onlyoffice/sheetview_sanitize.py", "integrations/onlyoffice/editor-wopi.original.ejs", "integrations/authentik/invite-recovery/test_*", "integrations/authentik/invite-recovery/smoke_*"],
+      "stacks": []
+    }
+  ]
+}
