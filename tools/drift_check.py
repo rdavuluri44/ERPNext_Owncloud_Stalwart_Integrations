@@ -26,7 +26,7 @@ import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from promotion_plan import load, rules_for  # noqa: E402
+from promotion_plan import parse_rules, rules_for  # noqa: E402
 
 SHA = re.compile(r'[0-9a-f]{7,40}')
 IMAGE_TAG = re.compile(r'([0-9a-f]{7,40})(?:-runtime)?')
@@ -87,13 +87,29 @@ def git(source, *args):
     return run(['git', '-C', str(source), *args]).strip()
 
 
+def expected_hash(item):
+    if "container" not in item:
+        return hashlib.sha256(Path(item["file"]).read_bytes()).hexdigest()
+    container = item["container"]
+    path = item["file"]
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", container) or not Path(path).is_absolute():
+        raise ValueError("expected a container name and absolute file path")
+    output = run(["docker", "exec", container, "sha256sum", "--", path])
+    digest, _, _ = output.partition(" ")
+    if not re.fullmatch(r"[0-9a-f]{64}", digest):
+        raise ValueError("could not read the file checksum")
+    return digest
+
+
 def check(config, today=None):
     source = Path(config['source'])
     if config.get('fetch', True):
         git(source, 'fetch', '--quiet', 'origin')
     main = git(source, 'rev-parse', config.get('branch', 'origin/main') + '^{commit}')
-    rules = load(source)
+    rules = parse_rules(git(source, "show", main + ":deployment/promotion-map.json"))
     results, problems, drift = {}, [], []
+    if not config["stacks"]:
+        raise ValueError("configure at least one stack")
     for stack, spec in sorted(config['stacks'].items()):
         try:
             short = deployed_commit(spec['commit_from'], config)
@@ -110,8 +126,14 @@ def check(config, today=None):
                     drift.append(stack + ' runs ' + commit[:12] + ', which is not on main')
                     results[stack] = entry
                     continue
-                changed = [f for f in git(source, 'diff', '--name-only', '--no-renames', commit, main).splitlines()
-                           if any(stack in r['stacks'] for r in rules_for(f, rules))]
+                files = git(source, "diff", "--name-only", "--no-renames", "-z", commit, main).split("\0")
+                changed = []
+                for path in filter(None, files):
+                    matching = rules_for(path, rules)
+                    if not matching:
+                        raise ValueError("no promotion rule for " + path)
+                    if any(stack in rule["stacks"] for rule in matching):
+                        changed.append(path)
                 if changed:
                     entry.update(state='behind', files=changed)
                     drift.append(stack + ' is behind main (' + str(len(changed)) + ' file(s), e.g. ' + changed[0] + ')')
@@ -126,11 +148,11 @@ def check(config, today=None):
     for item in config.get('served', []):
         try:
             remote = hashlib.sha256(fetch(item['url'])).hexdigest()
-            local = hashlib.sha256(Path(item['file']).read_bytes()).hexdigest()
+            local = expected_hash(item)
             served.append({'url': item['url'], 'same': remote == local})
             if remote != local:
                 drift.append(item['url'] + ' serves different content than ' + item['file'])
-        except (OSError, ValueError) as exc:
+        except (OSError, RuntimeError, ValueError) as exc:
             served.append({'url': item['url'], 'error': str(exc)})
             problems.append(item['url'] + ': ' + str(exc))
     return {'time': (today or datetime.datetime.now(datetime.timezone.utc)).strftime('%Y-%m-%dT%H:%M:%SZ'),

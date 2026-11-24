@@ -127,6 +127,8 @@ class DriftCheckTests(unittest.TestCase):
                         'dms': 'Source commit 0123456789abcdef0123456789abcdef01234567\n'}[args[-1].split("'")[1]]
             if args[:2] == ['docker', 'ps']:
                 return 'drive-ocis-1\ndrive-collab-1\nother\n'
+            if 'sha256sum' in args:
+                return 'a' * 64 + '  /srv/site/logo.svg\n'
             if args[:2] == ['docker', 'inspect']:
                 return 'cloud/drive:' + self.c[:12] + '-runtime <no value>\n'
             raise AssertionError(args)
@@ -172,6 +174,26 @@ class DriftCheckTests(unittest.TestCase):
                                             {'url': 'https://www.example.com/stale', 'same': False}])
         self.assertEqual(len(status['drift']), 3)
         self.assertEqual(len(status['problems']), 1)
+
+    def test_compares_served_bytes_to_a_file_in_the_running_container(self):
+        status = dc.check(self.config(served=[
+            {"url": "https://www.example.com/same", "container": "frontend-1", "file": "/srv/site/logo.svg"}
+        ]))
+        self.assertEqual(status["served"], [{"url": "https://www.example.com/same", "same": False}])
+        self.assertIn(["docker", "exec", "frontend-1", "sha256sum", "--", "/srv/site/logo.svg"], self.docker_calls)
+
+    def test_uses_promotion_rules_at_target_revision_and_flags_unknown_files(self):
+        self.write("unmapped.file", "new\n")
+        self.commit("Unmapped input")
+        config = self.config(stacks={"erp": {"commit_from": {"profile": str(self.profile)}}})
+        self.assertEqual(dc.check(config)["stacks"]["erp"]["state"], "unknown")
+        path = self.repo / "deployment/promotion-map.json"
+        data = json.loads(path.read_text())
+        data["rules"].append({"paths": ["unmapped.file"], "stacks": ["erp"]})
+        self.write("deployment/promotion-map.json", json.dumps(data))
+        self.commit("Classify input for ERP")
+        self.git("checkout", "--detach", self.c)
+        self.assertEqual(dc.check(config)["stacks"]["erp"]["files"], ["unmapped.file"])
 
     def test_signals_and_status_file(self):
         path = Path(self.tmp.name) / 'config.json'

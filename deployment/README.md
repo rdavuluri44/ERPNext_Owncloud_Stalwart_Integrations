@@ -97,8 +97,10 @@ because production stacks are promoted one by one and nothing listed what a merg
   reports the stack as **behind** when a file it owns changed between that commit and
   `main`, **not on main** when it runs another branch, and **unknown** when its commit
   cannot be read. It also compares served pages with local files (for example the landing
-  page script and the ERP favicon). Signals: exit 0 clean, 1 a check could not run, 2 drift;
-  `/var/lib/cloud-drift-check/status.json`; one journal line. Settings example:
+  page or ERP favicon). For assets in a live container, specify its name as
+  `container` and the absolute path as `file`. Signals: exit 0 clean, 1 a check
+  could not run, 2 drift. The service produces a journal line and
+  `/var/lib/cloud-drift-check/status.json`. Settings example:
   `deployment/drift-check.example.json`; nightly timer `deployment/drift-check.*.example`;
   also run it by hand after every promotion (`AGENTS.md`).
 - Not compared yet: Coolify's stored compose definition against the rendered one (Coolify

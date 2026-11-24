@@ -33,7 +33,11 @@ def pattern(glob):
 
 
 def load(source=ROOT):
-    rules = json.loads((Path(source) / 'deployment/promotion-map.json').read_text())['rules']
+    return parse_rules((Path(source) / "deployment/promotion-map.json").read_text())
+
+
+def parse_rules(document):
+    rules = json.loads(document)["rules"]
     for rule in rules:
         rule['_patterns'] = [pattern(g) for g in rule['paths']]
     return rules
@@ -67,9 +71,9 @@ def plan(files, rules):
 
 
 def changed(source, old, new):
-    out = subprocess.run(['git', '-C', str(source), 'diff', '--name-only', '--no-renames', old, new],
+    out = subprocess.run(['git', '-C', str(source), 'diff', '--name-only', '--no-renames', '-z', old, new],
                          capture_output=True, text=True, check=True).stdout
-    return [line for line in out.splitlines() if line]
+    return [line for line in out.split("\0") if line]
 
 
 def render(result, title):

@@ -546,6 +546,11 @@ discussion that led to a decision is not repeated here.
   `deployment/drift-check.*`, `AGENTS.md`, `.github/pull_request_template.md`, `docs/production-moves.md`,
   `tests/test_promotion_plan.py`.
 
+  **Follow-up:** read promotion rules from the target commit so a long-lived
+  checker uses the current ownership map. Treat unmapped changed files as
+  unknown. Compare public bytes against the live container asset where the
+  deployed stack serves the file from its image.
+
 ### Private sheet views isolate filters; every person is kept in their own view (P61)
 - **Decision:** a private sheet view exists only to keep each person's filters and sorting out of everyone
   else's work. Others may see the views, and other people's cursors stay visible (they only show where someone

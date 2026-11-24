@@ -1,5 +1,5 @@
 {
-  "_comment": "Settings of tools/drift_check.py (P59), kept outside Git as /etc/cloud-drift-check/config.json on the production host. source: a read-only clone of this repository (the check runs git fetch, never pull or push). Each stack names where its running commit is recorded: coolify_service (the 'Source commit' description written by tools/coolify_native.py), profile (a JSON deployment profile or receipt, key 'commit') or container (a running container prefix whose image tag or revision label is the commit). served: public addresses whose content must equal a local file. Sample values only.",
+  "_comment": "Settings of tools/drift_check.py (P59), kept outside Git as /etc/cloud-drift-check/config.json on the production host. source: a read-only clone of this repository (the check runs git fetch, never pull or push). Each stack names where its running commit is recorded: coolify_service (the 'Source commit' description written by tools/coolify_native.py), profile (a JSON deployment profile or receipt, key 'commit') or container (a running container prefix whose image tag or revision label is the commit). served: public addresses whose content must equal a host file or a file in a named live container. Sample values only.",
   "source": "/opt/cloud-drift-check/repository",
   "branch": "origin/main",
   "fetch": true,
@@ -16,6 +16,6 @@
   },
   "served": [
     {"url": "https://www.example.com/front/app.js", "file": "/srv/runtime/mounts/website_web_0/front/app.js"},
-    {"url": "https://erp.example.com/assets/erpnext_drive_integrations/company-favicon.svg", "file": "/srv/runtime/rendered/erpnext_drive_integrations/public/company-favicon.svg"}
+    {"url": "https://erp.example.com/assets/erpnext_drive_integrations/company-favicon.svg", "container": "erp-frontend", "file": "/home/frappe/frappe-bench/sites/assets/erpnext_drive_integrations/company-favicon.svg"}
   ]
 }
