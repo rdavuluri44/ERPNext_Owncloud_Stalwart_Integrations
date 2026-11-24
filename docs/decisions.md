@@ -37,6 +37,22 @@ policy would also have to cover.
 
 Release notes: [Stalwart 1.1.1](https://github.com/stalwartlabs/stalwart/releases/tag/v1.1.1).
 
+### Work photos in each project's Drive space, reached only through ERPNext (P74)
+- **Decision:** the mobile app's site photos (progress, hindrance, incident) go straight to the project's
+  Drive (oCIS) space, one folder per site and date, tagged with project, site, type, time, GPS, who took
+  them, "From gallery" and "Captured offline". The phone talks only to ERPNext: ERPNext checks the person's
+  site membership (the attendance rule) and a dedicated Drive account writes and reads the space with an
+  oCIS app token renewed every 30 days, the document worker's pattern. Nobody deletes a work photo: the
+  records cannot be deleted and the store never deletes in Drive. Receipts, bills and scans keep going to the
+  DMS first; project photo spaces stay outside the document worker. Immich and PhotoPrism were compared and
+  not adopted for now (no user groups / single sign-on only in a paid edition).
+  Drive's thumbnail sizes gain `256x256` (upstream defaults kept): oCIS serves only listed sizes and returned
+  1080 px for the 256 px preview on test.
+- **Why:** one sign-in for staff (no Drive key on the phone, no Drive account needed to see project photos),
+  permissions from ERPNext only, no new service to run or back up, and photos next to the project's other
+  files in Drive.
+- **Where:** `erpnext_drive_integrations/drive_store/`, `tests/test_drive_store.py`, issue #53.
+
 ### Patch the production identity images before the P49 cutover
 
 Keep PostgreSQL on major version 16 and move its identity pin to 16.16.

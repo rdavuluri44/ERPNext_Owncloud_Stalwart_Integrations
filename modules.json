@@ -160,6 +160,36 @@
       ]
     },
     {
+      "id": "drive-store",
+      "title": "Photo store",
+      "summary": "Work photos from the mobile app in each project's Drive space, reached only through ERPNext (site membership checked, one sign-in, never deleted).",
+      "readme": "erpnext_drive_integrations/drive_store/README.md",
+      "paths": [
+        "erpnext_drive_integrations/drive_store/**",
+        "tests/test_drive_store.py"
+      ],
+      "depends_on": [
+        "erp-addon-shell",
+        "custom-hr",
+        "drive"
+      ],
+      "tests": [
+        "tests/test_drive_store.py"
+      ],
+      "upstream": [
+        {
+          "name": "ownCloud Infinite Scale",
+          "license": "Apache-2.0",
+          "url": "https://github.com/owncloud/ocis"
+        },
+        {
+          "name": "Frappe Framework",
+          "license": "MIT",
+          "url": "https://github.com/frappe/frappe"
+        }
+      ]
+    },
+    {
       "id": "onboarding",
       "title": "Vendor onboarding and response links",
       "summary": "Vendor onboarding with KYC and amendments, single-use device-bound response links (yes/no, documents) with audit trail, WhatsApp consent capture, construction schedule page and monitoring.",

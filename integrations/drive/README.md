@@ -47,6 +47,8 @@ Deploy Collabora on `office.example.com` and the oCIS collaboration service with
 
 The workspace adapter hides duplicate Drive chrome in editors, retains filename/actions, slims TXT/Markdown headers and checks exact editor origins before processing messages. The attachment bridge never transfers an OIDC token to Mail. The native Office hostname remains required for WOPI/editing even without an Office launcher.
 
+Preview sizes: oCIS makes thumbnails only in the sizes listed in `THUMBNAILS_RESOLUTIONS` and serves the next larger one for any other request. The stack setting `CI_DRIVE_OCIS_THUMBNAILS_RESOLUTIONS` keeps the upstream default list and adds `256x256` for the photo store's previews (P74); without it a 256 px request returns a 1080 px image.
+
 Per-owner worker credentials and application data remain private. Editing-format policies affect creation choices; they do not convert existing documents or prohibit uploads.
 
 ## Tests

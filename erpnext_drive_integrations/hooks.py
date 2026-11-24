@@ -28,7 +28,7 @@ def _feature_enabled(name, configured):
     """cloud_features switch for one feature; `custom_hr` was called `field` before, and that key still counts."""
     return configured.get(name, configured.get("field", True) if name == "custom_hr" else True) is not False
 
-for _feature in ("portal", "custom_hr", "onboarding"):
+for _feature in ("portal", "custom_hr", "onboarding", "drive_store"):
     if not _feature_enabled(_feature, _configured):
         continue
     _fragment = import_module(f"erpnext_drive_integrations.{_feature}.hooks")

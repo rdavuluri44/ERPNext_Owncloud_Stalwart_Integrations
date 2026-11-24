@@ -195,6 +195,10 @@
     "kind": "setting",
     "default": "true"
   },
+  "CI_DRIVE_OCIS_THUMBNAILS_RESOLUTIONS": {
+    "kind": "setting",
+    "default": "16x16,32x32,64x64,128x128,256x256,1080x1920,1920x1080,2160x3840,3840x2160,4320x7680,7680x4320"
+  },
   "CI_DRIVE_OCIS_OCIS_ADD_RUN_SERVICES": {
     "kind": "setting",
     "default": "auth-app"
