@@ -1,0 +1,23 @@
+loki.source.journal "https_probe" {
+  matches = "_SYSTEMD_UNIT=cloud-https-monitor.service"
+  labels = { job = "https-probes" }
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.source.journal "backup_probe" {
+  matches = "_SYSTEMD_UNIT=cloud-backup-monitor.service"
+  labels = { job = "backup-probes" }
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.source.journal "restore_probe" {
+  matches = "_SYSTEMD_UNIT=cloud-restore-drill-monitor.service"
+  labels = { job = "restore-drill-probes" }
+  forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

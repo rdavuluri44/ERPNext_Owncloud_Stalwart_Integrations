@@ -59,3 +59,30 @@ This module provides probe results for an operator or notification integration.
 The module uses the repository license and ships no external dependencies.
 
 AI-assisted development by Codex.
+
+## Metrics and logs
+
+The Compose files in `observability/` use immutable upstream images for
+Prometheus, Grafana, Loki, Alloy, node_exporter and cAdvisor. Start the
+dashboard and storage components with the `central` profile. The default
+bindings are loopback. Use a private HTTPS proxy for the dashboard. Keep
+the required `admin_password` file, deployment URL and private scrape target
+addresses outside Git. Grant the Grafana container's UID 472 read access to
+its password file. Never include credentials in metric labels or logs.
+
+The exporters can run alone on a watched host. Where a remote Prometheus
+requires access, set `METRICS_BIND` to its private network address. cAdvisor
+uses read-only host mounts and the Docker socket to read Docker metrics.
+Allow access to the exporter ports only over the private monitoring network.
+
+Prometheus keeps 14 days of metrics up to its configured size limit.
+Loki keeps the allowlisted monitoring journal streams for seven days. Alloy
+collects the HTTPS, backup and restore monitor units. The initial deployment
+does not ingest arbitrary application logs. The dashboard and Prometheus
+rules cover host capacity, exporter reachability and container usage.
+The rules are visible through Prometheus. No external alert channel is
+configured by this module.
+
+For a local test, run `docker compose --profile central config --quiet`,
+check the Prometheus config and rules with `promtool`, and verify a fresh
+Prometheus sample and a Loki query against the running collectors.

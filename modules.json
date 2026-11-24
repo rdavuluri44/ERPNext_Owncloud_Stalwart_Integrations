@@ -22,7 +22,13 @@
       "paths": ["integrations/monitoring/**", "tests/test_https_monitor.py"],
       "depends_on": [],
       "tests": ["tests/test_https_monitor.py"],
-      "upstream": []
+      "upstream": [
+        {"name": "Grafana", "license": "AGPL-3.0-only", "url": "https://github.com/grafana/grafana"},
+        {"name": "Loki", "license": "AGPL-3.0-only", "url": "https://github.com/grafana/loki"},
+        {"name": "Alloy", "license": "Apache-2.0", "url": "https://github.com/grafana/alloy"},
+        {"name": "Prometheus and node_exporter", "license": "Apache-2.0", "url": "https://prometheus.io/"},
+        {"name": "cAdvisor", "license": "Apache-2.0", "url": "https://github.com/google/cadvisor"}
+      ]
     },
     {
       "id": "erp-addon-shell",

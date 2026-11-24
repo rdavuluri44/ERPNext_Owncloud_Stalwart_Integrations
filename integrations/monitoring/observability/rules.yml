@@ -1,0 +1,24 @@
+groups:
+  - name: availability-and-capacity
+    rules:
+      - alert: MonitorTargetDown
+        expr: up == 0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: A metrics source is unreachable
+      - alert: HostMemoryLow
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes < 0.10
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Available host memory is below ten percent
+      - alert: HostFilesystemLow
+        expr: node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs|nsfs",mountpoint="/"} / node_filesystem_size_bytes < 0.15
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Available root filesystem space is below fifteen percent
