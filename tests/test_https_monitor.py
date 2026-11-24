@@ -27,6 +27,14 @@ class ProbeTests(unittest.TestCase):
         self.assertEqual(check(self.target), ("Document manager", False, "connection failed"))
 
 
+    @patch("https_probe.certificate_days", return_value=2)
+    @patch("https_probe.build_opener")
+    def test_certificate_near_expiry_reports_down_for_healthy_http(self, opener, certificate):
+        opener.return_value.open.side_effect = HTTPError(self.target["url"], 302, "", {}, BytesIO())
+        target = dict(self.target, minimum_certificate_days=14)
+        self.assertEqual(check(target), ("Document manager", False, "certificate expires in 2.0 days"))
+        certificate.assert_called_once_with(self.target["url"])
+
     @patch("https_probe.socket.create_connection")
     def test_unreachable_tcp_target(self, connection):
         connection.side_effect = TimeoutError

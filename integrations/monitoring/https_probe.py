@@ -6,6 +6,8 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 import json
 import socket
+import ssl
+import time
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
@@ -15,6 +17,14 @@ from urllib.request import HTTPRedirectHandler, build_opener
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
+
+
+def certificate_days(url):
+    endpoint = urlsplit(url)
+    with socket.create_connection((endpoint.hostname, endpoint.port or 443), timeout=5) as connection:
+        with ssl.create_default_context().wrap_socket(connection, server_hostname=endpoint.hostname) as tls:
+            certificate = tls.getpeercert()
+    return (ssl.cert_time_to_seconds(certificate["notAfter"]) - time.time()) / 86400
 
 
 def check(target):
@@ -34,6 +44,14 @@ def check(target):
             status = error.code
     except (OSError, URLError):
         return name, False, "connection failed"
+    minimum_days = target.get("minimum_certificate_days")
+    if status in target["statuses"] and minimum_days is not None:
+        try:
+            days = certificate_days(url)
+        except (OSError, ValueError, KeyError):
+            return name, False, "certificate check failed"
+        if days < minimum_days:
+            return name, False, f"certificate expires in {days:.1f} days"
     return name, status in target["statuses"], f"HTTP {status}"
 
 
@@ -52,8 +70,10 @@ def targets(path):
         else:
             url = urlsplit(item["url"])
             statuses = item["statuses"]
+            minimum_days = item.get("minimum_certificate_days", 14)
             if (item.get("kind", "https") != "https" or url.scheme != "https" or not url.hostname
                     or url.username is not None or url.password is not None or url.fragment
+                    or type(minimum_days) is not int or not 1 <= minimum_days <= 90
                     or not statuses or any(type(code) is not int or not 200 <= code < 400 for code in statuses)):
                 raise ValueError("Invalid HTTPS monitor target")
         names.add(name)

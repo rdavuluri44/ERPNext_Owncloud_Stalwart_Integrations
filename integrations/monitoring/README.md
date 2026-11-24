@@ -30,7 +30,7 @@ user. Keep credentials out of the URLs and the target labels.
 
 ```json
 [
-  {"name": "Website", "url": "https://example.com/", "statuses": [200]},
+  {"name": "Website", "url": "https://example.com/", "statuses": [200], "minimum_certificate_days": 14},
   {"name": "Document manager", "url": "https://dms.example.com/", "statuses": [302]},
   {"name": "Storage host", "kind": "tcp", "host": "storage.example.com", "port": 443}
 ]
@@ -73,7 +73,8 @@ its password file. Never include credentials in metric labels or logs.
 The exporters can run alone on a watched host. Where a remote Prometheus
 requires access, set `METRICS_BIND` to its private network address. cAdvisor
 uses read-only host mounts and local Docker and containerd sockets to read
-container metrics. Keep it isolated from application networks.
+container metrics. cAdvisor collects CPU, memory, network and OOM metrics.
+Host disk capacity is collected by node_exporter. Keep the exporters isolated from application networks.
 Allow access to the exporter ports only over the private monitoring network.
 
 Prometheus keeps 14 days of metrics up to its configured size limit.
