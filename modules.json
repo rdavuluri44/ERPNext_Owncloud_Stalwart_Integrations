@@ -238,7 +238,8 @@
         "drive"
       ],
       "tests": [
-        "tests/test_rebuild_templates.py"
+        "tests/test_rebuild_templates.py",
+        "tests/test_mail_retention.py"
       ],
       "upstream": [
         {

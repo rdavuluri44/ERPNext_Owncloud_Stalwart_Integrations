@@ -1,0 +1,16 @@
+[Unit]
+Description=Remove company mail older than the retention period from every mailbox and the archive (P69)
+After=network-online.target docker.service
+
+[Service]
+Type=oneshot
+# Runs on the mail host. The profile is root-only (0600) and holds the Stalwart recovery
+# credential; it is never in Git. The checkout is the deployed public release.
+# Enable the timer only after a counting run ("purge" without --apply) has been reviewed.
+ExecStart=/usr/bin/python3 /opt/mail-retention/repository/integrations/mail/retention.py purge --apply --profile /etc/mail-retention/profile.json
+UMask=0077
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+TimeoutStartSec=3600

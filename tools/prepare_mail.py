@@ -12,6 +12,47 @@ import subprocess
 import zipfile
 
 
+def lookup(tree, dotted):
+    node = tree
+    for part in dotted.split("."):
+        node = node[part]
+    return node
+
+
+def apply_locale_overrides(output, overrides):
+    """Replace selected upstream texts in place (P69), leaving the rest of each file byte for byte.
+
+    Each entry names the upstream text it replaces; a changed upstream text fails the
+    build so the wording is reviewed again instead of silently going stale.
+    """
+    for relative, entries in overrides.items():
+        if relative.startswith("_"):
+            continue
+        path = output / relative
+        raw = path.read_bytes().decode("utf-8")
+        original = json.loads(raw)
+        for dotted, change in entries.items():
+            current = lookup(original, dotted)
+            if current != change["from"]:
+                raise ValueError(f"Upstream changed {relative}:{dotted}; review the override")
+            leaf = dotted.rsplit(".", 1)[-1]
+            old = json.dumps(leaf) + ": " + json.dumps(change["from"], ensure_ascii=False)
+            new = json.dumps(leaf) + ": " + json.dumps(change["to"], ensure_ascii=False)
+            if raw.count(old) != 1:
+                raise ValueError(f"{relative}:{dotted} is not unique in the file; extend the override")
+            raw = raw.replace(old, new)
+        result = json.loads(raw)
+        for dotted, change in entries.items():
+            node, parent = result, original
+            *parents, leaf = dotted.split(".")
+            for part in parents:
+                node, parent = node[part], parent[part]
+            node[leaf] = parent[leaf] = None
+        if result != original:
+            raise ValueError(f"Overriding {relative} changed more than the listed texts")
+        path.write_bytes(raw.encode("utf-8"))
+
+
 def prepare(source, output):
     source, output = Path(source).resolve(), Path(output).resolve()
     if source == output or source in output.parents or output.exists():
@@ -22,6 +63,7 @@ def prepare(source, output):
     subprocess.run(["git", "clone", "--no-checkout", lock["repository"], str(output)], check=True)
     subprocess.run(["git", "-C", str(output), "checkout", "--detach", lock["commit"]], check=True)
     shutil.copytree(source / "integrations/mail/overlay", output, dirs_exist_ok=True)
+    apply_locale_overrides(output, json.loads((source / "integrations/mail/locale-overrides.json").read_text()))
     archive = output / "public/cloud-customization-source.zip"
     archive.parent.mkdir(exist_ok=True)
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zipped:

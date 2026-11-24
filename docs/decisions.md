@@ -6,6 +6,23 @@ discussion that led to a decision is not repeated here.
 
 ## 2026-11-24
 
+### Keep company mail with Stalwart Community: journal copy, no permanent deletion (P69)
+
+Every message that passes the SMTP DATA stage is copied by a system Sieve script to an archive account
+that cannot sign in. Ordinary users lose the permissions that destroy mail, so a delete only moves mail
+to Trash, which no longer empties itself. One reader account has read-only access to the archive, and
+its sign-ins form the access log. Mail is kept for at most seven years, then a scheduled purge removes it
+everywhere. Mail from before the switch-on is copied into the archive once.
+
+Why: company mail must survive a user deleting it, and the owner chose the free edition. The built-in
+deleted-items archive needs an Enterprise licence. An isolated test on Stalwart 1.1.1 confirmed every part
+of this. It also showed that the journal starts only after a restart, and that the default log folder does
+not exist in the image, so the tool restarts the server and moves the log to the data volume. Webmail texts
+that promised a permanent delete are replaced, because the server now refuses it.
+
+Lives in `integrations/mail/retention.py`, `integrations/mail/locale-overrides.json` and the webmail
+policy in `tools/prepare_runtime.py`.
+
 ### Upgrade the mail server to Stalwart 1.1.1 before mail retention (P75)
 
 Move the Stalwart pin from 1.1.0 to 1.1.1 by digest, with no configuration

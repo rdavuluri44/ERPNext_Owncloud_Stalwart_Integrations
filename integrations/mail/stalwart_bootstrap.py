@@ -28,8 +28,8 @@ class Client:
     def __init__(self,url,credential):
         self.url=url.rstrip('/');self.authorization='Basic '+base64.b64encode(credential.encode()).decode()
 
-    def call(self,method,arguments):
-        body=json.dumps({'using':['urn:ietf:params:jmap:core'],'methodCalls':[[method,arguments,'operation']]}).encode()
+    def call(self,method,arguments,using=('urn:ietf:params:jmap:core',)):
+        body=json.dumps({'using':list(using),'methodCalls':[[method,arguments,'operation']]}).encode()
         request=urllib.request.Request(self.url+'/jmap',data=body,
             headers={'Authorization':self.authorization,'Content-Type':'application/json'})
         with urllib.request.urlopen(request,timeout=60) as response:data=response.read()
