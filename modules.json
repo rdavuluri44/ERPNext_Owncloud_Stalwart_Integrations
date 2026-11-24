@@ -231,7 +231,8 @@
         "integrations/mail/**",
         "erpnext_drive_integrations/cloud_integrations/**",
         "deployment/stacks/mail.compose.json",
-        "tools/prepare_mail.py"
+        "tools/prepare_mail.py",
+        "tests/test_mail_retention.py"
       ],
       "depends_on": [
         "authentik-identity",
