@@ -1,7 +1,7 @@
 {
   "services": {
     "stalwart": {
-      "image": "stalwartlabs/stalwart@sha256:f772aa6ef8cd8018969fa491640f1436b0270eb14e2c219b5f37f1a77020837e",
+      "image": "stalwartlabs/stalwart@sha256:5ebdf474b237161742fe4309396af4ae8797c938e8e6eb7e2d4837332c4f9851",
       "init": true,
       "restart": "unless-stopped",
       "ports": [

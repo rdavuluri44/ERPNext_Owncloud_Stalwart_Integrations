@@ -6,6 +6,20 @@ discussion that led to a decision is not repeated here.
 
 ## 2026-11-24
 
+### Upgrade the mail server to Stalwart 1.1.1 before mail retention (P75)
+
+Move the Stalwart pin from 1.1.0 to 1.1.1 by digest, with no configuration
+change. 1.1.1 fixes IMAP requests that could exhaust memory before login, file
+downloads that could run an uploaded page's script on the mail server's origin,
+and Sieve redirects that were dropped without a trace when they could not be
+queued. The last one matters for the mail retention journal (P69), which is a
+Sieve redirect. The image's build provenance was verified against the upstream
+release tag. Version 1.2.0 is not adopted yet: it is a large feature release with
+a manual role-permission step and new Exchange protocols that the retention
+policy would also have to cover.
+
+Release notes: [Stalwart 1.1.1](https://github.com/stalwartlabs/stalwart/releases/tag/v1.1.1).
+
 ### Patch the production identity images before the P49 cutover
 
 Keep PostgreSQL on major version 16 and move its identity pin to 16.16.

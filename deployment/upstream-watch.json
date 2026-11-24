@@ -5,7 +5,7 @@
     "ghcr.io/paperless-ngx/paperless-ngx@sha256:d704e84f88300eb6ab001ab15720a2330ff99169cf9f94d6b8fcc44b63a84c84": "3.4.2",
     "onlyoffice/documentserver@sha256:ca17889f10b11141cc6441836aebdd2835cf3e1b49681b2fd6e155c94b7850b3": "10.0.0",
     "owncloud/ocis@sha256:8b2249fedba81e8e8ea69ba4baeb880c85978a13a0d73c9bc98ddb3d48dbd4e6": "8.2.3",
-    "stalwartlabs/stalwart@sha256:f772aa6ef8cd8018969fa491640f1436b0270eb14e2c219b5f37f1a77020837e": "1.1.0",
+    "stalwartlabs/stalwart@sha256:5ebdf474b237161742fe4309396af4ae8797c938e8e6eb7e2d4837332c4f9851": "1.1.1",
     "apache/tika@sha256:21d8052de04e491ccf66e8680ade4da6f3d453a56d59f740b4167e54167219b7": "3.2.3",
     "gotenberg/gotenberg@sha256:53073e798c8ef39ea2187e44cb67bab77894ea2509100b94c4fe3b461f7b2996": "8.40.0",
     "coredns/coredns@sha256:0a9d8c8ddf34347eb59aad9a8784f0710de88d6d112726d11d271f9bc6daca26": "1.15.0",
