@@ -67,8 +67,9 @@ Prometheus, Grafana, Loki, Alloy, node_exporter and cAdvisor. Start the
 dashboard and storage components with the `central` profile. The default
 bindings are loopback. Use a private HTTPS proxy for the dashboard. Keep
 the required `admin_password` file, deployment URL and private scrape target
-addresses outside Git. Grant the Grafana container's UID 472 read access to
-its password file. Never include credentials in metric labels or logs.
+addresses outside Git. Set the password file to root:root and mode 0440 for the pinned Grafana
+image, which runs with GID 0. Verify the configured administrator can
+sign in before enabling the private proxy. Never include credentials in metric labels or logs.
 
 The exporters can run alone on a watched host. Where a remote Prometheus
 requires access, set `METRICS_BIND` to its private network address. cAdvisor
