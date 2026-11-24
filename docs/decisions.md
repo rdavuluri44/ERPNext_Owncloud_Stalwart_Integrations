@@ -610,3 +610,19 @@ check themselves in keep their existing workflows.
   test PR closes. Retire the Desk's code refresh button and its worker command.
   The one-way data refresh and its last successful refresh timestamp stay in use.
 - **Where:** the test Desk, the test refresh API, and the data refresh worker.
+
+### Private metrics and monitoring logs (P72)
+
+- **Decision:** Run the workspace dashboard and storage on a host with spare
+  memory. Use Grafana and Loki (AGPL-3.0), Prometheus, node_exporter, cAdvisor
+  and Alloy (Apache-2.0). Keep the dashboard behind private HTTPS and metric
+  and log storage on the monitoring network. Keep phone delivery disabled.
+- **Why:** Preserve probe logs through application redeployments and use the
+  same dashboard for host and container measurements. Versioned storage
+  limits keep this deployment bounded.
+- **Dependency review:** On 24 November 2026, official maintainers' releases,
+  GitHub advisories and OSV were reviewed for the six pinned images. Grafana
+  13.3.1 includes the November security fixes and does not use Elasticsearch
+  or the image renderer here. Prometheus 3.16.0 is newer than the listed
+  fixes in 3.11.3. No OSV commit match was returned for the six pins.
+- **Where:** `integrations/monitoring/observability/`. AI-assisted by Codex.

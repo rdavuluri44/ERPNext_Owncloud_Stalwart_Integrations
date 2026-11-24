@@ -72,7 +72,8 @@ its password file. Never include credentials in metric labels or logs.
 
 The exporters can run alone on a watched host. Where a remote Prometheus
 requires access, set `METRICS_BIND` to its private network address. cAdvisor
-uses read-only host mounts and the Docker socket to read Docker metrics.
+uses read-only host mounts and local Docker and containerd sockets to read
+container metrics. Keep it isolated from application networks.
 Allow access to the exporter ports only over the private monitoring network.
 
 Prometheus keeps 14 days of metrics up to its configured size limit.

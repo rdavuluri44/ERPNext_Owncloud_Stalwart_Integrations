@@ -22,3 +22,10 @@ groups:
           severity: warning
         annotations:
           summary: Available root filesystem space is below fifteen percent
+      - alert: ContainerRepeatedRestart
+        expr: changes((max by (site, name) (container_start_time_seconds{name!=""}))[15m:1m]) > 3
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: A Docker container has repeatedly restarted
