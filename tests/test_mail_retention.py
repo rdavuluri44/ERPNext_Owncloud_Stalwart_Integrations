@@ -152,6 +152,29 @@ class RetentionTests(unittest.TestCase):
         self.assertEqual(retention.backfill(PROFILE, self.receipt, state), 0)
         self.assertEqual(len(self.server.emails[archive]), 2)
 
+    def test_backfill_treats_an_already_archived_message_as_done(self):
+        archive = retention.apply(PROFILE, self.receipt)
+        original = self.server.call
+
+        def call(method, args, using=None):
+            if method == "Email/copy":
+                raise retention.NativeError(method, {"notCreated": {"c0": {"type": "alreadyExists"}}})
+            return original(method, args, using)
+
+        self.server.call = call
+        state = self.tmp / "state.json"
+        retention.backfill(PROFILE, self.receipt, state)
+        self.assertEqual(len(json.loads(state.read_text())["alice"]), 2)
+
+        def refuse(method, args, using=None):
+            if method == "Email/copy":
+                raise retention.NativeError(method, {"notCreated": {"c0": {"type": "overQuota"}}})
+            return original(method, args, using)
+
+        self.server.call = refuse
+        with self.assertRaises(retention.NativeError):
+            retention.backfill(PROFILE, self.receipt, self.tmp / "other.json")
+
     def test_purge_counts_by_default_and_removes_only_old_mail_on_request(self):
         report = retention.purge(PROFILE)
         self.assertEqual((report["messages"], report["removed"]), (1, 0))

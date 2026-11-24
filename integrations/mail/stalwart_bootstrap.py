@@ -22,6 +22,9 @@ class NativeError(RuntimeError):
         self.bootstrap='bootstrap mode' in result.get('description','').lower()
         self.invalid_fields=[field for section in ['notCreated','notUpdated']
             for problem in (result.get(section) or {}).values() for field in problem.get('properties',[])]
+        # Error codes only (for example alreadyExists); never descriptions or payloads.
+        self.item_types=sorted({problem.get('type') for section in ['notCreated','notUpdated','notDestroyed']
+            for problem in (result.get(section) or {}).values()})
 
 
 class Client:

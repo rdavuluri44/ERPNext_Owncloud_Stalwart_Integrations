@@ -40,7 +40,7 @@ import sys
 import time
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from stalwart_bootstrap import Client  # noqa: E402
+from stalwart_bootstrap import Client, NativeError  # noqa: E402
 
 SCRIPT = "p69-retention-journal"
 DELETION_PERMISSIONS = ("imapDelete", "imapExpunge", "jmapEmailDestroy", "jmapMailboxDestroy", "pop3Dele")
@@ -323,8 +323,14 @@ def backfill(profile, receipt_path, state_path):
             position += len(ids)
             todo = [i for i in ids if i not in done]
             if todo:
-                client.call("Email/copy", {"fromAccountId": row["id"], "accountId": archive["id"], "create": {
-                    f"c{n}": {"id": i, "mailboxIds": {target: True}} for n, i in enumerate(todo)}}, MAIL)
+                try:
+                    client.call("Email/copy", {"fromAccountId": row["id"], "accountId": archive["id"], "create": {
+                        f"c{n}": {"id": i, "mailboxIds": {target: True}} for n, i in enumerate(todo)}}, MAIL)
+                except NativeError as error:
+                    # The same message in several mailboxes (a group and its members) is
+                    # archived once; the server refuses the later copies as alreadyExists.
+                    if error.kind or set(error.item_types) - {"alreadyExists"}:
+                        raise
                 done.update(todo)
                 copied_total += len(todo)
                 state[row["id"]] = sorted(done)
