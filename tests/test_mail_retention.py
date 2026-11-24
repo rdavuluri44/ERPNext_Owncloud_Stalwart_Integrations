@@ -204,6 +204,22 @@ class WebmailTextTests(unittest.TestCase):
             self.assertTrue(change["from"] and change["to"] and change["from"] != change["to"], key)
             self.assertNotIn("forever?", change["to"])
 
+    def test_build_context_is_readable_under_a_private_umask(self):
+        import os, stat
+        folder = Path(tempfile.mkdtemp())
+        old = os.umask(0o077)
+        try:
+            (folder / "app").mkdir()
+            (folder / "app/package.json").write_text("{}")
+            (folder / "run.sh").write_text("#!/bin/sh")
+            (folder / "run.sh").chmod(0o700)
+        finally:
+            os.umask(old)
+        prepare_mail.make_readable(folder)
+        self.assertEqual(stat.S_IMODE((folder / "app/package.json").stat().st_mode), 0o644)
+        self.assertEqual(stat.S_IMODE((folder / "app").stat().st_mode), 0o755)
+        self.assertEqual(stat.S_IMODE((folder / "run.sh").stat().st_mode), 0o755)
+
     def test_webmail_policy_locks_delete_to_trash(self):
         policy = prepare_runtime.MAIL_POLICY
         self.assertEqual(policy["restrictions"]["deleteAction"], {"locked": True, "value": "trash"})

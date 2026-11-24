@@ -53,6 +53,17 @@ def apply_locale_overrides(output, overrides):
         path.write_bytes(raw.encode("utf-8"))
 
 
+def make_readable(output):
+    """The image runs as an unprivileged user. A private operator umask (077) would
+    otherwise copy unreadable files into the image and webmail fails to start
+    ("permission denied" on /app/package.json). The build context holds no secrets."""
+    for path in [output, *output.rglob("*")]:
+        if ".git" in path.relative_to(output).parts or path.is_symlink():
+            continue
+        mode = path.stat().st_mode
+        path.chmod(0o755 if path.is_dir() or mode & 0o100 else 0o644)
+
+
 def prepare(source, output):
     source, output = Path(source).resolve(), Path(output).resolve()
     if source == output or source in output.parents or output.exists():
@@ -64,6 +75,7 @@ def prepare(source, output):
     subprocess.run(["git", "-C", str(output), "checkout", "--detach", lock["commit"]], check=True)
     shutil.copytree(source / "integrations/mail/overlay", output, dirs_exist_ok=True)
     apply_locale_overrides(output, json.loads((source / "integrations/mail/locale-overrides.json").read_text()))
+    make_readable(output)
     archive = output / "public/cloud-customization-source.zip"
     archive.parent.mkdir(exist_ok=True)
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zipped:
