@@ -69,7 +69,7 @@ configured here: Frappe Framework and ERPNext, Frappe HR, India Compliance,
 Raven, Insights, India Payroll, payment utilities and RazorpayX integration,
 eKYC India; authentik; ownCloud Infinite Scale (Drive) and its web client;
 ONLYOFFICE Docs (and Collabora Online CODE, used until November 2026); Stalwart Mail Server and Bulwark Webmail; Paperless-ngx
-with Apache Tika and Gotenberg; Coolify and Traefik; Headscale and Tailscale;
+with Apache Tika and Gotenberg; Frigate (camera recording); Coolify and Traefik; Headscale and Tailscale;
 MariaDB, PostgreSQL and Redis. Thank you to their communities. Each remains
 under its own license (see LICENSES.md).
 

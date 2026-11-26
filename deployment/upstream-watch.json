@@ -57,6 +57,7 @@
     "ubuntu": {"name": "Ubuntu", "host": true, "endoflife": "ubuntu", "exposure": "public"},
     "linux": {"name": "Linux kernel", "host": true, "endoflife": "linux", "exposure": "public"},
     "restic": {"name": "restic", "host": true, "github": "restic/restic", "exposure": "internal"},
-    "rustfs": {"name": "RustFS", "host": true, "github": "rustfs/rustfs", "exposure": "internal"}
+    "rustfs": {"name": "RustFS", "host": true, "github": "rustfs/rustfs", "exposure": "internal"},
+    "frigate": {"name": "Frigate (TrueNAS app)", "host": true, "github": "blakeblackshear/frigate", "exposure": "tailnet"}
   }
 }

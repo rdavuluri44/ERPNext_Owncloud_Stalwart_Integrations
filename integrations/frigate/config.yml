@@ -1,0 +1,55 @@
+# Frigate 0.18.3 configuration for a one-camera trial (P46).
+# Copy to the app's config folder as config.yml. Keep camera passwords out of
+# this file: Frigate replaces {FRIGATE_*} placeholders in camera paths with
+# environment variables set in the app (see README.md).
+
+mqtt:
+  enabled: false
+
+auth:
+  enabled: true
+  failed_login_rate_limit: "1/second;5/minute;20/hour"
+  session_length: 43200
+
+# No graphics chip on the trial host: OpenVINO on the processor with the
+# model bundled in the image (Frigate docs, object detectors, SSDLite).
+detectors:
+  ov:
+    type: openvino
+    device: CPU
+
+model:
+  width: 300
+  height: 300
+  input_tensor: nhwc
+  input_pixel_format: bgr
+  path: /openvino-model/ssdlite_mobilenet_v2.xml
+  labelmap_path: /openvino-model/coco_91cl_bkgr.txt
+
+objects:
+  track:
+    - person
+    - car
+    - motorcycle
+    - bicycle
+
+record:
+  enabled: true
+  continuous:
+    days: 3
+  alerts:
+    retain:
+      days: 14
+  detections:
+    retain:
+      days: 14
+
+snapshots:
+  enabled: true
+  retain:
+    default: 14
+
+# Cameras are added when installed; see README.md for the trial camera.
+cameras: {}
+
+version: 0.18-0
