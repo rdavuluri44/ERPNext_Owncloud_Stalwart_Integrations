@@ -140,6 +140,12 @@
       "steps": ["build and distribute the app (no server stack)"]
     },
     {
+      "name": "Camera recorder (Frigate TrueNAS app, P46)",
+      "paths": ["integrations/frigate/**"],
+      "stacks": ["host"],
+      "steps": ["copy integrations/frigate/config.yml into the Frigate app's config folder on TrueNAS, keeping the cameras added there", "restart the Frigate app and check that it reports version 0.18.3 or newer and asks for a login"]
+    },
+    {
       "name": "No running stack (documents, tests, checks, operator tools)",
       "paths": ["*.md", "**/*.md", "LICENSE", ".github/**", ".gitignore", ".gitattributes", ".dockerignore", "modules.json", "docs/**", "tests/**", "tools/check_repository.py", "tools/run_unit_tests.py", "tools/promotion_plan.py", "tools/initialize_erp.py", "tools/migrate_asset_references.py", "tools/verify_erp_assets.py", "deployment/runtime.example.json", "deployment/promotion-map.json", "integrations/onlyoffice/sheetview_sanitize.py", "integrations/onlyoffice/editor-wopi.original.ejs", "integrations/authentik/invite-recovery/test_*", "integrations/authentik/invite-recovery/smoke_*"],
       "stacks": []
