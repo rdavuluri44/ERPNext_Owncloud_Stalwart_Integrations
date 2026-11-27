@@ -12,7 +12,9 @@ that the admin receives the alerts and sees them on the Desk. This module is tha
   updates the same record and counts it; the check passing again resolves it; failing again later reopens it
   and shows it as unread again.
 - **Mail at once for critical alerts** (when one opens, reopens, or an open alert turns critical, and when it is
-  resolved), and **one summary mail a day** while anything is open. Plain repeats send no mail.
+  resolved), and **one summary mail a day** while anything is open. Plain repeats send no mail. A check that keeps
+  failing and passing mails at most once an hour per alert (turning critical is always mailed), and a "resolved"
+  mail goes out only when the admin was told about the opening.
 - **The page `/admin-alerts`**: open alerts newest first (unread ones marked "New"), those resolved in the last
   seven days, and a panel of admin tool links. The Desk shows an **Alerts** entry with the unread count to the
   admins only.

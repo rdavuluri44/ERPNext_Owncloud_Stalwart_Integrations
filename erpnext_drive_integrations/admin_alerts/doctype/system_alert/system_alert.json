@@ -15,21 +15,113 @@
     "first_seen",
     "last_seen",
     "resolved_at",
-    "repeat_count"
+    "repeat_count",
+    "last_mailed",
+    "mailed_state"
   ],
   "fields": [
-    {"fieldname": "alert_key", "label": "Alert key", "fieldtype": "Data", "reqd": 1, "unique": 1, "read_only": 1},
-    {"fieldname": "source", "label": "Source", "fieldtype": "Data", "reqd": 1, "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
-    {"fieldname": "host", "label": "Host", "fieldtype": "Data", "read_only": 1},
-    {"fieldname": "severity", "label": "Severity", "fieldtype": "Select", "options": "critical\nwarning\ninfo", "reqd": 1, "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
-    {"fieldname": "status", "label": "Status", "fieldtype": "Select", "options": "Open\nResolved", "default": "Open", "reqd": 1, "read_only": 1, "in_list_view": 1, "in_standard_filter": 1},
-    {"fieldname": "title", "label": "Title", "fieldtype": "Data", "reqd": 1, "read_only": 1, "in_list_view": 1},
-    {"fieldname": "detail", "label": "Detail", "fieldtype": "Small Text", "read_only": 1},
-    {"fieldname": "link", "label": "Link", "fieldtype": "Data", "read_only": 1},
-    {"fieldname": "first_seen", "label": "First seen", "fieldtype": "Datetime", "read_only": 1},
-    {"fieldname": "last_seen", "label": "Last seen", "fieldtype": "Datetime", "read_only": 1},
-    {"fieldname": "resolved_at", "label": "Resolved at", "fieldtype": "Datetime", "read_only": 1},
-    {"fieldname": "repeat_count", "label": "Times reported", "fieldtype": "Int", "read_only": 1}
+    {
+      "fieldname": "alert_key",
+      "label": "Alert key",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "unique": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "source",
+      "label": "Source",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "read_only": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "host",
+      "label": "Host",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "severity",
+      "label": "Severity",
+      "fieldtype": "Select",
+      "options": "critical\nwarning\ninfo",
+      "reqd": 1,
+      "read_only": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "status",
+      "label": "Status",
+      "fieldtype": "Select",
+      "options": "Open\nResolved",
+      "default": "Open",
+      "reqd": 1,
+      "read_only": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "title",
+      "label": "Title",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "detail",
+      "label": "Detail",
+      "fieldtype": "Small Text",
+      "read_only": 1
+    },
+    {
+      "fieldname": "link",
+      "label": "Link",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "first_seen",
+      "label": "First seen",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "last_seen",
+      "label": "Last seen",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "resolved_at",
+      "label": "Resolved at",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "repeat_count",
+      "label": "Times reported",
+      "fieldtype": "Int",
+      "read_only": 1
+    },
+    {
+      "fieldname": "last_mailed",
+      "label": "Last mailed",
+      "fieldtype": "Datetime",
+      "read_only": 1,
+      "hidden": 1
+    },
+    {
+      "fieldname": "mailed_state",
+      "label": "Last mail was about",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "hidden": 1
+    }
   ],
   "track_seen": 1,
   "title_field": "title",

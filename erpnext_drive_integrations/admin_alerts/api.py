@@ -26,6 +26,7 @@ CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 CONTROL_KEEP_LINES = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
 LINK = re.compile(r"(https?://[^\s<>\"'\\]+|/(?![/\\])[^\s<>\"'\\]*)")  # no //host or /\host
 REFUSED = "Not permitted"
+MAIL_EVERY_MINUTES = 60  # a check that keeps failing and passing mails at most once an hour per alert
 LINKS_NOTE = ("Reachable only from devices on the company tailnet; each tool has its own administrator sign-in "
               "for now.")
 
@@ -120,8 +121,9 @@ def report():
 
 
 def upsert(source, alert):
-    """One row per source and key. Returns {"ok", "name", "status"}. Mails when a critical alert opens or reopens,
-    when an open alert turns critical, and when a critical alert is resolved; never on a plain repeat."""
+    """One row per source and key. Returns {"ok", "name", "status"}. Mails when a critical alert opens or reopens
+    (at most once an hour per alert), at once when an open alert turns critical, and when a critical alert the admin
+    was told about is resolved; never on a plain repeat."""
     alert_key = f"{source}:{alert['key']}"
     now = now_datetime()
     row = frappe.db.get_value(DOCTYPE, {"alert_key": alert_key}, ["name", "status"], as_dict=True, for_update=True)
@@ -137,14 +139,16 @@ def upsert(source, alert):
             return {"ok": True, "name": row.name, "status": row.status}
         doc = frappe.get_doc(DOCTYPE, row.name)
         doc.status, doc.resolved_at = "Resolved", now
+        told = doc.severity == "critical" and doc.get("mailed_state") == "open"
+        if told:
+            doc.mailed_state, doc.last_mailed = "resolved", now
         doc.save(ignore_permissions=True)
-        if doc.severity == "critical":
+        if told:
             notify(doc, resolved=True)
         return {"ok": True, "name": doc.name, "status": doc.status}
     if not row:
         doc = frappe.get_doc({"doctype": DOCTYPE, "alert_key": alert_key, "source": source, "status": "Open",
                               "first_seen": now, "last_seen": now, "repeat_count": 1, **fields})
-        doc.insert(ignore_permissions=True)
         opened, escalated = True, False
     else:
         doc = frappe.get_doc(DOCTYPE, row.name)
@@ -154,12 +158,27 @@ def upsert(source, alert):
         doc.status, doc.last_seen, doc.repeat_count = "Open", now, (doc.repeat_count or 0) + 1
         if opened:
             doc.resolved_at = None
+    mail = doc.severity == "critical" and (escalated or (opened and _may_mail(doc, now)))
+    if mail:
+        doc.mailed_state, doc.last_mailed = "open", now
+    if not row:
+        doc.insert(ignore_permissions=True)
+    else:
         doc.save(ignore_permissions=True)
         if opened:  # shows as unread again for everyone
             frappe.db.set_value(DOCTYPE, doc.name, "_seen", None, update_modified=False)
-    if (opened or escalated) and doc.severity == "critical":
+    if mail:
         notify(doc)
     return {"ok": True, "name": doc.name, "status": doc.status}
+
+
+def _may_mail(doc, now):
+    last = doc.get("last_mailed")
+    if not last:
+        return True
+    if isinstance(last, str):
+        last = frappe.utils.get_datetime(last)
+    return (now - last).total_seconds() >= MAIL_EVERY_MINUTES * 60
 
 
 # ---------- mail ----------

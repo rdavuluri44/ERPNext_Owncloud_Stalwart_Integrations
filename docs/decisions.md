@@ -1300,7 +1300,7 @@ check themselves in keep their existing workflows.
   defaulting to System Manager, because ERP roles are not mapped from sign-in groups. The admin reaches the
   inbox through an **Alerts** entry on the Desk with the unread count, not an inline widget, because the Desk is
   an app-frame shell: each entry opens a page in the frame. Critical alerts are mailed at once (and their
-  resolve), everything still open is summarised in one mail a day, and when ERP cannot be reached the sender
+  resolve; at most once an hour per alert, so a flapping check cannot flood the mailbox), everything still open is summarised in one mail a day, and when ERP cannot be reached the sender
   mails a critical alert directly through the host-check mail sender. The token travels in `X-Alert-Token`,
   because Frappe refuses any request with an unknown two-part `Authorization` header before a guest method runs.
   Stage 2 wires the existing checks to the sender and opens a narrow proxy route for the report method only.

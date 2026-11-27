@@ -237,7 +237,7 @@ class UpsertAndMailTests(unittest.TestCase):
         name = send()['name']
         api.mark_seen([name], 'admin@example.com')
         send(state='resolved')
-        later()
+        later(61)  # past the hourly mail limit (see FlappingTests)
         send(detail='again')
         row = STATE['rows'][name]
         self.assertEqual((row['status'], row['repeat_count'], row['resolved_at'], row['_seen']), ('Open', 2, None, None))
@@ -258,6 +258,27 @@ class UpsertAndMailTests(unittest.TestCase):
         self.assertEqual(api.recipients(), ['ops@example.com'])
         frappe.conf['cloud_alerts']['role'] = 'Nobody'
         self.assertEqual(api.recipients(), [])
+
+
+class FlappingTests(unittest.TestCase):
+    def test_a_flapping_critical_check_mails_at_most_once_an_hour(self):
+        reset()
+        send()                      # opens: mailed
+        later(); send(state='resolved')   # told about the opening: resolved mail
+        later(); send()             # reopens within the hour: no mail
+        later(); send(state='resolved')   # the admin's last news was "resolved": no mail
+        self.assertEqual([m['subject'] for m in STATE['mails']], ['[Alert] Disk full', '[Resolved] Disk full'])
+        later(61); send()           # an hour after the last mail: mailed again
+        self.assertEqual(STATE['mails'][-1]['subject'], '[Alert] Disk full')
+        self.assertEqual(len(STATE['mails']), 3)
+
+    def test_turning_critical_is_mailed_even_within_the_hour(self):
+        reset()
+        send(severity='critical'); later(); send(state='resolved')
+        later(); send(severity='warning')      # reopened as a warning: no mail
+        later(); send(severity='critical')     # turns critical: mailed at once
+        self.assertEqual([m['subject'] for m in STATE['mails']],
+                         ['[Alert] Disk full', '[Resolved] Disk full', '[Alert] Disk full'])
 
 
 class DigestTests(unittest.TestCase):
