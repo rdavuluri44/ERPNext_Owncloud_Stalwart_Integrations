@@ -106,6 +106,9 @@
           "license": "per upstream frappe/suite",
           "url": "https://github.com/frappe/suite"
         }
+      ],
+      "exclude": [
+        "erpnext_drive_integrations/public/app-logos/alerts.svg"
       ]
     },
     {
@@ -269,6 +272,37 @@
           "name": "India Compliance",
           "license": "GPL-3.0",
           "url": "https://github.com/resilient-tech/india-compliance"
+        }
+      ]
+    },
+    {
+      "id": "admin-alerts",
+      "title": "Admin alert inbox",
+      "summary": "One inbox in ERP for every check on every server: a token-checked report endpoint, the System Alert record, the /admin-alerts page and its Desk entry, mail at once for critical alerts and a daily summary, and the sender tool the checks call (with a direct-mail fallback).",
+      "readme": "erpnext_drive_integrations/admin_alerts/README.md",
+      "paths": [
+        "erpnext_drive_integrations/admin_alerts/**",
+        "erpnext_drive_integrations/www/admin_alerts.*",
+        "erpnext_drive_integrations/public/app-logos/alerts.svg",
+        "tools/send_alert.py",
+        "tests/admin_alerts/**",
+        "tests/test_send_alert.py"
+      ],
+      "depends_on": [
+        "erp-addon-shell",
+        "portal-sso",
+        "deployment"
+      ],
+      "tests": [
+        "tests/admin_alerts/test_api.py",
+        "tests/admin_alerts/test_desk_entry.py",
+        "tests/test_send_alert.py"
+      ],
+      "upstream": [
+        {
+          "name": "Frappe Framework",
+          "license": "MIT",
+          "url": "https://github.com/frappe/frappe"
         }
       ]
     },

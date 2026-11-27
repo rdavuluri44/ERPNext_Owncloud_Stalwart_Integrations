@@ -52,6 +52,17 @@ def get_context(context):
         {'id': 'mail', 'name': 'Mail', 'url': 'https://mail.example.com/mail/folder/inbox', 'logo': '/assets/erpnext_drive_integrations/app-logos/external-mail.svg'},
         {'id': 'dms', 'name': 'DMS', 'url': 'https://dms.example.com/', 'logo': '/assets/erpnext_drive_integrations/app-logos/external-dms.svg'},
     ])
+    try:  # the admin alert inbox (P72, P53); never let it break the Desk
+        from erpnext_drive_integrations.admin_alerts import api as alerts
+        if alerts.enabled() and alerts.is_admin():
+            n = alerts.unread_count(frappe.session.user)
+            apps.append({'id': 'alerts', 'name': 'Alerts' + (f' ({n})' if n else ''), 'url': '/admin-alerts',
+                         'logo': '/assets/erpnext_drive_integrations/app-logos/alerts.svg'})
+    except Exception:
+        try:
+            frappe.log_error('Alerts entry on the Desk')
+        except Exception:
+            pass
     context.portal_apps = apps
     context.logout_url = '/api/method/erpnext_drive_integrations.portal.sso.finish_logout'
     return context

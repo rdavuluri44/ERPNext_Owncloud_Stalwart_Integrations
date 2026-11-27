@@ -16,6 +16,9 @@ class CompositionTests(unittest.TestCase):
         self.assertIn('erpnext_drive_integrations.portal.guard.refuse_rpc_cmd',hooks.before_request)
         self.assertIn('erpnext_drive_integrations.custom_hr.checkout.close_due_entries',hooks.scheduler_events['cron']['* * * * *'])
         self.assertIn('erpnext_drive_integrations.onboarding.monitor.check_mail',hooks.scheduler_events['hourly'])
+    def test_admin_alerts_fragment_is_composed(self):
+        self.assertIn('erpnext_drive_integrations.admin_alerts.api.daily_digest',hooks.scheduler_events['daily'])
+        self.assertIn({'from_route':'/admin-alerts','to_route':'admin_alerts'},hooks.website_route_rules)
     def test_installed_identity(self):
         self.assertEqual(hooks.app_name,'erpnext_drive_integrations')
         from erpnext_drive_integrations import __version__
