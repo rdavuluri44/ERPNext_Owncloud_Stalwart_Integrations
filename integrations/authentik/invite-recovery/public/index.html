@@ -9,7 +9,7 @@
   <script type="module" src="./page.mjs"></script>
 </head>
 <body>
-  <header><a href="/if/user/">Cloud</a><nav aria-label="Invitation navigation"><a href="/if/admin/#/flow/stages/invitations">Manage invitations</a><a href="/if/admin/">Authentik administration ↗</a></nav></header>
+  <header><a href="/if/admin/" id="back">← Back</a><nav aria-label="Invitation navigation"><a href="/if/admin/#/flow/stages/invitations">Manage invitations</a><a href="/if/admin/">Authentik administration ↗</a></nav></header>
   <main>
     <p class="eyebrow">USER ENROLLMENT</p>
     <h1>Invite user</h1>
@@ -30,12 +30,20 @@
           <option value="48">2 days</option><option value="72">3 days</option>
         </select>
         <p class="hint" id="expires-at"></p>
+        <div id="attempts-field" hidden>
+          <label for="attempts">Link can be opened</label>
+          <select id="attempts" name="attempts">
+            <option value="1">1 time</option><option value="2">2 times</option><option value="3">3 times</option>
+            <option value="4">4 times</option><option value="5" selected>5 times</option>
+          </select>
+          <p class="hint">Each opening counts as one attempt. The link stops working as soon as the passkey is set up.</p>
+        </div>
         <p class="delivery" id="delivery">The invitation will be sent from noreply@example.com.</p>
         <button type="submit" id="send">Send invitation</button>
       </form>
       <div class="actions"><button type="button" id="reload" hidden>Refresh user list</button><a id="sign-in" href="/if/admin/" hidden>Sign in to Authentik</a></div>
     </section>
-    <p class="footnote" id="footnote">Allowed passkey providers: Apple Passwords/iCloud Keychain or Bitwarden. Setup instructions are included in the email. The link is single-use. Recovery deletes old passkeys only after the replacement is successfully registered and verified.</p>
+    <p class="footnote" id="footnote">Allowed passkey providers: Apple Passwords/iCloud Keychain, Bitwarden (or Vaultwarden), Google Password Manager or Chrome on Mac. Setup instructions are included in the email. The link is single-use. Recovery deletes old passkeys only after the replacement is successfully registered and verified.</p>
   </main>
 </body>
 </html>

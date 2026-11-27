@@ -6,6 +6,7 @@ import { useSyncExternalStore } from 'react';
 import { z } from 'zod';
 
 import { type Api, callErp } from '@/lib/erp';
+import { callKept } from '@/lib/saved';
 
 const Action = z.object({
   name: z.string(),
@@ -51,14 +52,14 @@ export async function refreshInbox(api: Api) {
   set({ loading: true });
   try {
     const [actions, logs] = await Promise.all([
-      callErp(api, ACTIONS_METHOD, z.array(Action), {
+      callKept(api, ACTIONS_METHOD, z.array(Action), {
         doctype: 'Workflow Action',
         fields: ['name', 'reference_doctype', 'reference_name', 'workflow_state', 'creation'],
         filters: { status: 'Open' },
         order_by: 'creation desc',
         limit_page_length: 100,
       }),
-      callErp(api, LOGS_METHOD, Logs, { limit: 50 }),
+      callKept(api, LOGS_METHOD, Logs, { limit: 50 }),
     ]);
     set({ actions, notifications: logs.notification_logs, error: null, loading: false, loaded: true });
   } catch (e) {

@@ -11,7 +11,7 @@ if (!window.hov_request_response_loaded) {
 
 	const refresh = (frm) => {
 		if (frm.is_new() || frm.doc.docstatus === 2) return;
-		const status = rule_cache[frm.doctype] || (rule_cache[frm.doctype] = frappe.xcall("erpnext_drive_integrations.onboarding.respond.rule_status", { doctype: frm.doctype }));
+		const status = rule_cache[frm.doctype] || (rule_cache[frm.doctype] = frappe.xcall("erpnext_drive_integrations.onboarding.respond.rule_status", { doctype: frm.doctype }, "GET"));
 		status.then((s) => {
 			if (!s.enabled || !s.can_request) return;
 			frm.add_custom_button(__("Request response"), () => {

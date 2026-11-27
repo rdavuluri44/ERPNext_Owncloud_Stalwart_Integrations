@@ -14,7 +14,8 @@ class Invitations(unittest.TestCase):
     (source/name/'__pycache__/generated.pyc').write_bytes(b'generated')
     (source/name/'generated.pyo').write_bytes(b'generated')
     (source/name/'retained.py').write_text('retained = True\n')
-   for name in ['pyproject.toml','MANIFEST.in']:
+   for name in ['pyproject.toml','MANIFEST.in','tools/fetch_face_models.py','deployment/face-models.json']:
+    (source/name).parent.mkdir(parents=True,exist_ok=True)
     (source/name).write_text('')
    output=Path(d)/'build'
    m.render(source,output,{'domain':'example.net'})

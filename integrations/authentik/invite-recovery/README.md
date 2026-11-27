@@ -12,6 +12,10 @@ Mount templates/ persistently into both authentik server and worker, preserving 
 
 ## Retained guarantees
 
+Invitation attempts (P78): the administrator chooses how many times a link may be opened, 1 to 5 (default 5) when the site's `invite-mode.mjs` sets `attemptsAvailable`. One attempt is a native single-use link. More attempts create a reusable link with `fixed_data.attempts`; the invitation policies count each opening once per flow in a server-side ledger, remove the link after the last attempt, and end it as soon as setup succeeds (recovery completes, or the user already has a passkey). Without `attemptsAvailable` the form keeps creating single-use links, so a site only offers attempts after its policies are updated.
+
+Approved passkey providers (P79) come from one setting, [`../passkey-providers.json`](../passkey-providers.json): Apple Passwords, Bitwarden (also with Vaultwarden), Google Password Manager and Chrome on Mac. `tools/sync_passkey_providers.py` rewrites the copies Authentik needs as literal text (this module's policies, installer and the blueprint), and `tests/test_passkey_providers.py` fails if any copy differs.
+
 One expiring, single-use native invitation link fixes the identity/email and serves as email-possession proof. Enrollment rejects an identity with existing keys. Recovery snapshots old keys after invitation validation, requires a fresh allowed replacement registration and assertion, then removes only that snapshot transactionally. Abandoned/failed recovery preserves old keys; concurrent newer keys are preserved. Provider AAGUID values are reported metadata, not cryptographic vendor attestation.
 
 ## Tests and upgrades

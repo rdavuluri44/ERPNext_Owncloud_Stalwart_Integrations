@@ -12,10 +12,11 @@ const adminEmail = "operator@example.invalid";
 const now = Date.parse("2026-11-06T08:00:00Z");
 function fixture({ user = baseUser, devices = [], admin = true, csrf = true,
   sendFails = false, cleanupFails = false, duplicate = false, activeInvite = false,
-  missingRecovery = false, listFails = false, test = false, delivery = adminEmail } = {}) {
+  missingRecovery = false, listFails = false, test = false, delivery = adminEmail,
+  attemptsAvailable = false, activeSingleUse = true } = {}) {
   const requests = [], invitations = [];
   const client = new InvitationClient({
-    test,
+    test, attemptsAvailable,
     origin: () => "https://sso.example.invalid", now: () => now,
     cookie: () => csrf ? "authentik_csrf=test-csrf" : "", uuid: () => "test-attempt",
     fetcher: async (url, request) => {
@@ -33,7 +34,7 @@ function fixture({ user = baseUser, devices = [], admin = true, csrf = true,
       if (path === "authenticators/admin/webauthn/") return listFails ? reply({}, 500)
         : page(devices.map((d) => ({ user: { pk: user.pk }, ...d })));
       if (path === "stages/invitation/invitations/" && request.method === "GET") {
-        return page(activeInvite ? [{ flow: devices.length ? recoveryFlow.pk : flow.pk, single_use: true,
+        return page(activeInvite ? [{ flow: devices.length ? recoveryFlow.pk : flow.pk, single_use: activeSingleUse,
           expires: new Date(now + 3600000).toISOString(), fixed_data: { email: user.email } }] : invitations);
       }
       if (path === "stages/invitation/invitations/" && request.method === "POST") {
@@ -173,6 +174,33 @@ export async function runTests() {
     const f = fixture({ test: true, user: synthetic, delivery: "" });
     await assert.rejects(f.client.send(7, 24), /administrator account/);
     assert.equal(writes(f).length, 0);
+  });
+  await check("P78: sites without attempt support keep single-use links", async () => {
+    const f = fixture(); const result = await f.client.send(7, 24);
+    assert.equal(f.invitations[0].single_use, true); assert.equal("attempts" in f.invitations[0].fixed_data, false);
+    assert.equal(result.attempts, 1);
+    const g = fixture();
+    await assert.rejects(g.client.send(7, 24, 3), /one attempt per link/); assert.equal(writes(g).length, 0);
+  });
+  await check("P78: five attempts by default when the site supports them", async () => {
+    const f = fixture({ attemptsAvailable: true }); const result = await f.client.send(7, 24);
+    assert.equal(f.invitations[0].single_use, false);
+    assert.deepEqual(f.invitations[0].fixed_data, { email: baseUser.email, user_id: 7, attempts: 5 });
+    assert.equal(result.attempts, 5);
+  });
+  await check("P78: one attempt stays a native single-use link", async () => {
+    const f = fixture({ attemptsAvailable: true }); await f.client.send(7, 24, 1);
+    assert.equal(f.invitations[0].single_use, true); assert.equal("attempts" in f.invitations[0].fixed_data, false);
+  });
+  await check("P78: only 1 to 5 attempts are accepted", async () => {
+    for (const attempts of [0, 6, 2.5, "3"]) {
+      const f = fixture({ attemptsAvailable: true });
+      await assert.rejects(f.client.send(7, 24, attempts), /1 to 5 attempts/); assert.equal(writes(f).length, 0);
+    }
+  });
+  await check("P78: an unexpired reusable link blocks a second invitation", async () => {
+    const f = fixture({ attemptsAvailable: true, activeInvite: true, activeSingleUse: false });
+    await assert.rejects(f.client.send(7, 24), /already has a valid invitation/); assert.equal(writes(f).length, 0);
   });
   return { passed };
 }

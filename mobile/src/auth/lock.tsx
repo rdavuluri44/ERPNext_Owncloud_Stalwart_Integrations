@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { APP_NAME } from '@/auth/session';
 import { Button, Status, T } from '@/components/ui';
+import { t as text } from '@/i18n';
 import { useTheme } from '@/theme';
 
 export const RELOCK_AFTER_MS = 60_000;
@@ -24,13 +25,13 @@ export function AppLock() {
     if (busy.current) return;
     busy.current = true;
     try {
-      const result = await LocalAuthentication.authenticateAsync({ promptMessage: `Unlock ${APP_NAME}` });
+      const result = await LocalAuthentication.authenticateAsync({ promptMessage: text('lock.prompt', { app: APP_NAME }) });
       setError(null);
       if (result.success) setLocked(false);
       else if (result.error === 'not_enrolled' || result.error === 'passcode_not_set')
-        setError(`Set a screen lock (passcode, Face ID or fingerprint) on this phone to use ${APP_NAME}.`);
+        setError(text('lock.noScreenLock', { app: APP_NAME }));
       else if (result.error !== 'user_cancel' && result.error !== 'app_cancel' && result.error !== 'system_cancel')
-        setError('Could not unlock. Try again.');
+        setError(text('lock.failed'));
     } finally {
       busy.current = false;
     }
@@ -55,10 +56,10 @@ export function AppLock() {
     <View style={[StyleSheet.absoluteFill, { backgroundColor: t.c.bg }]}>
       {locked && (
         <SafeAreaView style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 20 }}>
-          <T variant="title" style={{ fontSize: t.font(30) }}>
-            {APP_NAME} is locked
+          <T variant="title" style={{ fontSize: t.font(26) }}>
+            {text('lock.locked', { app: APP_NAME })}
           </T>
-          <Button label="Unlock" icon="face-recognition" onPress={unlock} />
+          <Button label={text('lock.unlock')} icon="face" onPress={unlock} />
           {error && <Status kind="warn" label={error} />}
         </SafeAreaView>
       )}

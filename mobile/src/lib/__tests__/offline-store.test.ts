@@ -61,6 +61,19 @@ describe('encrypted offline store', () => {
     await store.clear();
     expect(await store.all()).toEqual([]);
   });
+
+  it('saved answers live in the same encrypted file, older than a day are deleted, sign-out deletes all', async () => {
+    const { db, statements } = fakeDb('4.6.1');
+    const store = (await encryptedStore(db, KEY))!;
+    expect(statements.some((s) => s.includes('CREATE TABLE IF NOT EXISTS saved'))).toBe(true);
+    await store.keep('k', '{}', 5000, 1000);
+    expect(statements.slice(-2)).toEqual([
+      'DELETE FROM saved WHERE saved_at < ?',
+      'INSERT OR REPLACE INTO saved (key, saved_at, body) VALUES (?, ?, ?)',
+    ]);
+    await store.clear();
+    expect(statements.slice(-2)).toEqual(['DELETE FROM queue', 'DELETE FROM saved']);
+  });
 });
 
 describe('offline store in Expo Go', () => {
@@ -76,5 +89,59 @@ describe('offline store in Expo Go', () => {
     expect(openDatabaseAsync).not.toHaveBeenCalled();
     await expect(offlineStorageKind()).resolves.toBe('memory');
     expect(store.encrypted).toBeUndefined();
+  });
+});
+
+describe('whose offline data it is (owner decisions 4 and 5)', () => {
+  const load = () => {
+    jest.resetModules();
+    jest.doMock('expo-constants', () => ({ __esModule: true, default: { executionEnvironment: 'storeClient' }, ExecutionEnvironment: { StoreClient: 'storeClient' } }));
+    jest.doMock('expo-sqlite', () => ({ openDatabaseAsync: jest.fn(), deleteDatabaseAsync: jest.fn() }));
+    const secure = new Map<string, string>();
+    jest.doMock('expo-secure-store', () => ({
+      WHEN_UNLOCKED_THIS_DEVICE_ONLY: 1,
+      getItemAsync: async (k: string) => secure.get(k) ?? null,
+      setItemAsync: async (k: string, v: string) => void secure.set(k, v),
+      deleteItemAsync: async (k: string) => void secure.delete(k),
+    }));
+    return jest.requireActual('@/lib/offline-store') as typeof import('@/lib/offline-store');
+  };
+
+  it('the same person keeps their unsent entries; another person never gets them', async () => {
+    const { offlineStore, adoptOffline } = load();
+    const store = await offlineStore();
+    await adoptOffline('a@example.com', false);
+    await store.put(item('a1', Date.now()));
+    await adoptOffline('a@example.com', false); // signed in again after the sign-in expired
+    expect((await store.all()).map((i) => i.id)).toEqual(['a1']);
+    await adoptOffline('b@example.com', false); // someone else on this phone
+    expect(await store.all()).toEqual([]);
+  });
+
+  it('data without a recorded owner: kept at app start with a saved sign-in, deleted at a fresh sign-in', async () => {
+    const first = load();
+    await (await first.offlineStore()).put(item('x', Date.now()));
+    await first.adoptOffline('a@example.com', true);
+    expect(await (await first.offlineStore()).all()).toHaveLength(1);
+    const second = load();
+    await (await second.offlineStore()).put(item('y', Date.now()));
+    await second.adoptOffline('a@example.com', false);
+    expect(await (await second.offlineStore()).all()).toEqual([]);
+  });
+
+  it('app start deletes anything older than a day; Sign out deletes everything and forgets the owner', async () => {
+    const { offlineStore, adoptOffline, purgeOffline, wipeOffline } = load();
+    const store = await offlineStore();
+    await adoptOffline('a@example.com', false);
+    const now = Date.now();
+    await store.put(item('old', now - 25 * 60 * 60 * 1000));
+    await store.put(item('new', now));
+    await purgeOffline(now);
+    expect((await store.all()).map((i) => i.id)).toEqual(['new']);
+    await wipeOffline();
+    expect(await store.all()).toEqual([]);
+    await store.put(item('c', now));
+    await adoptOffline('b@example.com', true); // no owner recorded any more: kept only at app start
+    expect(await store.all()).toHaveLength(1);
   });
 });

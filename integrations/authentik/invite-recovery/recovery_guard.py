@@ -42,7 +42,7 @@ def old_keys_to_delete(proof, *, user_id, email, active, approved,
     if not proof.email_verified or not proof.replacement_verified:
         raise ValueError("Fresh email and replacement-key verification are required")
     if not allowed_provider(proof.replacement_aaguid):
-        raise ValueError("Replacement passkey must identify as Apple Passwords or Bitwarden")
+        raise ValueError("Replacement passkey must come from an approved provider")
     if not proof.replacement_key or proof.replacement_key in proof.old_keys:
         raise ValueError("A new replacement passkey must be verified")
     if proof.replacement_key not in confirmed_keys:

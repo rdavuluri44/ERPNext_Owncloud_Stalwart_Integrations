@@ -140,6 +140,14 @@ def before_cancel_attendance(doc,method=None):
 def protect_file(doc,method=None):
     old=doc.get_doc_before_save()
     protected=doc.attached_to_doctype=='Field Attendance Entry' or bool(old and old.attached_to_doctype=='Field Attendance Entry')
+    queued=doc.attached_to_doctype=='Field Face Capture' or bool(old and old.attached_to_doctype=='Field Face Capture')
+    if queued and not protected:
+        if doc.flags.field_service:return
+        if method=='on_trash':frappe.throw('Queued face captures are removed when they are resolved.',frappe.PermissionError)
+        if not doc.is_private:frappe.throw('Attendance photographs must remain private.',frappe.PermissionError)
+        if old and any(doc.get(f)!=old.get(f) for f in ('file_url','is_private','attached_to_doctype','attached_to_name')):
+            frappe.throw('Attendance evidence cannot be moved or replaced directly.',frappe.PermissionError)
+        return
     if not protected:return
     if method=='on_trash':frappe.throw('Attendance photographs are retained as approval evidence and cannot be deleted directly.',frappe.PermissionError)
     if not doc.is_private:frappe.throw('Attendance photographs must remain private.',frappe.PermissionError)

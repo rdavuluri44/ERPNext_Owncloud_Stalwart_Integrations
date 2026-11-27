@@ -4,6 +4,7 @@ import { ActivityIndicator, FlatList, ScrollView, View } from 'react-native';
 import { useAuth } from '@/auth/session';
 import { DocView, docStatus } from '@/components/doc-view';
 import { Button, Row, Status, T } from '@/components/ui';
+import { t as text } from '@/i18n';
 import { type DocMeta, getJson, useErp, useMeta } from '@/lib/erp';
 import { formatValue, HIDDEN_TYPES } from '@/lib/format';
 import { useTheme } from '@/theme';
@@ -52,7 +53,7 @@ export function DocList({ doctype, selected, onOpen }: { doctype: string; select
       setMore((old) => [...old, ...res.data]);
       setMoreDone(res.data.length < PAGE);
     } catch (e) {
-      setMoreError(e instanceof Error ? e.message : 'Something went wrong');
+      setMoreError(e instanceof Error ? e.message : text('erp.unexpected'));
     } finally {
       setBusy(false);
     }
@@ -68,7 +69,7 @@ export function DocList({ doctype, selected, onOpen }: { doctype: string; select
   if (meta?.is_virtual) {
     return (
       <View style={{ padding: 16 }}>
-        <Status kind="info" label="This list opens only on the web for now." />
+        <Status kind="info" label={text('list.webOnly')} />
       </View>
     );
   }
@@ -88,7 +89,7 @@ export function DocList({ doctype, selected, onOpen }: { doctype: string; select
         return (
           <Row
             title={title}
-            subtitle={[status?.label, sub].filter(Boolean).join('  |  ')}
+            subtitle={[status?.label, sub].filter(Boolean).join(' · ')}
             selected={selected === item.name}
             onPress={() => onOpen(item.name)}
           />
@@ -98,13 +99,13 @@ export function DocList({ doctype, selected, onOpen }: { doctype: string; select
         error ? (
           <View style={{ padding: 16, gap: 12 }}>
             <Status kind="danger" label={error} />
-            <Button label="Try again" icon="refresh" secondary onPress={refresh} />
+            <Button label={text('inbox.retry')} icon="refresh" secondary onPress={refresh} />
           </View>
         ) : first.loading || !meta ? (
           <ActivityIndicator style={{ margin: 32 }} size="large" color={t.c.primary} />
         ) : (
           <T color="muted" style={{ padding: 16 }}>
-            Nothing here yet.
+            {text('list.empty')}
           </T>
         )
       }
@@ -112,7 +113,7 @@ export function DocList({ doctype, selected, onOpen }: { doctype: string; select
         items.length > 0 ? (
           <View style={{ padding: 16, gap: 12 }}>
             {moreError && <Status kind="danger" label={moreError} />}
-            {!done && <Button label={busy ? 'Loading...' : 'Show more'} secondary onPress={loadMore} />}
+            {!done && <Button label={text(busy ? 'list.loading' : 'list.more')} secondary onPress={loadMore} disabled={busy} />}
           </View>
         ) : undefined
       }

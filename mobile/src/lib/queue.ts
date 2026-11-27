@@ -19,13 +19,23 @@ export type QueueItem = {
   error?: string;
 };
 
-/** Where items live: the encrypted database on a development build, memory in Expo Go and tests. */
+/**
+ * Where items live: the encrypted database on a development build, memory in Expo Go and tests. The same
+ * store keeps the last good server answers for reading offline (lib/saved.ts).
+ */
 export interface QueueStore {
   /** True only for the SQLCipher database whose encryption was confirmed. */
   encrypted?: boolean;
   all(): Promise<QueueItem[]>;
   put(item: QueueItem): Promise<void>;
   remove(id: string): Promise<void>;
+  /** A saved answer, if saved at or after `notBefore` (milliseconds). */
+  read(key: string, notBefore: number): Promise<{ at: number; body: string } | null>;
+  /** Save an answer at `at`; answers saved before `notBefore` are deleted. */
+  keep(key: string, body: string, at: number, notBefore: number): Promise<void>;
+  /** Delete queued items and saved answers older than `notBefore` (owner: data stays at most a day). */
+  purge(notBefore: number): Promise<void>;
+  /** Everything: queued items and saved answers (sign-out). */
   clear(): Promise<void>;
 }
 
@@ -36,18 +46,34 @@ export const newClientId = () => Crypto.randomUUID();
 
 export function memoryStore(): QueueStore {
   const items = new Map<string, QueueItem>();
+  const saved = new Map<string, { at: number; body: string }>();
   return {
     all: async () => [...items.values()].map((i) => ({ ...i, args: { ...i.args } })),
     put: async (item) => void items.set(item.id, { ...item, args: { ...item.args } }),
     remove: async (id) => void items.delete(id),
-    clear: async () => items.clear(),
+    read: async (key, notBefore) => {
+      const s = saved.get(key);
+      return s && s.at >= notBefore ? s : null;
+    },
+    keep: async (key, body, at, notBefore) => {
+      for (const [k, s] of saved) if (s.at < notBefore) saved.delete(k);
+      saved.set(key, { at, body });
+    },
+    purge: async (notBefore) => {
+      for (const [k, i] of items) if (i.createdAt < notBefore) items.delete(k);
+      for (const [k, s] of saved) if (s.at < notBefore) saved.delete(k);
+    },
+    clear: async () => {
+      items.clear();
+      saved.clear();
+    },
   };
 }
 
 type Send = (item: QueueItem) => Promise<unknown>;
 
 export function createQueue(store: QueueStore, send: Send, now: () => number = Date.now) {
-  let flushing: Promise<{ sent: number; failed: number }> | null = null;
+  let flushing: Promise<{ sent: number; failed: number; stopped: boolean }> | null = null;
 
   const ordered = async () => (await store.all()).sort((a, b) => a.createdAt - b.createdAt);
 
@@ -62,6 +88,7 @@ export function createQueue(store: QueueStore, send: Send, now: () => number = D
     await purge();
     let sent = 0;
     let failed = 0;
+    let stopped = false;
     for (const item of await ordered()) {
       if (item.state !== 'waiting') continue;
       try {
@@ -78,10 +105,11 @@ export function createQueue(store: QueueStore, send: Send, now: () => number = D
         // Offline, a server or rate problem, or anything unexpected (for example signed out): the item keeps
         // waiting, and nothing after it is sent before it.
         await store.put({ ...item, attempts: item.attempts + 1 });
+        stopped = true; // no connection (or server trouble): the rest waits too
         break;
       }
     }
-    return { sent, failed };
+    return { sent, failed, stopped };
   };
 
   return {

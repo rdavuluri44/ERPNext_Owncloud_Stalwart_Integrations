@@ -16,7 +16,8 @@ Status: owner decisions of 22 and 23 November 2026; nothing in sections 6 to 12 
 3. **Web parity by role:** everything a person can do on the web (all their DocTypes, onboarding forms, reports
    they may open) is possible in the app. Hand-designed screens for the top daily tasks; every other DocType
    through the generic form engine built from ERPNext's own metadata.
-4. **Incident report:** a pop-up to pick the kind, photos, the person chooses one or more Raven threads (channels
+4. **Incident report** (owner, 27 November 2026: Raven is removed, P108; where incident reports go instead is being
+   decided, so the Raven parts of this guide no longer apply)**:** a pop-up to pick the kind, photos, the person chooses one or more Raven threads (channels
    they belong to), the post carries a colour code and banner so others notice at once. The lock-screen text of
    the resulting notification may name the incident kind and the site, never a person. No separate safety
    register for now.
@@ -92,21 +93,47 @@ Installed on the owner's PC (read before installing): plugins `feature-dev`, `pr
 (`react-native-best-practices`, `react-native-testing`, `github-actions`). Built in: `/code-review`,
 `/security-review`, `/simplify`.
 
+**The loop for every screen** (the developers' working loop, adopted by the owner on 26 November 2026; the steps
+marked † are project rules added to it). A screen is not done until it has been through every step.
+
+0. **Work item †:** a P item with the objective, scope and acceptance before the work starts; the pull request names
+   it.
 1. **Explore** (`feature-dev` code-explorer): read the existing app, `portal/mobile.py`, the APIs and DocTypes the
    item touches. Report file:line facts, not assumptions.
-2. **Design** (`feature-dev` code-architect, with `expo-overview` loaded first): one plan with the files, the
-   screens, and for every custom feature its **data path** (which API receives it, which DocType stores it, where
-   its photos go, how a retry avoids duplicates; section 7). Check current Expo docs for the SDK in
-   `package.json`, never memory.
-3. **Owner go** on that plan (plain words, numbered questions).
-4. **Build** in small commits; tests in the same commit as the code they cover.
-5. **Check:** `pr-review-toolkit` (code-reviewer, silent-failure-hunter, type-design-analyzer, comment-analyzer),
-   `/code-review`, `/security-review`; fix what they find or say why not.
-6. **Test** (`pr-test-analyzer`, `react-native-testing`): unit and component tests; Maestro flows for the main
-   paths once they exist; `pnpm typecheck`, `pnpm lint`, `pnpm test`, and the repository's
-   `tools/check_repository.py` and `tools/run_unit_tests.py`.
-7. **Pull request** with the template filled in (what and why, promotion plan, tests, what the test site must
-   check, real devices). The maintainers test on the test site and real phones; the owner merges.
+2. **Taps and states:** a list of every tap and where it leads, and every state of every screen: loading, empty,
+   offline, refused (the server said no), error. Add the **data path** of every custom feature (which API receives
+   it, which DocType stores it, where its photos go, how a retry avoids duplicates; section 7). Check current Expo
+   docs for the SDK in `package.json`, never memory.
+3. **Mock-up and plan approved:** the owner (or the person the owner names) approves the mock-up and the plan
+   (`feature-dev` code-architect, with `expo-overview` loaded first) before any code. Questions in plain words,
+   numbered.
+4. **Tests first:** tests for the rules (what is allowed, refused, counted, stored) first, then the code; small
+   commits, tests in the same commit as the code they cover.
+5. **Screen tests in every state** from step 2, at phone size (360 dp wide) and tablet size (600 dp and wider);
+   Maestro flows for the main paths.
+6. **Automatic checks:** build, `pnpm typecheck`, `pnpm lint`, `pnpm test`, the repository's
+   `tools/check_repository.py` and `tools/run_unit_tests.py`, a code scanner, the security advisories of the app's
+   dependencies, and a secret scan. Until these run in CI for `mobile/` (P100), run them locally and paste the
+   results into the pull request. **†** A new or upgraded package: "advisories checked: none open / list" in the
+   pull request (GitHub Security Advisories and OSV, the exact version), and an entry in `docs/open-source.json`.
+7. **Own review against the checklist:** the review agents (`pr-review-toolkit` code-reviewer, silent-failure-hunter,
+   type-design-analyzer, comment-analyzer; `/code-review`; `/security-review`), then the checklist: every tap and
+   state of step 2 handled; the hard rules (section 2); the security baseline (section 9); no names or amounts in
+   notifications; texts readable at the largest font size. Fix what they find or say why not.
+8. **Second review in a fresh session** that did not write the code, as on PR #98. **By a different AI model** for
+   anything touching sign-in, security, payments, or personal or biometric data (as Codex for P82); a fresh
+   session of the same model is enough for other screens (owner, 26 November 2026).
+9. **Real phone:** the developer taps through every tap and state of step 2 on a real phone, including offline and
+   refused, and notes the phone model and Android version; a tablet when the screen has a tablet layout.
+10. **Small pull request** with the template filled in: the P item; what was tested and what was not; the app build
+    tested (commit and build); **†** the promotion plan when the server side changes; **†** the SOP updated in the
+    same pull request when the screen changes how people use the system (P96); **†** the register of our changes
+    to upstream apps when it changes or relies on their behaviour.
+11. **Maintainers test on the test site:** the server side deployed to the test site, the app build from the branch
+    signed in against it; the tested commit and build recorded in the pull request.
+12. **The owner merges.**
+13. **A fault found late** goes back to step 2: a new test that fails on the fault first, then the fix, so the same
+    fault cannot come back.
 
 The `code-simplifier` agent may edit code by itself: use it only on code written in the current, approved item,
 and this repository's conventions win over its defaults.
@@ -265,8 +292,9 @@ root/jailbreak detection: decide at the security review before the first release
   budget Android (2-3 GB memory; check battery-saver behaviour of Xiaomi, Oppo, Vivo), an iPad, an Android tablet.
 - First screen in under 2 seconds on the budget Android; smooth lists (virtualised); works at 360 dp width and at
   the largest system font size.
-- Gates per pull request: `pnpm typecheck`, `pnpm lint`, `pnpm test`, repository checks, the review agents, and
-  tests for every behaviour the change adds.
+- Gates per pull request: the loop in section 3 (steps 5 to 9): screen tests in every state at phone and tablet
+  size, the automatic checks (in CI once P100 is done), the reviews, the real-phone tap-through, and tests for
+  every behaviour the change adds.
 
 ## 11. Phases (each: owner go → branch → PR → test site → merge)
 

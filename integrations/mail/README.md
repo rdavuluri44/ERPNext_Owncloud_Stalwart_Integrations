@@ -12,6 +12,7 @@ Single sign-on webmail with Drive attachments: a source overlay for Bulwark Webm
 - `erpnext_drive_integrations/cloud_integrations/**`
 - `deployment/stacks/mail.compose.json`
 - `tools/prepare_mail.py`
+- `tools/refresh_webmail_overlay_base.py`
 
 ## Requirements
 
@@ -21,7 +22,7 @@ Stalwart Mail Server and Bulwark Webmail at the commit in `integrations/mail/ups
 
 ## Reuse
 
-Run `tools/prepare_mail.py` to apply the overlay to the pinned Bulwark commit and build it; the modified source is shipped with the build as the AGPL requires. The ERP mailbox administration DocType can be reused without the webmail overlay.
+Run `tools/prepare_mail.py` to apply the overlay to the pinned Bulwark commit and build it; the modified source is shipped with the build as the AGPL requires. The overlay replaces whole upstream files, so `overlay_base` in `upstream.json` records the upstream checksum of each file it replaces at that commit: the build stops when the clone differs, and the tests fail when the commit changes without it (P91). To move to a new Bulwark commit, run `tools/refresh_webmail_overlay_base.py --checkout <clone at the new commit>`: it lists the files to merge (old upstream, new upstream, ours); after merging, run it again with `--write` (register entries WEBMAIL-1 to -3 in `docs/upstream-customizations.md`). The ERP mailbox administration DocType can be reused without the webmail overlay.
 
 ## Configuration
 

@@ -1,0 +1,248 @@
+{
+  "account": "rdavuluri44",
+  "note": "What we posted on other projects, with every check and follow-up (P35; working agreements, 26 November 2026). Edit here, then run tools/upstream_posts.py render. Private reports go in the private companion, never here.",
+  "posts": [
+    {
+      "id": "collabora-autofilter-search",
+      "url": "https://github.com/CollaboraOnline/online/issues/16276#issuecomment-6947112394",
+      "kind": "comment",
+      "posted": "2026-11-17",
+      "summary": "Calc AutoFilter search: findings, workaround, search box only above 25 entries",
+      "p_items": [
+        "P35",
+        "P42"
+      ],
+      "status": "stopped",
+      "watch": false,
+      "last_seen": "2026-11-24T18:25:17Z",
+      "thread_state": "open (reopened)",
+      "checks": [
+        {
+          "date": "2026-11-26",
+          "result": "maintainer replied on 24 November: confirmed our analysis (the search only filters in the browser; the engine's search is off), the 25-entry threshold is intended, passed to the Calc popup developers, no date."
+        },
+        {
+          "date": "2026-11-26",
+          "result": "stopped watching (owner's go)",
+          "follow_up": "thanked the maintainer and said we moved to another office suite: https://github.com/CollaboraOnline/online/issues/16276#issuecomment-7195109042"
+        }
+      ],
+      "stop_reason": "we no longer use Collabora (replaced by ONLYOFFICE Docs, P42); thank-you posted on 26 November 2026"
+    },
+    {
+      "id": "ocis-app-registry-refresh",
+      "url": "https://github.com/owncloud/ocis/issues/3832#issuecomment-7186892628",
+      "kind": "comment",
+      "posted": "2026-11-26",
+      "summary": "App registry registration lost after a Drive restart (our editor re-registration)",
+      "p_items": [
+        "P89",
+        "P80"
+      ],
+      "register": [
+        "editor registration (P80)"
+      ],
+      "status": "waiting",
+      "watch": true,
+      "last_seen": "2026-11-26T08:41:00Z",
+      "thread_state": "open",
+      "checks": [
+        {
+          "date": "2026-11-26",
+          "result": "nothing new"
+        }
+      ]
+    },
+    {
+      "id": "onlyoffice-sheet-view-crash",
+      "url": "https://github.com/ONLYOFFICE/DocumentServer/issues/3954",
+      "kind": "bug report",
+      "posted": "2026-11-26",
+      "summary": "Sheet view with an empty columnFilter crashes the editor; workbook opens blank",
+      "p_items": [
+        "P89",
+        "P61"
+      ],
+      "status": "waiting",
+      "watch": true,
+      "last_seen": "2026-11-26T08:41:00Z",
+      "thread_state": "open",
+      "checks": [
+        {
+          "date": "2026-11-26",
+          "result": "nothing new"
+        }
+      ]
+    },
+    {
+      "id": "coolify-empty-volumes",
+      "url": "https://github.com/coollabsio/coolify/issues/12667",
+      "kind": "bug report",
+      "posted": "2026-11-26",
+      "summary": "Compose service: empty volumes: [] and ports: [] saved as {}, which docker compose rejects",
+      "p_items": [
+        "P89"
+      ],
+      "status": "fixed",
+      "watch": true,
+      "next": "When a Coolify release carries commit 8dbaecc and we run it: remove our workaround, update its register entry, and say so on the issue (working agreements).",
+      "last_seen": "2026-11-26T12:15:00Z",
+      "thread_state": "closed (completed)",
+      "checks": [
+        {
+          "date": "2026-11-26",
+          "result": "closed as completed by the maintainer with commit 8dbaecc (12:15 UTC); a contributor had offered a fix from a fork at 09:38."
+        }
+      ],
+      "register": [
+        "COOLIFY-1"
+      ]
+    },
+    {
+      "id": "frappe-cmd-any-path",
+      "url": "https://github.com/frappe/frappe/pull/48437#issuecomment-7186893154",
+      "kind": "comment",
+      "posted": "2026-11-26",
+      "summary": "Legacy ?cmd= calls on any path: hardening note on the open removal",
+      "p_items": [
+        "P89"
+      ],
+      "status": "waiting",
+      "watch": true,
+      "last_seen": "2026-11-26T08:41:00Z",
+      "thread_state": "open",
+      "checks": [
+        {
+          "date": "2026-11-26",
+          "result": "nothing new"
+        }
+      ]
+    },
+    {
+      "id": "frappe-whatsapp-signature",
+      "url": "https://github.com/shridarpatil/frappe_whatsapp/pull/257#issuecomment-7186893657",
+      "kind": "comment",
+      "posted": "2026-11-26",
+      "summary": "Webhook signature check: support for the open fix",
+      "p_items": [
+        "P89",
+        "P04"
+      ],
+      "status": "waiting",
+      "watch": true,
+      "last_seen": "2026-11-26T08:41:00Z",
+      "thread_state": "open",
+      "checks": [
+        {
+          "date": "2026-11-26",
+          "result": "nothing new"
+        }
+      ]
+    },
+    {
+      "id": "authentik-aaguid-management",
+      "url": "https://github.com/goauthentik/authentik/issues/16049#issuecomment-7186894135",
+      "kind": "comment",
+      "posted": "2026-11-26",
+      "summary": "WebAuthn AAGUID management: our use case (only our app's keys)",
+      "p_items": [
+        "P89",
+        "P82"
+      ],
+      "status": "waiting",
+      "watch": true,
+      "last_seen": "2026-11-26T08:41:00Z",
+      "thread_state": "open",
+      "checks": [
+        {
+          "date": "2026-11-26",
+          "result": "nothing new"
+        }
+      ]
+    },
+    {
+      "id": "authentik-session-refresh",
+      "url": "https://github.com/goauthentik/authentik/issues/14304#issuecomment-7186894885",
+      "kind": "comment",
+      "posted": "2026-11-26",
+      "summary": "Session refresh and idle timeout: our use case",
+      "p_items": [
+        "P89",
+        "P82"
+      ],
+      "status": "waiting",
+      "watch": true,
+      "last_seen": "2026-11-26T08:41:00Z",
+      "thread_state": "open",
+      "checks": [
+        {
+          "date": "2026-11-26",
+          "result": "nothing new"
+        }
+      ]
+    },
+    {
+      "id": "authentik-authenticator-attachment",
+      "url": "https://github.com/goauthentik/authentik/issues/28187",
+      "kind": "feature request",
+      "posted": "2026-11-26",
+      "summary": "Expose WebAuthn authenticatorAttachment and transports to policies",
+      "p_items": [
+        "P89",
+        "P82"
+      ],
+      "status": "waiting",
+      "watch": true,
+      "last_seen": "2026-11-26T08:41:00Z",
+      "thread_state": "open",
+      "checks": [
+        {
+          "date": "2026-11-26",
+          "result": "nothing new"
+        }
+      ]
+    },
+    {
+      "id": "authentik-session-limit",
+      "url": "https://github.com/goauthentik/authentik/issues/28188",
+      "kind": "feature request",
+      "posted": "2026-11-26",
+      "summary": "Per-user concurrent session limit, optionally per device kind",
+      "p_items": [
+        "P89",
+        "P82"
+      ],
+      "status": "waiting",
+      "watch": true,
+      "last_seen": "2026-11-26T08:41:00Z",
+      "thread_state": "open",
+      "checks": [
+        {
+          "date": "2026-11-26",
+          "result": "nothing new"
+        }
+      ]
+    },
+    {
+      "id": "opencv-sface-training-data",
+      "url": "https://github.com/opencv/opencv_zoo/issues/313#issuecomment-7193191907",
+      "kind": "comment",
+      "posted": "2026-11-26",
+      "summary": "SFace 2021dec: which dataset trained the published weights",
+      "p_items": [
+        "P95"
+      ],
+      "status": "waiting",
+      "watch": true,
+      "next": "The answer decides P95's residual risk before production.",
+      "last_seen": "2026-11-26T13:19:00Z",
+      "thread_state": "open",
+      "checks": [
+        {
+          "date": "2026-11-26",
+          "result": "nothing new (posted the same day)"
+        }
+      ]
+    }
+  ]
+}

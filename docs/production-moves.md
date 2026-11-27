@@ -65,27 +65,38 @@ editor.
 
 ## After a reboot or restart: checklist
 
-The server restarts every container by itself (`restart: unless-stopped`),
-Tailscale is brought up before Docker, and the **boot check** runs once Docker
-is up (`tools/host_check.py boot`; its result is in
-`/var/lib/cloud-host-check/status.json` and the journal:
-`journalctl -u cloud-boot-check`). A restart-count **watch** runs every five
-minutes (`restart-alerts.json`, journal lines starting `ALERT`). Verify by hand
-only when the check reports a problem:
+The server restarts every container by itself (`restart: unless-stopped`; the monitoring stack uses
+`restart: always` since Prometheus once stayed down after a reboot, 26 November 2026), Tailscale is brought up
+before Docker, and the **boot check** runs once Docker is up (`tools/host_check.py boot`; its result is in
+`/var/lib/cloud-host-check/status.json` and the journal: `journalctl -u cloud-boot-check`). A restart-count
+**watch** runs every five minutes (`restart-alerts.json`, journal lines starting `ALERT`) and saves the list of
+running containers (`running-containers.json`). After a reboot the boot check compares with that list: a
+container that ran before (restart policy `always` or `unless-stopped`) and is not running a minute after Docker
+started is **started once**, and anything that still stays down fails the check. When the check repaired or
+failed something it **mails the admin** through the dedicated alert sender (`host_checks.alert` in the private
+profile; without it the result is only in the status file and the journal; set `host_checks.alert.address` to
+the mail server's tailnet address when the server cannot reach its own public mail name, the certificate is still
+verified for `smtp_host`). Verify by hand only when the check
+reports a problem:
 
 1. `systemctl status cloud-boot-check` is `active (exited)`; otherwise read its
    journal: it names what stays wrong (a missing container, a host answering
    with an error, a port not listening, the editor bridge not registered).
 2. All containers running, none restarting: `docker ps --filter
-   status=restarting` is empty.
-3. ERP, sign-in, Drive, Mail, DMS and the editor host answer (the check does
+   status=restarting` is empty. `status.json` lists what the check started after the reboot
+   (`started_after_reboot`) and what it could not start (`could_not_start`); find out why each did not come back
+   by itself and note it in the release record.
+3. **The monitoring stack is back:** on the central host Prometheus, Grafana, Loki and Alloy, and the two exporters
+   (node_exporter, cAdvisor) on every watched host; Prometheus answers on its port and has fresh samples. Without
+   it no metric alert can fire.
+4. ERP, sign-in, Drive, Mail, DMS and the editor host answer (the check does
    this over HTTP; open the portal once in a browser).
-4. **Drive opens a document** in the editor (a download offer means the bridge
+5. **Drive opens a document** in the editor (a download offer means the bridge
    is not registered).
-5. Tailnet-bound services listen (private DNS, mail on the tailnet and relay
+6. Tailnet-bound services listen (private DNS, mail on the tailnet and relay
    addresses): the check tests the ports you list in the private profile.
-6. The next nightly backup finds its containers (names in the backup profile).
-7. Note the cause of the restart in the release record.
+7. The next nightly backup finds its containers (names in the backup profile).
+8. Note the cause of the restart in the release record.
 
 ## Planned reboot procedure
 

@@ -5,11 +5,23 @@ http:
       - http
       rule: Host(`mx.example.com`) && PathPrefix(`/.well-known/acme-challenge/`)
       priority: 2000
-      service: office-mail-jmap@docker
+      service: mail-stalwart@file
     office-web-acme-validation:
       entryPoints:
       - http
       rule: (Host(`office.example.com`) || Host(`docs.example.com`) || Host(`dms.example.com`)
         || Host(`mail.example.com`)) && PathPrefix(`/.well-known/acme-challenge/`)
       priority: 1000
+      service: acme-http@internal
+    # P11: every public name gets its own Let's Encrypt certificate through the
+    # HTTP challenge; no copied wildcard certificate. The priority is above every
+    # port-80 route for these names (a host-wide redirect such as Respond's would
+    # otherwise send the challenge to HTTPS, where it fails).
+    own-certificate-acme-validation:
+      entryPoints:
+      - http
+      rule: (Host(`example.com`) || Host(`www.example.com`) || Host(`erp.example.com`)
+        || Host(`sso.example.com`) || Host(`drive.example.com`) || Host(`respond.example.com`))
+        && PathPrefix(`/.well-known/acme-challenge/`)
+      priority: 99000
       service: acme-http@internal

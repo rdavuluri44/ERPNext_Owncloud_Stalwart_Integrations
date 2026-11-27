@@ -18,5 +18,10 @@
     "name": "Office Files group membership",
     "scope_name": "profile",
     "expression": "return {'office_groups': ['office'] if ak_is_group_member(request.user, name='Workspace Users') else []}"
+  },
+  {
+    "name": "Chat name",
+    "scope_name": "chat",
+    "expression": "name = request.user.attributes.get(\"chat_name\")\nif not name:\n    raise ValueError(\"No chat name assigned to this identity\")\nreturn {\"chat_name\": name}"
   }
 ]

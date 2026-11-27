@@ -2,7 +2,7 @@ services:
   prometheus:
     profiles: [central]
     image: prom/prometheus:v3.16.0@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06
-    restart: unless-stopped
+    restart: always
     mem_limit: 512m
     command:
       - --config.file=/etc/prometheus/prometheus.yml
@@ -16,7 +16,7 @@ services:
   loki:
     profiles: [central]
     image: grafana/loki:3.7.10@sha256:b43c257ccfc925d4a50b8717cac61a3b51df8c48d01847936057e5c4075a24a7
-    restart: unless-stopped
+    restart: always
     mem_limit: 512m
     command: [-config.file=/etc/loki/config.yml]
     volumes:
@@ -25,7 +25,7 @@ services:
   alloy:
     profiles: [central]
     image: grafana/alloy:v1.22.0@sha256:9acc2529bc1edb7f5b2bd801dd8334ebc80c158e3a9e5526ecd7c9a273d43189
-    restart: unless-stopped
+    restart: always
     mem_limit: 256m
     user: "0:0"
     command: [run, --storage.path=/var/lib/alloy, /etc/alloy/config.alloy]
@@ -38,7 +38,7 @@ services:
   grafana:
     profiles: [central]
     image: grafana/grafana:13.3.1@sha256:0615ec4fbd4072004b7d86b46ded63013a74b7d6eb1119273dd89e8fa25c13cf
-    restart: unless-stopped
+    restart: always
     mem_limit: 512m
     ports:
       - "127.0.0.1:13000:3000"
@@ -58,7 +58,7 @@ services:
       - grafana-data:/var/lib/grafana
   node-exporter:
     image: prom/node-exporter:v1.13.1@sha256:7296504d4ada44b7d7ab4431e27e9f9900d8488f8d55842f4b12ae2704e16dfe
-    restart: unless-stopped
+    restart: always
     mem_limit: 96m
     pid: host
     command: [--path.rootfs=/host]
@@ -68,7 +68,7 @@ services:
       - /:/host:ro,rslave
   cadvisor:
     image: ghcr.io/google/cadvisor:v0.61.1@sha256:4929b70e82079d001d0028b85d6a4dd25ad4666b719455c9542b983489963916
-    restart: unless-stopped
+    restart: always
     mem_limit: 256m
     cgroup: host
     ports:

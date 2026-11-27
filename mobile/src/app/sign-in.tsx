@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { APP_NAME, CLIENT_ID, useAuth } from '@/auth/session';
 import { Button, Status, T } from '@/components/ui';
+import { t as text } from '@/i18n';
 import { useTheme } from '@/theme';
 
 export default function SignIn() {
@@ -18,7 +19,7 @@ export default function SignIn() {
     try {
       await signIn();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Sign-in failed');
+      setError(e instanceof Error ? e.message : text('signIn.failed'));
     } finally {
       setBusy(false);
     }
@@ -27,14 +28,14 @@ export default function SignIn() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.c.bg }}>
       <View style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 20, maxWidth: 520, width: '100%', alignSelf: 'center' }}>
-        <T variant="title" style={{ fontSize: t.font(34) }}>
+        <T variant="title" style={{ fontSize: t.font(28) }}>
           {APP_NAME}
         </T>
-        <Button label={busy ? 'Opening sign-in...' : 'Sign in with passkey'} icon="fingerprint" onPress={busy ? () => {} : onPress} />
+        <Button label={text(busy ? 'signIn.opening' : 'signIn.button')} icon="fingerprint" onPress={onPress} disabled={busy} />
         <T variant="small" color="muted">
-          Uses your company passkey (Face ID / fingerprint), the same sign-in as ERPNext on the web.
+          {text('signIn.hint')}
         </T>
-        {!CLIENT_ID && <Status kind="warn" label="Sign-in is not set up in this build yet" />}
+        {!CLIENT_ID && <Status kind="warn" label={text('signIn.notSetUp')} />}
         {error && <Status kind="danger" label={error} />}
       </View>
     </SafeAreaView>

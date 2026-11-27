@@ -45,6 +45,30 @@
         {
           "useSQLCipher": true
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "The camera takes the attendance photo (your selfie, or the worker you mark). Photos go only to ERPNext.",
+          "recordAudioAndroid": false,
+          "microphonePermission": false,
+          "barcodeScannerEnabled": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Your location is checked against the site fence when attendance is recorded, only while the app is open.",
+          "isAndroidBackgroundLocationEnabled": false,
+          "isIosBackgroundLocationEnabled": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose a site photo from your gallery to add it to the project folder. It is marked \"From gallery\".",
+          "microphonePermission": false
+        }
       ]
     ],
     "experiments": {

@@ -71,6 +71,13 @@ addresses outside Git. Set the password file to root:root and mode 0440 for the 
 image, which runs with GID 0. Verify the configured administrator can
 sign in before enabling the private proxy. Never include credentials in metric labels or logs.
 
+Every service uses `restart: always` (P57, 26 November 2026): after a production reboot Prometheus once stayed
+down for 26 minutes although it had `unless-stopped`, and with it every metric alert. `always` starts a container
+whenever Docker starts, whatever happened before, so on a host that runs only the exporters, **remove** the four
+central containers instead of leaving them stopped: `docker compose rm -s -f prometheus loki alloy grafana`
+(their named volumes stay). The host's boot check also starts, once, any container that ran before a reboot and
+did not come back (`tools/host_check.py`).
+
 The exporters can run alone on a watched host. Where a remote Prometheus
 requires access, set `METRICS_BIND` to its private network address. cAdvisor
 uses read-only host mounts and local Docker and containerd sockets to read

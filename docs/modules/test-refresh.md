@@ -55,7 +55,11 @@ it (the exporter runs it after production has resumed, on copies only):
 
 Run `tools/rehearse_cripple.py --config <test worker profile> --keep <login>`
 on the test host to prove the scrambling against copies of the test site's own
-data; it prints counts of surviving identifiers per table, never values.
+data; it prints counts of surviving identifiers per table, never values. Its
+e-mail audit counts addresses at the public mail providers, at the profile's
+`domain` and `mail_domain`, and at the domains listed in the worker profile's
+optional `audit_mail_domains` (for example a client's own domain, which never
+appears in this repository).
 
 ## Contents
 

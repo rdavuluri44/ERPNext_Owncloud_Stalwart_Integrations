@@ -1,1 +1,23 @@
-{"repository": "https://github.com/bulwarkmail/webmail", "commit": "933bc18f517135e38245821c5cc1bc7117ce2d64", "version": "1.21.2"}
+{
+  "_comment": "P91: overlay_base records, for the pinned commit, the upstream checksum of every file the overlay replaces and the files it only adds. tools/prepare_mail.py stops when the clone differs; tests fail when the commit changes without it. Refresh with tools/refresh_webmail_overlay_base.py, then merge our changes into each changed file (register entry WEBMAIL-1).",
+  "repository": "https://github.com/bulwarkmail/webmail",
+  "commit": "933bc18f517135e38245821c5cc1bc7117ce2d64",
+  "version": "1.21.2",
+  "overlay_base": {
+    "commit": "933bc18f517135e38245821c5cc1bc7117ce2d64",
+    "replaced": {
+      "Dockerfile": "a3b9b823d623d36e89d7da0c58f6d87d282919340d708e731fcf890a5184b7ef",
+      "app/(main)/[locale]/auth/callback/page.tsx": "d93e7baf367c711e8f361769fe52d5e43a8c8142798845c9fc6c707606ea9a06",
+      "app/(main)/[locale]/login/page.tsx": "596bec2da5f509e6bf9b7fb22e8d93f835932ca600707d1df5f6a8bd56a6bbf3",
+      "app/(main)/layout.tsx": "0a05ad406c45a852acc226d70878cc40dd49862466bb325dfb5aa67c75f0af26",
+      "components/email/email-composer.tsx": "ab2feaaea11cd57d29a56ca4c4a791f8affad1a350653535c553d812cf4c1100",
+      "stores/auth-store.ts": "6bf2d251f2d3cfbd83dcc59b8be730e2c21c2811acdbeab0ce5f3ca06d5b14c2"
+    },
+    "added": [
+      "components/cloud-session-guard.tsx",
+      "components/cloud-test-marker.tsx",
+      "components/email/owncloud-attach-button.tsx",
+      "lib/cloud-session.ts"
+    ]
+  }
+}

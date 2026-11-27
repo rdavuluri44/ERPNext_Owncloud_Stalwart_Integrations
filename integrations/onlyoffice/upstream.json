@@ -1,0 +1,8 @@
+{
+  "_comment": "P91: the pinned ONLYOFFICE image and the checksum of its own start page, which editor-wopi.original.ejs must equal. Refresh both with tools/refresh_editor_original.py on every image change, then re-apply the cloud-integrations changes to editor-wopi.ejs (register entry OFFICE-1).",
+  "image": "onlyoffice/documentserver@sha256:ca17889f10b11141cc6441836aebdd2835cf3e1b49681b2fd6e155c94b7850b3",
+  "version": "10.0.0 build 169",
+  "start_page": "/var/www/onlyoffice/documentserver/web-apps/apps/api/wopi/editor-wopi.ejs",
+  "original_sha256": "6edc0bc1bf26456dc80109d40d23bf6945d2e1f9a35f581837cf43302a7c5eec",
+  "checked": "26 November 2026: extracted from the pinned image on the test host (package onlyoffice-documentserver 10.0.0-169)"
+}

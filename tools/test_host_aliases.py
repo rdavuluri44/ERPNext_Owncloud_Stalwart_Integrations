@@ -20,6 +20,7 @@ def render(text,profile):
     if (start in text)!=(end in text):raise ValueError('Incomplete managed host block')
     clean=re.sub(re.escape(start)+r'\n.*?'+re.escape(end)+r'\n?', '',text,flags=re.S)
     hosts=[profile['hosts'][name] for name in ['erp','drive','office','mail','dms','respond']]
+    hosts+=[profile['hosts'][name] for name in ['chat','chat-auth'] if name in profile['hosts']]
     if any(not re.fullmatch('[a-z0-9.-]+',host) for host in hosts):raise ValueError('Invalid test hostname')
     for line in clean.splitlines():
         values=line.split('#',1)[0].split()

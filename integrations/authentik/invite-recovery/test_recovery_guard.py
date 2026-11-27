@@ -25,7 +25,7 @@ class RecoveryDeletionTests(unittest.TestCase):
         for patch in [dict(email_verified=False), dict(replacement_verified=False),
                       dict(replacement_key=""), dict(replacement_key="old-a"),
                       dict(completed=True), dict(flow="ordinary-add-passkey"),
-                      dict(replacement_aaguid="ea9b8d66-4d01-1d21-3ce4-b6b48cb575d4"),
+                      dict(replacement_aaguid="bada5566-a7aa-401f-bd96-45619a55120d"),
                       dict(expires=self.now), dict(user_id=8), dict(email="changed@example.invalid")]:
             with self.subTest(patch=patch), self.assertRaises(ValueError):
                 old_keys_to_delete(replace(self.proof, **patch), **self.args)
@@ -35,12 +35,12 @@ class RecoveryDeletionTests(unittest.TestCase):
             with self.subTest(patch=patch), self.assertRaises(ValueError):
                 old_keys_to_delete(self.proof, **{**self.args, **patch})
 
-    def test_apple_and_bitwarden_allowed(self):
+    def test_approved_providers_allowed(self):
         for aaguid in ALLOWED_PROVIDERS:
             self.assertTrue(allowed_provider(aaguid.upper()))
 
-    def test_google_other_unknown_and_missing_providers_denied(self):
-        for aaguid in ["ea9b8d66-4d01-1d21-3ce4-b6b48cb575d4",  # Google
+    def test_other_unknown_and_missing_providers_denied(self):
+        for aaguid in ["08987058-cadc-4b81-b6e1-30de50dcbe96",  # Windows Hello
                        "bada5566-a7aa-401f-bd96-45619a55120d",  # 1Password
                        "00000000-0000-0000-0000-000000000000", "", None, "Apple"]:
             with self.subTest(aaguid=aaguid):

@@ -74,9 +74,25 @@ def configure(profile_path, output_path):
                 provider.property_mappings.add(approval)
             app,_=Application.objects.update_or_create(slug=slug,defaults={
                 'name':settings['name'],'provider':provider,'meta_launch_url':settings['url'],
-                'meta_hide':True,'open_in_new_tab':False,'group':'','policy_engine_mode':'all'})
+                'meta_hide':True,'open_in_new_tab':False,'group':''})
             PolicyBinding.objects.update_or_create(target=app,order=0,defaults={
                 'group':group,'policy':None,'user':None,'enabled':True,'negate':False,'failure_result':False})
+            # P69: an application may also admit extra groups (the mail archive reader, `also_groups`).
+            # With several group bindings any one group is enough ("any"); with one the mode stays "all".
+            # A rerun keeps a group binding added earlier, so it never locks everyone out.
+            for name in settings.get('also_groups',[]):
+                extra=Group.objects.get(name=name)
+                if not PolicyBinding.objects.filter(target=app,group=extra).exists():
+                    last=PolicyBinding.objects.filter(target=app).order_by('-order').first()
+                    PolicyBinding.objects.create(target=app,group=extra,order=last.order+10,
+                        enabled=True,negate=False,failure_result=False)
+            bindings=PolicyBinding.objects.filter(target=app)
+            plain=bindings.filter(group__isnull=False,policy__isnull=True,user__isnull=True,negate=False,enabled=True)
+            several=plain.count()>1
+            if several and plain.count()!=bindings.count():
+                raise RuntimeError('Several groups on '+slug+' need plain group bindings only')
+            app.policy_engine_mode='any' if several else 'all'
+            app.save(update_fields=['policy_engine_mode'])
             if key=='erp-gateway':
                 embedded=Outpost.objects.get(managed='goauthentik.io/outposts/embedded')
                 conflicts=ProxyProvider.objects.filter(pk__in=embedded.providers.values('pk'),

@@ -36,7 +36,7 @@ with transaction.atomic():
     flow = Flow.objects.get(slug=module["RECOVERY_SLUG"])
     apple = "fbfc3007-154e-4ecc-8c0b-6e020557d7bd"
     bitwarden = "d548826e-79b4-db40-a3d8-11116f7e8349"
-    google = "ea9b8d66-4d01-1d21-3ce4-b6b48cb575d4"
+    onepassword = "bada5566-a7aa-401f-bd96-45619a55120d"  # not an approved provider
     def device(aaguid, last_used=None):
         return WebAuthnDevice.objects.create(user=user, name="Disposable key", confirmed=True,
             credential_id=uuid4().hex, public_key="dGVzdA", rp_id="sso.example.com", aaguid=aaguid,
@@ -53,9 +53,9 @@ with transaction.atomic():
     check(not commit(ctx), "missing replacement assertion preserves old key")
     ctx["auth_method_args"] = {"mfa_devices": [old]}
     check(not commit(ctx), "old key cannot masquerade as replacement")
-    disallowed = device(google, now())
+    disallowed = device(onepassword, now())
     ctx["auth_method_args"] = {"mfa_devices": [disallowed]}
-    check(not commit(ctx), "Google replacement denied")
+    check(not commit(ctx), "unapproved provider replacement denied")
     replacement = device(apple, now())
     ctx["auth_method_args"] = {"mfa_devices": [replacement]}
     user.ak_groups.clear()

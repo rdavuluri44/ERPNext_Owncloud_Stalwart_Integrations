@@ -35,11 +35,13 @@ phases).
 
 - `mobile/**`: the Expo project (`src/` screens and logic, `scripts/` checks, `assets/` placeholder icons),
   `BUILD-GUIDE.md` (the build guide for agents and developers).
+- `mobile/trials/passkey-android/`: a throw-away Kotlin test app for P82 (passkeys held by the app, fingerprint
+  lock); never shipped, see its README.
 - `tests/test_mobile_app.py`: tenant-neutral source and server API checks.
 
 ## Requirements
 
-Modules: `portal-sso` (native login binding and the Bearer gateway route `cloud-raven-native.yaml`),
+Modules: `portal-sso` (native login binding and the Bearer gateway route `cloud-native-clients.yaml`),
 `onboarding` (the `bootstrap` API).
 
 Node 22 or later and pnpm 10. Expo Go for quick tests (iPhone); a development build for the encrypted offline
@@ -72,14 +74,14 @@ SQLCipher database, hit Windows' 260-character path limit, which the Android too
 
 1. In ERPNext, create an **OAuth Client** for the app (app name `ERP Mobile`): grant type Authorization Code,
    response type Code, token endpoint auth method None, redirect URI `<APP_SCHEME>://oauth/callback`. Add its
-   ID to the site setting `cloud_native_mobile_clients` (with `cloud_raven_mobile_enabled`) so
+   ID to the site setting `cloud_native_mobile_clients` (with `cloud_native_mobile_enabled`) so
    `portal/mobile.py` accepts it.
 2. While the app is under test (P38), keep it off production and list it in the private test profile's
    `test_oauth_clients` with `"native": true`, a fixed `client_id`, `"skip_authorization": true` (no
    "allow this app" screen for your own app) and the Expo Go redirect addresses
    (see `deployment/test-runtime.example.json`). Every test bootstrap then creates the client if it is
    missing, restores its redirect addresses and makes it the only native client the test site accepts. The
-   test ingress (`tools/prepare_ingress.py`) carries production's native routes (`cloud-raven-native.yaml`).
+   test ingress (`tools/prepare_ingress.py`) carries production's native routes (`cloud-native-clients.yaml`).
 3. Copy `mobile/.env.example` to `mobile/.env` and fill in your values, then:
 
 ```bash

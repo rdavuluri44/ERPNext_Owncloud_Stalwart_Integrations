@@ -31,7 +31,7 @@ describe('offline queue', () => {
     await add('a');
     await add('b');
     await add('c');
-    await expect(queue.flush()).resolves.toEqual({ sent: 3, failed: 0 });
+    await expect(queue.flush()).resolves.toEqual({ sent: 3, failed: 0, stopped: false });
     expect(sent).toEqual(['a', 'b', 'c']);
     expect(await queue.waiting()).toEqual([]);
   });
@@ -57,7 +57,7 @@ describe('offline queue', () => {
     const { queue, add } = setup((i) => (i.id === 'a' ? new ServerError('You are outside the site fence.', 417) : {}));
     await add('a');
     await add('b');
-    await expect(queue.flush()).resolves.toEqual({ sent: 1, failed: 1 });
+    await expect(queue.flush()).resolves.toEqual({ sent: 1, failed: 1, stopped: false });
     expect((await queue.failed()).map((i) => [i.id, i.error])).toEqual([['a', 'You are outside the site fence.']]);
     await queue.dismiss('a');
     expect(await queue.failed()).toEqual([]);
@@ -67,7 +67,7 @@ describe('offline queue', () => {
     for (const problem of [new ServerError('busy', 503), new Error('signed out')]) {
       const { queue, add } = setup(() => problem);
       await add('a');
-      await expect(queue.flush()).resolves.toEqual({ sent: 0, failed: 0 });
+      await expect(queue.flush()).resolves.toEqual({ sent: 0, failed: 0, stopped: true });
       expect((await queue.waiting()).map((i) => i.state)).toEqual(['waiting']);
     }
   });

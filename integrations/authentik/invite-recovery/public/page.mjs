@@ -1,10 +1,18 @@
 import { InvitationClient, InvitationError } from "./invitations.mjs";
 
-import { mailAvailable, test } from "./invite-mode.mjs";
+import { attemptsAvailable, mailAvailable, test } from "./invite-mode.mjs";
 
-const client = new InvitationClient({ test });
+const client = new InvitationClient({ test, attemptsAvailable });
 let delivery;
 const $ = (id) => document.getElementById(id);
+$("attempts-field").hidden = !attemptsAvailable;
+// "Back" returns one step to the page the administrator came from on this site;
+// opened directly, it falls back to the Authentik administration (its href).
+$("back").addEventListener("click", (event) => {
+  let sameSite = false;
+  try { sameSite = Boolean(document.referrer) && new URL(document.referrer).origin === location.origin; } catch { sameSite = false; }
+  if (sameSite && history.length > 1) { event.preventDefault(); history.back(); }
+});
 let options = new Map();
 let pending = false;
 
@@ -59,7 +67,9 @@ async function load() {
       $("own-passkey").hidden = false;
       $("intro").textContent = "Send a first-time passkey invitation for a synthetic test account.";
       $("eligibility").textContent = "Only synthetic accounts awaiting their first passkey appear here.";
-      $("footnote").textContent = "Test invitations are single-use. Register a separate passkey on the test host.";
+      $("footnote").textContent = attemptsAvailable
+        ? "Test invitations can be opened the chosen number of times and stop working once the passkey is set up. Register a separate passkey on the test host."
+        : "Test invitations are single-use. Register a separate passkey on the test host.";
     }
     for (const user of users) {
       const label = `${user.name || user.username} — ${user.username} — ${user.email}`;
@@ -94,18 +104,19 @@ $("invite-form").addEventListener("submit", async (event) => {
     return;
   }
   pending = true;
-  for (const id of ["send", "reload", "user", "expiry"]) $(id).disabled = true;
+  for (const id of ["send", "reload", "user", "expiry", "attempts"]) $(id).disabled = true;
   $("send").textContent = "Sending…";
   status("Checking eligibility and sending the invitation…");
   try {
-    const result = await client.send(user.pk, Number($("expiry").value));
-    status(`${result.kind === "recovery" ? "Recovery" : "Enrollment"} invitation queued for ${result.email}. It expires ${new Date(result.expires).toLocaleString()}. Check Authentik System Tasks if the email does not arrive.`);
+    const result = await client.send(user.pk, Number($("expiry").value),
+      attemptsAvailable ? Number($("attempts").value) : 1);
+    status(`${result.kind === "recovery" ? "Recovery" : "Enrollment"} invitation queued for ${result.email}. It expires ${new Date(result.expires).toLocaleString()} and can be opened ${result.attempts} time${result.attempts === 1 ? "" : "s"}. Check Authentik System Tasks if the email does not arrive.`);
     $("invite-form").hidden = true;
   } catch (error) {
     status(error instanceof InvitationError ? error.message : "The invitation could not be completed. Check Authentik Invitations before retrying.", true);
   } finally {
     pending = false;
-    for (const id of ["send", "reload", "user", "expiry"]) $(id).disabled = false;
+    for (const id of ["send", "reload", "user", "expiry", "attempts"]) $(id).disabled = false;
     $("send").textContent = "Send invitation";
   }
 });

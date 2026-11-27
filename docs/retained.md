@@ -6,7 +6,7 @@ Updated **15 November 2026 (Asia/Kolkata)**. Scope: the final retained changes f
 
 ## Deployment and addresses
 
-Production ERPNext and authentik now run with the workspace services on the new Webyne VPS, **203.0.113.10**, managed by its own Coolify instance. The old controller remains independent and has no active application projects or test deployment. Its management services, retained data volumes and rollback archives remain.
+Production ERPNext and authentik now run with the workspace services on the new VPS at the hosting provider, **203.0.113.10**, managed by its own Coolify instance. The old controller remains independent and has no active application projects or test deployment. Its management services, retained data volumes and rollback archives remain.
 
 | Address | Retained purpose |
 |---|---|

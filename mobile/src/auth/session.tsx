@@ -1,5 +1,5 @@
 // Sign-in: authentik passkey in the system browser + ERPNext OAuth with PKCE S256.
-// No client secret in the app (public client, like Raven). Tokens live only in Keychain / Keystore.
+// No client secret in the app (public client). Tokens live only in Keychain / Keystore.
 // The server binds tokens to the authentik browser session (erpnext_drive_integrations/portal/mobile.py),
 // so signing out on the web also ends the app's access.
 import Constants from 'expo-constants';
@@ -33,12 +33,15 @@ const USER = 'erp.user';
 
 export type User = { name: string; email: string; roles: string[] };
 type Status = 'loading' | 'signedOut' | 'signedIn';
+/** Why the app is signed out: the person pressed Sign out, or the server ended the sign-in (expired, revoked). */
+export type Ended = 'signOut' | 'expired' | null;
 
 /** The server refused our tokens (signed out on the web, user disabled, expired). Not a network error. */
 export class SignedOutError extends Error {}
 
 type Auth = {
   status: Status;
+  ended: Ended;
   user: User | null;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -48,8 +51,11 @@ type Auth = {
 
 const AuthContext = createContext<Auth | null>(null);
 
+// This device only: a phone backup restored elsewhere does not carry the sign-in.
+const LOCAL = { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY };
+
 async function saveTokens(t: AuthSession.TokenResponse) {
-  await SecureStore.setItemAsync(TOKENS, JSON.stringify(t.getRequestConfig()));
+  await SecureStore.setItemAsync(TOKENS, JSON.stringify(t.getRequestConfig()), LOCAL);
 }
 
 async function clearLocal() {
@@ -81,13 +87,25 @@ async function accessToken(): Promise<string> {
   return refreshing;
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+/**
+ * `onUser` runs before the app opens for a person (sign-in, or app start with a saved sign-in): it makes sure the
+ * phone's offline data is theirs (lib/offline-store `adoptOffline`). `keepUnowned` is true at app start.
+ */
+export function AuthProvider({
+  children,
+  onUser,
+}: {
+  children: ReactNode;
+  onUser?: (email: string, keepUnowned: boolean) => Promise<void>;
+}) {
   const [status, setStatus] = useState<Status>('loading');
+  const [ended, setEnded] = useState<Ended>(null);
   const [user, setUser] = useState<User | null>(null);
 
-  const endLocal = async () => {
+  const endLocal = async (why: Exclude<Ended, null>) => {
     await clearLocal();
     setUser(null);
+    setEnded(why);
     setStatus('signedOut');
   };
 
@@ -96,7 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       token = await accessToken();
     } catch (e) {
-      if (e instanceof SignedOutError) await endLocal();
+      if (e instanceof SignedOutError) await endLocal('expired');
       throw e;
     }
     const res = await fetch(ERP_URL + path, {
@@ -104,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       headers: { Accept: 'application/json', ...init?.headers, Authorization: `Bearer ${token}` },
     });
     if (res.status === 401) {
-      await endLocal();
+      await endLocal('expired');
       throw new SignedOutError('Signed out on the server');
     }
     return res;
@@ -115,8 +133,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!res.ok) throw new Error(`ERPNext profile failed (${res.status})`);
     const p = (await res.json()) as { name?: string; email?: string; roles?: string[] };
     const u: User = { name: p.name || p.email || '', email: p.email ?? '', roles: p.roles ?? [] };
-    await SecureStore.setItemAsync(USER, JSON.stringify(u));
+    await SecureStore.setItemAsync(USER, JSON.stringify(u), LOCAL);
     setUser(u);
+    return u;
   };
 
   // App start: signed in if tokens exist (works offline with the cached profile), then refresh the profile.
@@ -127,9 +146,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         SecureStore.getItemAsync(USER),
       ]);
       if (!tokens) return setStatus('signedOut');
-      if (cached) setUser(JSON.parse(cached) as User);
-      setStatus('signedIn');
-      loadProfile().catch(() => {}); // offline: keep the cached profile; SignedOutError already signed out
+      if (cached) {
+        const u = JSON.parse(cached) as User;
+        await onUser?.(u.email, true).catch(() => {});
+        setUser(u);
+        setStatus('signedIn');
+        loadProfile().catch(() => {}); // offline: keep the cached profile; SignedOutError already signed out
+        return;
+      }
+      try {
+        const u = await loadProfile();
+        await onUser?.(u.email, true);
+        setStatus('signedIn');
+      } catch {
+        await endLocal('expired');
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -157,8 +188,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       discovery,
     );
     await saveTokens(tokens);
+    try {
+      // The offline data must be this person's before any screen can send it (adoptOffline).
+      const u = await loadProfile();
+      await onUser?.(u.email, false);
+    } catch (e) {
+      await clearLocal();
+      throw e;
+    }
+    setEnded(null);
     setStatus('signedIn');
-    await loadProfile();
   };
 
   const signOut = async () => {
@@ -174,11 +213,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // ignore: local sign-out must always succeed
     }
-    await endLocal();
+    await endLocal('signOut');
   };
 
   return (
-    <AuthContext.Provider value={{ status, user, signIn, signOut, api }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ status, ended, user, signIn, signOut, api }}>{children}</AuthContext.Provider>
   );
 }
 

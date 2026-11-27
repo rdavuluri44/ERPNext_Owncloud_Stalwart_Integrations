@@ -39,7 +39,7 @@ def initialize(runtime, receipt, site):
         credentials.write_text(json.dumps({'password':secrets.token_urlsafe(48)}));credentials.chmod(0o600)
     payload={'site':site,'database_root_password':values['CI_ERP_DB_MYSQL_ROOT_PASSWORD'],
         'administrator_password':json.loads(credentials.read_text())['password'],
-        'apps':['erpnext','hrms','india_compliance','raven','insights','erpnext_drive_integrations',
+        'apps':['erpnext','hrms','india_compliance','insights','erpnext_drive_integrations',
                 'payment_integration_utils','razorpayx_integration','india_payroll']}
     compose=Path('/data/coolify/services')/uid/'docker-compose.yml'
     subprocess.run(['docker','compose','-p',uid,'-f',str(compose),'run','--rm','-T','--no-deps',

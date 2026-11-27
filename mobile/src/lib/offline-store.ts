@@ -1,4 +1,4 @@
-// Where the offline queue lives (build guide sections 5 and 8).
+// Where the offline queue and the saved answers for offline reading live (build guide sections 5 and 8).
 // Development build (Android APK, later iPhone): an SQLCipher-encrypted database; its random key lives in
 // the Keychain / Keystore, on this device only. Expo Go has no SQLCipher, so there (and in tests) the queue
 // is kept in memory only: nothing business-related reaches the phone's storage unencrypted.
@@ -7,7 +7,7 @@ import * as Crypto from 'expo-crypto';
 import * as SecureStore from 'expo-secure-store';
 import * as SQLite from 'expo-sqlite';
 
-import { type QueueItem, type QueueStore, memoryStore } from '@/lib/queue';
+import { MAX_AGE_MS, type QueueItem, type QueueStore, memoryStore } from '@/lib/queue';
 
 /** The part of an expo-sqlite database this store uses. */
 export type Db = Pick<SQLite.SQLiteDatabase, 'execAsync' | 'getFirstAsync' | 'getAllAsync' | 'runAsync' | 'closeAsync'>;
@@ -29,7 +29,8 @@ export async function encryptedStore(db: Db, hexKey: string): Promise<QueueStore
     return null;
   }
   await db.execAsync(
-    'CREATE TABLE IF NOT EXISTS queue (id TEXT PRIMARY KEY NOT NULL, created_at INTEGER NOT NULL, body TEXT NOT NULL);',
+    'CREATE TABLE IF NOT EXISTS queue (id TEXT PRIMARY KEY NOT NULL, created_at INTEGER NOT NULL, body TEXT NOT NULL);' +
+      'CREATE TABLE IF NOT EXISTS saved (key TEXT PRIMARY KEY NOT NULL, saved_at INTEGER NOT NULL, body TEXT NOT NULL);',
   );
   return {
     encrypted: true,
@@ -48,8 +49,25 @@ export async function encryptedStore(db: Db, hexKey: string): Promise<QueueStore
     remove: async (id) => {
       await db.runAsync('DELETE FROM queue WHERE id = ?', id);
     },
+    read: async (key, notBefore) => {
+      const row = await db.getFirstAsync<{ saved_at: number; body: string }>(
+        'SELECT saved_at, body FROM saved WHERE key = ? AND saved_at >= ?',
+        key,
+        notBefore,
+      );
+      return row ? { at: row.saved_at, body: row.body } : null;
+    },
+    keep: async (key, body, at, notBefore) => {
+      await db.runAsync('DELETE FROM saved WHERE saved_at < ?', notBefore);
+      await db.runAsync('INSERT OR REPLACE INTO saved (key, saved_at, body) VALUES (?, ?, ?)', key, at, body);
+    },
+    purge: async (notBefore) => {
+      await db.runAsync('DELETE FROM queue WHERE created_at < ?', notBefore);
+      await db.runAsync('DELETE FROM saved WHERE saved_at < ?', notBefore);
+    },
     clear: async () => {
       await db.runAsync('DELETE FROM queue');
+      await db.runAsync('DELETE FROM saved');
     },
   };
 }
@@ -102,7 +120,29 @@ export async function offlineStorageKind() {
   return kind;
 }
 
-/** Sign-out (and later remote wipe): remove every queued item from the phone. */
+/** Sign-out (and later remote wipe): remove every queued item and saved answer from the phone. */
 export async function wipeOffline() {
   await (await offlineStore()).clear();
+  await SecureStore.deleteItemAsync(OWNER).catch(() => {});
+}
+
+/** App start: nothing older than a day stays on the phone, sent or not (owner). */
+export async function purgeOffline(now = Date.now()) {
+  await (await offlineStore()).purge(now - MAX_AGE_MS);
+}
+
+// Whose unsent entries and saved copies these are (owner decision 5, 23 November 2026: an expired sign-in keeps
+// them for the same person). Another person signing in on this phone never sends or sees them.
+const OWNER = 'offline-owner';
+
+/**
+ * Called before the app opens for `email`. Data of another person is deleted first. `keepUnowned`: data
+ * without a recorded owner belongs to this person (app start with their saved sign-in, after an update);
+ * a fresh sign-in deletes it instead.
+ */
+export async function adoptOffline(email: string, keepUnowned: boolean) {
+  const owner = await SecureStore.getItemAsync(OWNER).catch(() => null);
+  if (owner === email) return;
+  if (owner || !keepUnowned) await (await offlineStore()).clear();
+  await SecureStore.setItemAsync(OWNER, email, { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY }).catch(() => {});
 }

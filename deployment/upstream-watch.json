@@ -1,8 +1,10 @@
 {
   "_comment": "P62 upstream watch catalog (tools/upstream_watch.py). 'images' records the version behind every pinned image digest (images are pinned by digest only; a test fails when a digest changes without its version here). 'sources' says where each component's releases and advisories are published: github (releases, tags, repository advisories, licence), endoflife (endoflife.date release lines and end of life), osv (OSV.dev package), nvd (NVD product name, version appended), branch (for commit pins), exposure (public, tailnet, internal or build; the private profile may override it) and workaround (our own fix to retire once upstream no longer needs it). Components marked host are not in this repository; their versions come from the private profile.",
   "images": {
-    "ghcr.io/goauthentik/server@sha256:602227a86455d6772e3d16b7d852713c4f864f40df5df894abd1285bb53979a5": "2026.8.5",
+    "ghcr.io/goauthentik/server@sha256:1675a017c46ba7f4f15333aeafeeb64538c581673bcbcd36af872cdf7de4e7f7": "2026.8.7",
     "ghcr.io/paperless-ngx/paperless-ngx@sha256:d704e84f88300eb6ab001ab15720a2330ff99169cf9f94d6b8fcc44b63a84c84": "3.4.2",
+    "ghcr.io/element-hq/synapse@sha256:2cdc84f1de4687af89e4b7b1fe7b5f93e0ee7913243b63f79b05319cb6a8f525": "1.166.0",
+    "ghcr.io/element-hq/matrix-authentication-service@sha256:9252ed4ae66a172864c73550eedb1e805ad52586cf1949d8172b9e6f0db44918": "1.30.0",
     "onlyoffice/documentserver@sha256:ca17889f10b11141cc6441836aebdd2835cf3e1b49681b2fd6e155c94b7850b3": "10.0.0",
     "owncloud/ocis@sha256:8b2249fedba81e8e8ea69ba4baeb880c85978a13a0d73c9bc98ddb3d48dbd4e6": "8.2.3",
     "stalwartlabs/stalwart@sha256:5ebdf474b237161742fe4309396af4ae8797c938e8e6eb7e2d4837332c4f9851": "1.1.1",
@@ -18,45 +20,267 @@
     "nginx@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236": "1.28.3",
     "python@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e": "3.13.18",
     "python@sha256:35caba83af2fe6da9a5d922f9b0156f21d1246a48278c58a08bd253303ba42e8": "3.14.9",
-    "node@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5": "24.22.3"
+    "node@sha256:116b800c3754b440ee0aa3ed2f20f5bf3d99a554bfd9adeea09ea8017f6e85f5": "24.22.3",
+    "prom/prometheus@sha256:e04987641b57704f408e31f6373ba4138ecf27cb4a165d24aabb6c38fddd0f06": "3.16.0",
+    "grafana/loki@sha256:b43c257ccfc925d4a50b8717cac61a3b51df8c48d01847936057e5c4075a24a7": "3.7.10",
+    "grafana/alloy@sha256:9acc2529bc1edb7f5b2bd801dd8334ebc80c158e3a9e5526ecd7c9a273d43189": "1.22.0",
+    "grafana/grafana@sha256:0615ec4fbd4072004b7d86b46ded63013a74b7d6eb1119273dd89e8fa25c13cf": "13.3.1",
+    "prom/node-exporter@sha256:7296504d4ada44b7d7ab4431e27e9f9900d8488f8d55842f4b12ae2704e16dfe": "1.13.1",
+    "ghcr.io/google/cadvisor@sha256:4929b70e82079d001d0028b85d6a4dd25ad4666b719455c9542b983489963916": "0.61.1"
   },
   "sources": {
-    "frappe": {"osv": {"ecosystem": "PyPI", "name": "frappe"}, "exposure": "public"},
-    "erpnext": {"exposure": "public"},
-    "hrms": {"exposure": "public"},
-    "india_compliance": {"exposure": "public"},
-    "raven": {"exposure": "public"},
-    "insights": {"exposure": "public", "workaround": "integrations/insights/patch_session.py"},
-    "payment_integration_utils": {"exposure": "public"},
-    "razorpayx_integration": {"exposure": "public"},
-    "india_payroll": {"exposure": "public"},
-    "bulwark-webmail": {"exposure": "public", "workaround": "integrations/mail/overlay/ (sign-in, session guard, Drive attachments)"},
-    "frappe_docker": {"branch": "main", "exposure": "build"},
-    "frappe-bench": {"github": "frappe/bench", "exposure": "build"},
-    "node-build": {"endoflife": "nodejs", "exposure": "build"},
-    "ocis-konnectd": {"branch": "master", "exposure": "build"},
-    "ghcr.io/goauthentik/server": {"name": "authentik", "github": "goauthentik/authentik", "endoflife": "authentik", "osv": {"ecosystem": "Go", "name": "goauthentik.io"}, "exposure": "public"},
-    "ghcr.io/paperless-ngx/paperless-ngx": {"name": "Paperless-ngx", "github": "paperless-ngx/paperless-ngx", "exposure": "public"},
-    "onlyoffice/documentserver": {"name": "ONLYOFFICE Docs", "github": "ONLYOFFICE/DocumentServer", "nvd": "cpe:2.3:a:onlyoffice:document_server", "exposure": "public", "workaround": "integrations/onlyoffice/ (patched WOPI start page editor-wopi.ejs, sheetview_sanitize.py)"},
-    "owncloud/ocis": {"name": "ownCloud Infinite Scale", "github": "owncloud/ocis", "exposure": "public"},
-    "stalwartlabs/stalwart": {"name": "Stalwart", "github": "stalwartlabs/stalwart", "exposure": "public"},
-    "apache/tika": {"name": "Apache Tika", "github": "apache/tika", "osv": {"ecosystem": "Maven", "name": "org.apache.tika:tika-core"}, "exposure": "internal"},
-    "gotenberg/gotenberg": {"name": "Gotenberg", "github": "gotenberg/gotenberg", "osv": {"ecosystem": "Go", "name": "github.com/gotenberg/gotenberg/v8"}, "exposure": "internal"},
-    "coredns/coredns": {"name": "CoreDNS", "github": "coredns/coredns", "osv": {"ecosystem": "Go", "name": "github.com/coredns/coredns"}, "exposure": "tailnet"},
-    "mariadb": {"name": "MariaDB", "endoflife": "mariadb", "nvd": "cpe:2.3:a:mariadb:mariadb", "exposure": "internal"},
-    "postgres": {"name": "PostgreSQL", "endoflife": "postgresql", "nvd": "cpe:2.3:a:postgresql:postgresql", "exposure": "internal"},
-    "redis": {"name": "Redis", "endoflife": "redis", "nvd": "cpe:2.3:a:redis:redis", "exposure": "internal"},
-    "nginx": {"name": "nginx", "endoflife": "nginx", "nvd": "cpe:2.3:a:f5:nginx", "exposure": "public"},
-    "python": {"name": "Python", "endoflife": "python", "exposure": "internal"},
-    "node": {"name": "Node.js", "endoflife": "nodejs", "exposure": "build"},
-    "coolify": {"name": "Coolify", "host": true, "github": "coollabsio/coolify", "nvd": "cpe:2.3:a:coollabs:coolify", "exposure": "tailnet"},
-    "traefik": {"name": "Traefik (Coolify proxy)", "host": true, "github": "traefik/traefik", "endoflife": "traefik", "nvd": "cpe:2.3:a:traefik:traefik", "exposure": "public"},
-    "docker": {"name": "Docker Engine", "host": true, "endoflife": "docker-engine", "exposure": "internal"},
-    "tailscale": {"name": "Tailscale", "host": true, "github": "tailscale/tailscale", "exposure": "tailnet"},
-    "truenas": {"name": "TrueNAS", "host": true, "endoflife": "truenas", "exposure": "tailnet"},
-    "ubuntu": {"name": "Ubuntu", "host": true, "endoflife": "ubuntu", "exposure": "public"},
-    "linux": {"name": "Linux kernel", "host": true, "endoflife": "linux", "exposure": "public"},
-    "restic": {"name": "restic", "host": true, "github": "restic/restic", "exposure": "internal"},
-    "rustfs": {"name": "RustFS", "host": true, "github": "rustfs/rustfs", "exposure": "internal"}
+    "apache/tika": {
+      "name": "Apache Tika",
+      "github": "apache/tika",
+      "osv": {
+        "ecosystem": "Maven",
+        "name": "org.apache.tika:tika-core"
+      },
+      "exposure": "internal"
+    },
+    "bulwark-webmail": {
+      "exposure": "public",
+      "workaround": "docs/upstream-customizations.md WEBMAIL-1 to -3 (integrations/mail/overlay/: sign-in, session guard, Drive attachments; tools/refresh_webmail_overlay_base.py)"
+    },
+    "coolify": {
+      "name": "Coolify",
+      "host": true,
+      "github": "coollabsio/coolify",
+      "nvd": "cpe:2.3:a:coollabs:coolify",
+      "exposure": "tailnet",
+      "workaround": "docs/upstream-customizations.md COOLIFY-1 to -4 (registration through its internals, empty ports and volumes, stored proxy configuration)"
+    },
+    "coredns/coredns": {
+      "name": "CoreDNS",
+      "github": "coredns/coredns",
+      "osv": {
+        "ecosystem": "Go",
+        "name": "github.com/coredns/coredns"
+      },
+      "exposure": "tailnet"
+    },
+    "docker": {
+      "name": "Docker Engine",
+      "host": true,
+      "endoflife": "docker-engine",
+      "exposure": "internal"
+    },
+    "erpnext": {
+      "exposure": "public"
+    },
+    "frappe": {
+      "osv": {
+        "ecosystem": "PyPI",
+        "name": "frappe"
+      },
+      "exposure": "public"
+    },
+    "frappe-bench": {
+      "github": "frappe/bench",
+      "exposure": "build"
+    },
+    "frappe_docker": {
+      "branch": "main",
+      "exposure": "build"
+    },
+    "ghcr.io/goauthentik/server": {
+      "name": "authentik",
+      "github": "goauthentik/authentik",
+      "endoflife": "authentik",
+      "osv": {
+        "ecosystem": "Go",
+        "name": "goauthentik.io"
+      },
+      "exposure": "public",
+      "workaround": "docs/upstream-customizations.md AUTHENTIK-1 to -14 and the private companion (invitation and recovery policies, admin template, blueprint copies of default objects)"
+    },
+    "ghcr.io/google/cadvisor": {
+      "name": "cAdvisor",
+      "github": "google/cadvisor",
+      "exposure": "internal"
+    },
+    "ghcr.io/paperless-ngx/paperless-ngx": {
+      "name": "Paperless-ngx",
+      "github": "paperless-ngx/paperless-ngx",
+      "exposure": "public",
+      "workaround": "docs/upstream-customizations.md DMS-1 to -5 (cloud_session Django app, schema used by the test scrambler, CSP replaced at the proxy)"
+    },
+    "ghcr.io/element-hq/synapse": {
+      "name": "Synapse",
+      "github": "element-hq/synapse",
+      "exposure": "public"
+    },
+    "ghcr.io/element-hq/matrix-authentication-service": {
+      "name": "Matrix Authentication Service",
+      "github": "element-hq/matrix-authentication-service",
+      "exposure": "public"
+    },
+    "gotenberg/gotenberg": {
+      "name": "Gotenberg",
+      "github": "gotenberg/gotenberg",
+      "osv": {
+        "ecosystem": "Go",
+        "name": "github.com/gotenberg/gotenberg/v8"
+      },
+      "exposure": "internal"
+    },
+    "grafana/alloy": {
+      "name": "Grafana Alloy",
+      "github": "grafana/alloy",
+      "exposure": "internal"
+    },
+    "grafana/grafana": {
+      "name": "Grafana",
+      "github": "grafana/grafana",
+      "nvd": "cpe:2.3:a:grafana:grafana",
+      "exposure": "tailnet"
+    },
+    "grafana/loki": {
+      "name": "Grafana Loki",
+      "github": "grafana/loki",
+      "exposure": "internal"
+    },
+    "hrms": {
+      "exposure": "public"
+    },
+    "india_compliance": {
+      "exposure": "public"
+    },
+    "india_payroll": {
+      "exposure": "public"
+    },
+    "insights": {
+      "exposure": "public",
+      "workaround": "docs/upstream-customizations.md INSIGHTS-1 to -3 (integrations/insights/patch_session.py)"
+    },
+    "linux": {
+      "name": "Linux kernel",
+      "host": true,
+      "endoflife": "linux",
+      "exposure": "public"
+    },
+    "mariadb": {
+      "name": "MariaDB",
+      "endoflife": "mariadb",
+      "nvd": "cpe:2.3:a:mariadb:mariadb",
+      "exposure": "internal"
+    },
+    "nginx": {
+      "name": "nginx",
+      "endoflife": "nginx",
+      "nvd": "cpe:2.3:a:f5:nginx",
+      "exposure": "public"
+    },
+    "node": {
+      "name": "Node.js",
+      "endoflife": "nodejs",
+      "exposure": "build"
+    },
+    "node-build": {
+      "endoflife": "nodejs",
+      "exposure": "build"
+    },
+    "ocis-konnectd": {
+      "branch": "master",
+      "exposure": "build"
+    },
+    "onlyoffice/documentserver": {
+      "name": "ONLYOFFICE Docs",
+      "github": "ONLYOFFICE/DocumentServer",
+      "nvd": "cpe:2.3:a:onlyoffice:document_server",
+      "exposure": "public",
+      "workaround": "docs/upstream-customizations.md OFFICE-1 to -6 (patched WOPI start page editor-wopi.ejs, tools/refresh_editor_original.py, sheet-view guard and sheetview_sanitize.py)"
+    },
+    "opencv_zoo": {
+      "name": "OpenCV Zoo (face models, P95)",
+      "github": "opencv/opencv_zoo",
+      "branch": "main",
+      "exposure": "internal"
+    },
+    "owncloud/ocis": {
+      "name": "ownCloud Infinite Scale",
+      "github": "owncloud/ocis",
+      "exposure": "public",
+      "workaround": "docs/upstream-customizations.md DRIVE-1 to -9 (workspace.js, mail picker, config copies, editor bridge registration)"
+    },
+    "payment_integration_utils": {
+      "exposure": "public"
+    },
+    "postgres": {
+      "name": "PostgreSQL",
+      "endoflife": "postgresql",
+      "nvd": "cpe:2.3:a:postgresql:postgresql",
+      "exposure": "internal"
+    },
+    "prom/node-exporter": {
+      "name": "Prometheus node_exporter",
+      "github": "prometheus/node_exporter",
+      "exposure": "internal"
+    },
+    "prom/prometheus": {
+      "name": "Prometheus",
+      "github": "prometheus/prometheus",
+      "exposure": "internal"
+    },
+    "python": {
+      "name": "Python",
+      "endoflife": "python",
+      "exposure": "internal"
+    },
+    "razorpayx_integration": {
+      "exposure": "public"
+    },
+    "redis": {
+      "name": "Redis",
+      "endoflife": "redis",
+      "nvd": "cpe:2.3:a:redis:redis",
+      "exposure": "internal"
+    },
+    "restic": {
+      "name": "restic",
+      "host": true,
+      "github": "restic/restic",
+      "exposure": "internal"
+    },
+    "rustfs": {
+      "name": "RustFS",
+      "host": true,
+      "github": "rustfs/rustfs",
+      "exposure": "internal"
+    },
+    "stalwartlabs/stalwart": {
+      "name": "Stalwart",
+      "github": "stalwartlabs/stalwart",
+      "exposure": "public",
+      "workaround": "docs/upstream-customizations.md MAIL-1 to -5 (set-up through the admin JMAP API, sender accounts, reload after restart)"
+    },
+    "tailscale": {
+      "name": "Tailscale",
+      "host": true,
+      "github": "tailscale/tailscale",
+      "exposure": "tailnet",
+      "workaround": "docs/upstream-customizations.md TAILSCALE-1 (Docker waits for the tailnet address; masqueraded source)"
+    },
+    "traefik": {
+      "name": "Traefik (Coolify proxy)",
+      "host": true,
+      "github": "traefik/traefik",
+      "endoflife": "traefik",
+      "nvd": "cpe:2.3:a:traefik:traefik",
+      "exposure": "public",
+      "workaround": "docs/upstream-customizations.md PROXY-1 to -5 (framing headers, gate bypass routes, HTTP/3 off for the relayed test host)"
+    },
+    "truenas": {
+      "name": "TrueNAS",
+      "host": true,
+      "endoflife": "truenas",
+      "exposure": "tailnet"
+    },
+    "ubuntu": {
+      "name": "Ubuntu",
+      "host": true,
+      "endoflife": "ubuntu",
+      "exposure": "public"
+    }
   }
 }

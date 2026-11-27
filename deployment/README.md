@@ -38,7 +38,7 @@ A Linux Docker host with Coolify; Python 3.14 in the ERP image for the tools; ne
 
 ## Reuse
 
-Use `tools/prepare_erp_image.py` + `tools/build_erp_core.py` for a reproducible Frappe/ERPNext image from `upstream-lock.json`, or `tools/prepare_runtime.py` + `tools/coolify_native.py` to render and register stacks on any Coolify host. See tools/README.md for every tool by module.
+Use `tools/prepare_erp_image.py` + `tools/build_erp_core.py` for a reproducible Frappe/ERPNext image from `upstream-lock.json` (every change it makes to frappe_docker's Containerfile must find its upstream line exactly once, or it stops: register entry BUILD-1), or `tools/prepare_runtime.py` + `tools/coolify_native.py` to render and register stacks on any Coolify host. See tools/README.md for every tool by module.
 
 ## Configuration
 
@@ -53,7 +53,7 @@ Read docs/deployment.md first. This directory and integrations contain source/co
 - `erp/frappe.conf.template`, backend_start.py and netbird_realtime.cjs: retained frontend/startup/realtime adapters. Preserve private ingress boundaries. The separately deferred idle/realtime defect is not fixed by these files.
 - `integrations/authentik/identity-support`: optional private TLS/backchannel gateway and invitation companion composition. Adapt Docker aliases/networks and supply certificates privately; it publishes no host ports. Its internal ERP backchannel still validates signed logout tokens in the addon. The invitation companion source is in its own sibling directory.
 
-Create separate native Coolify projects for ERP, authentik/identity helpers, Drive/collaboration, Collabora, Mail, DMS and the document worker. Create and retain their native database/storage volumes and private application networks. Configure public DNS/TLS for the documented host map, with Coolify/mail administration private. Native product configuration is explicit setup work: clone cannot manufacture provider accounts, signing keys, mailbox credentials, API credits or data.
+Create separate native Coolify projects for ERP, authentik/identity helpers, Drive/collaboration, the ONLYOFFICE editor, Mail, DMS and the document worker. Create and retain their native database/storage volumes and private application networks. Configure public DNS/TLS for the documented host map, with Coolify/mail administration private. Native product configuration is explicit setup work: clone cannot manufacture provider accounts, signing keys, mailbox credentials, API credits or data.
 
 Rebuild order: prerequisite ERP image and native site → authentik/passkey flows and app providers → addon/native migration → Drive/editor → Mail and DMS → owner-bound worker enrollment → acceptance checks. Configure SMTP-only senders and shared-mailbox membership through native Stalwart settings. Retain only the selected integration sender; don't copy mailbox credentials from an old installation.
 
@@ -97,7 +97,16 @@ because production stacks are promoted one by one and nothing listed what a merg
   reports the stack as **behind** when a file it owns changed between that commit and
   `main`, **not on main** when it runs another branch, and **unknown** when its commit
   cannot be read. It also compares served pages with local files (for example the landing
-  page or ERP favicon). For assets in a live container, specify its name as
+  page or ERP favicon). **Mounted runtime files (P99):** it finds every read-only file or
+  folder the running containers mount from a runtime `mounts/` folder that is made from a
+  repository file (`tools/runtime_mounts.py`; data, secrets and writable mounts are never
+  read). A mount is **equal to main** when its bytes equal main's file, or when it matches
+  its deployment record (`mount-record.json`, written by `tools/prepare_runtime.py` or by
+  `tools/runtime_mounts.py record` after a one-file promotion) and its source is unchanged on
+  main since the recorded commit; such a file no longer makes its stack "behind". It is
+  **behind** when the recorded source changed on main, **changed by hand** when the file
+  differs from its record (both are drift), and **not compared** when there is no record.
+  The nightly unit first updates the check's own checkout to `main` (`ExecStartPre`). For assets in a live container, specify its name as
   `container` and the absolute path as `file`. Signals: exit 0 clean, 1 a check
   could not run, 2 drift. The service produces a journal line and
   `/var/lib/cloud-drift-check/status.json`. Settings example:
@@ -115,13 +124,18 @@ random at each start) and the stacks give the databases `stop_grace_period`
 of 60 s and Redis 30 s. `tools/render_host_checks.py` renders a Docker drop-in
 (start after Tailscale, wait up to a minute for the tailnet address), a boot
 check (`tools/host_check.py boot`: containers, hosts over HTTP, tailnet ports,
-and a one-time restart of the editor bridge if it cannot register) and a
-five-minute watch for containers that keep restarting. Checklist, planned
+a one-time restart of the editor bridge if it cannot register, and a one-time start of every container that
+ran before the reboot and did not come back, with a mail to the admin when it repaired or failed something) and a
+five-minute watch for containers that keep restarting, which also saves the list of running containers. Checklist, planned
 reboot procedure and install commands: `docs/production-moves.md`; private
 section example: `deployment/host-checks.example.json`; tests:
 `tests/test_reboot_resilience.py`, `tests/test_host_checks.py`.
 
 ## Upstream watch (P62)
+
+**Container logs before a recreate (P59).** A recreate deletes a container's logs. Before any stack is recreated, run `tools/archive_container_logs.py` on the host as root: it saves every container's logs, compressed, to `/var/log/cloud-integrations/container-logs/<date>/` (root-only) and removes folders older than 30 days. The promotion plan lists it as the first step. **Image cleanup:** Coolify's forced nightly Docker cleanup is off on production and the test VM; Coolify cleans only above 80 percent disk use, so the ERP core and rollback images stay.
+
+**Proxy image (P90).** Coolify writes its proxy as `traefik:v3.x`, a tag that moves with every release. `deployment/coolify-proxy.json` pins the Traefik image by tag and digest; `tools/coolify_proxy_image.py --restart` (on the host, as root) writes it into Coolify's saved proxy configuration and the compose file (keeping a copy), pulls it, recreates the proxy and reattaches its networks; `--check` reports the running version. Keep the upstream watch profile's `traefik` version equal to the pin.
 
 `tools/upstream_watch.py` runs once a day and reports what is new upstream for
 everything we pin. It never upgrades anything: an upgrade is a normal branch,
@@ -129,7 +143,8 @@ test, merge and production change that the owner takes up.
 
 - **Inventory:** the locks (`upstream-lock.json`, `build-lock.json`,
   `native-clients-lock.json`, `integrations/mail/upstream.json`) and every
-  image digest in the stack files, build lock and Dockerfiles. Images are
+  image digest in the stack files, build lock, Dockerfiles and the module
+  compose files under `integrations/` (monitoring, identity support). Images are
   pinned by digest only, so `upstream-watch.json` records the version behind
   each digest (a test fails when a digest changes without it) and where each
   component publishes releases and advisories. Components that are not in the
@@ -164,10 +179,13 @@ test, merge and production change that the owner takes up.
   `/etc/systemd/system/` (without `.example`) and
   `systemctl enable --now upstream-watch.timer`. The service runs as a
   temporary unprivileged user; digests land in `/var/lib/upstream-watch`.
+- **Our upstream posts (P35):** when the checkout has `docs/upstream-posts.json`, the watch also checks
+  every watched post for new replies and state changes (`tools/upstream_posts.py`) and writes
+  `YYYY-MM-DD-posts.md` for anything new, each reply once (the state keeps what was reported). It never posts.
 - **Not yet:** open upstream issues matching our versions, vendor notices
   outside these sources, and the Ubuntu security notices for host packages.
 
-Tests: `tests/test_upstream_watch.py` (sample answers, no network).
+Tests: `tests/test_upstream_watch.py` and `tests/test_upstream_posts.py` (sample answers, no network).
 
 ## AI-assisted development
 

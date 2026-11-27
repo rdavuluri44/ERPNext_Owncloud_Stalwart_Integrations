@@ -3,9 +3,12 @@
 
 Subcommands (all read a private JSON config, see tools/render_host_checks.py):
   boot          wait until the stacks are up and healthy, repair the one known
-                weak spot (the editor bridge not registered), report and exit
-                non-zero with a clear message if something stays wrong;
-  watch         flag containers whose restart count keeps rising (crash loops);
+                weak spot (the editor bridge not registered), compare with the
+                containers that ran before the reboot and start each missing one
+                once, report and exit non-zero with a clear message if something
+                stays wrong; mail the admin when it repaired or failed something;
+  watch         flag containers whose restart count keeps rising (crash loops),
+                and save the list of running containers for the next boot;
   wait-tailnet  wait (best effort) until the tailnet address exists, so Docker
                 can bind ports to it.
 
@@ -14,9 +17,12 @@ logic is tested without Docker, a network or a clock.
 """
 import argparse
 import datetime
+import email.message
 import json
 import os
+import smtplib
 import socket
+import ssl
 import subprocess
 import sys
 import time
@@ -31,6 +37,9 @@ DEFAULTS = {
                'quiet_seconds': 120, 'min_uptime_seconds': 45, 'restart_once': True},
     'watch': {'restart_increase': 3},
     'state_dir': '/var/lib/cloud-host-check',
+    # P57 follow-up 7: containers that ran before the reboot must run again; each missing one is started once.
+    'after_reboot': {'start_missing': True, 'start_after_seconds': 60, 'policies': ['always', 'unless-stopped']},
+    'alert': None,
 }
 
 
@@ -66,6 +75,46 @@ class Environment:
 
     def sleep(self, seconds):
         time.sleep(seconds)
+
+    def boot_id(self):
+        try:
+            with open('/proc/sys/kernel/random/boot_id', encoding='ascii') as handle:
+                return handle.read().strip()
+        except OSError:
+            return None
+
+    def send_mail(self, alert, subject, body):
+        """One plain-text mail through the dedicated sender; the password is read from its root-only file."""
+        with open(alert['password_file'], encoding='utf-8') as handle:
+            password = handle.read().strip()
+        message = email.message.EmailMessage()
+        message['From'], message['To'], message['Subject'] = alert['sender'], ', '.join(alert['to']), subject
+        message.set_content(body)
+        server = verified_smtp(alert, ssl.create_default_context())
+        with server:
+            server.login(alert['username'], password)
+            server.send_message(message)
+
+
+def verified_smtp(alert, context, timeout=30):
+    """Open the SMTP connection for the alert sender. With `address` set (for example the mail server's tailnet
+    address, when the server cannot reach its own public name), connect there but still verify the certificate for
+    `smtp_host`; certificate checks are never switched off (P57 follow-up 10)."""
+    hostname, port = alert['smtp_host'], int(alert['smtp_port'])
+    address = alert.get('address') or hostname
+    implicit = alert.get('security', 'ssl') == 'ssl'
+    base = smtplib.SMTP_SSL if implicit else smtplib.SMTP
+
+    class Verified(base):
+        def _get_socket(self, host, port, timeout):
+            raw = socket.create_connection((address, port), timeout, self.source_address)
+            return context.wrap_socket(raw, server_hostname=hostname) if implicit else raw
+
+    if implicit:
+        return Verified(hostname, port, timeout=timeout, context=context)
+    server = Verified(hostname, port, timeout=timeout)
+    server.starttls(context=context)  # verifies the certificate for smtp_host as well
+    return server
 
 
 def load_config(path):
@@ -152,6 +201,77 @@ def evaluate(config, env, names):
     return problems, bridge
 
 
+def ignored(config, name):
+    prefixes = tuple(config.get('watch', {}).get('ignore_prefixes', []))
+    return bool(prefixes) and name.startswith(prefixes)
+
+
+def restart_policies(env, names):
+    """{name: restart policy} for the given containers, in one docker call."""
+    if not names:
+        return {}
+    code, out = env.run(['docker', 'inspect', '-f', '{{.Name}} {{.HostConfig.RestartPolicy.Name}}', *names])
+    if code != 0:
+        return {}
+    found = {}
+    for line in out.splitlines():
+        parts = line.split()
+        if len(parts) == 2:
+            found[parts[0].lstrip('/')] = parts[1]
+    return found
+
+
+def snapshot_path(config):
+    return os.path.join(config['state_dir'], 'running-containers.json')
+
+
+def save_snapshot(config, env, names):
+    """The containers running now, so the next boot can tell which did not come back (P57 follow-up 7)."""
+    if names is None:
+        return
+    keep = [name for name in names if not ignored(config, name)]
+    payload = {'boot_id': env.boot_id(), 'taken_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+               'containers': restart_policies(env, keep)}
+    try:
+        os.makedirs(config['state_dir'], exist_ok=True)
+        path = snapshot_path(config)
+        with open(path + '.tmp', 'w', encoding='utf-8') as handle:
+            json.dump(payload, handle, indent=2)
+        os.replace(path + '.tmp', path)
+    except OSError as error:
+        log('cannot save the container list: ' + str(error))
+
+
+def expected_after_reboot(config, env):
+    """Containers that ran in an earlier boot and should restart by themselves; empty in the same boot."""
+    try:
+        with open(snapshot_path(config), encoding='utf-8') as handle:
+            saved = json.load(handle)
+    except (OSError, ValueError):
+        return [], None
+    if not saved.get('boot_id') or saved.get('boot_id') == env.boot_id():
+        return [], saved.get('taken_at')
+    policies = set(config['after_reboot']['policies'])
+    names = [name for name, policy in sorted((saved.get('containers') or {}).items())
+             if policy in policies and not ignored(config, name)]
+    return names, saved.get('taken_at')
+
+
+def notify(config, env, subject, body):
+    """Mail the admin through the dedicated sender; a failure to send is logged, never fatal."""
+    alert = config.get('alert')
+    if not alert:
+        log('no alert sender configured; result is in the status file and the journal only')
+        return False
+    try:
+        env.send_mail(alert, subject, body)
+        log('alert mailed to ' + ', '.join(alert['to']))
+        return True
+    except Exception as error:  # the boot check must finish even when mail is down
+        log('ALERT NOT SENT (' + type(error).__name__ + '): ' + subject)
+        return False
+
+
 def write_status(config, payload):
     try:
         os.makedirs(config['state_dir'], exist_ok=True)
@@ -170,10 +290,30 @@ def boot(config, env):
     restarted = False
     attempts = 0
     problems = []
+    expected, snapshot_taken = expected_after_reboot(config, env)
+    after = config['after_reboot']
+    started_once, start_failed = [], []
     while True:
         attempts += 1
         names = running_names(env)
         problems, bridge = evaluate(config, env, names)
+        missing = [name for name in expected if names is not None and name not in names]
+        # P57 follow-up 7: a container that ran before the reboot and did not come back by itself is started once,
+        # after Docker had time to start everything it starts on its own.
+        if missing and after.get('start_missing') and env.now() - started >= after['start_after_seconds']:
+            for name in missing:
+                if name in started_once or name in start_failed:
+                    continue
+                code, out = env.run(['docker', 'start', name], timeout=120)
+                if code == 0:
+                    log('started ' + name + ' once: it ran before the reboot and did not come back by itself')
+                    started_once.append(name)
+                else:
+                    log('could not start ' + name + ': ' + out.strip()[:200])
+                    start_failed.append(name)
+            names = running_names(env)
+            missing = [name for name in expected if names is not None and name not in names]
+        problems += ['%s ran before the reboot and is not running' % name for name in missing]
         if not problems:
             break
         # The one known weak spot: restart the editor bridge once when it cannot register.
@@ -188,12 +328,41 @@ def boot(config, env):
     ok = not problems
     write_status(config, {'ok': ok, 'checked_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
                           'attempts': attempts, 'bridge_restarted': restarted,
-                          'waited_seconds': int(env.now() - started), 'problems': problems})
+                          'waited_seconds': int(env.now() - started), 'problems': problems,
+                          'compared_with_containers_from': snapshot_taken, 'expected_after_reboot': len(expected),
+                          'started_after_reboot': started_once, 'could_not_start': start_failed})
+    save_snapshot(config, env, running_names(env))
+    host = socket.gethostname()
     if ok:
-        log('boot check passed after %d attempt(s)%s' % (attempts, ', editor bridge restarted once' if restarted else ''))
+        log('boot check passed after %d attempt(s)%s%s' % (
+            attempts, ', editor bridge restarted once' if restarted else '',
+            (', started once: ' + ', '.join(started_once)) if started_once else ''))
+        if started_once or restarted:
+            notify(config, env, '[%s] boot check repaired something' % host, boot_report(
+                host, True, started_once, start_failed, restarted, problems, expected, snapshot_taken))
         return 0
     log('BOOT CHECK FAILED: ' + '; '.join(problems))
+    notify(config, env, '[%s] BOOT CHECK FAILED' % host, boot_report(
+        host, False, started_once, start_failed, restarted, problems, expected, snapshot_taken))
     return 1
+
+
+def boot_report(host, ok, started_once, start_failed, restarted, problems, expected, snapshot_taken):
+    lines = ['Boot check on %s: %s.' % (host, 'passed after a repair' if ok else 'FAILED'), '']
+    if started_once:
+        lines += ['Started once because they ran before the reboot and did not come back by themselves:']
+        lines += ['  - ' + name for name in started_once] + ['']
+    if start_failed:
+        lines += ['Could not be started:'] + ['  - ' + name for name in start_failed] + ['']
+    if restarted:
+        lines += ['The editor bridge was restarted once (it could not register).', '']
+    if problems:
+        lines += ['Still wrong:'] + ['  - ' + problem for problem in problems] + ['']
+    lines += ['Compared with %d containers that ran before the reboot (list from %s).' % (len(expected), snapshot_taken),
+              'Status file: /var/lib/cloud-host-check/status.json; journal: journalctl -u cloud-boot-check.',
+              'Procedure: docs/production-moves.md, "After a reboot or restart"; SOP: admin alerts and daily checks.']
+    return '\n'.join(lines) + '\n'
+
 
 
 def watch(config, env):
@@ -235,6 +404,7 @@ def watch(config, env):
         log('cannot write the watch state: ' + str(error))
     for alert in alerts:
         log('ALERT: ' + alert)
+    save_snapshot(config, env, names)
     return 1 if alerts else 0
 
 

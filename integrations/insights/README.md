@@ -18,7 +18,7 @@ Frappe Insights at the version pinned in `deployment/upstream-lock.json`.
 
 ## Reuse
 
-Run `integrations/insights/patch_session.py <insights app dir>` before compiling the Insights frontend (the ERP add-on Dockerfile does this).
+Run `integrations/insights/patch_session.py <insights app dir>` before compiling the Insights frontend (the ERP add-on Dockerfile does this). Every line it changes must appear exactly once upstream, or it stops the build: on an Insights upgrade, re-apply the patch to the new source (register entry INSIGHTS-1 in `docs/upstream-customizations.md`).
 
 ## Configuration
 
@@ -26,6 +26,7 @@ None.
 
 ## Tests
 
+- `tests/test_insights_patch.py`
 - `tests/test_rebuild_templates.py`
 
 Run all suites offline with `python tools/run_unit_tests.py` in the matching ERP Python environment.

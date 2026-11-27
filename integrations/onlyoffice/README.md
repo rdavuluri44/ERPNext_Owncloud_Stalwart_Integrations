@@ -36,7 +36,7 @@ Editor (this module, `editor-wopi.ejs`):
   no panel is open. Tried and replaced: always visible, auto-hide on hover,
   an edge handle on phones. Phones use the desktop editor because
   ONLYOFFICE's touch editor is view-only in the free edition (verified on
-  10.0.0.1).
+  10.0.0 build 169).
 - **Headers:** row and column headers #D9D9D9, hover #C6C6C6, selected row
   or column #A6A6A6, text #262626; numbers of filtered rows blue (#1F5BC6). The row-number column width is drawn by
   ONLYOFFICE's compiled engine and cannot be changed; white text on the
@@ -96,14 +96,25 @@ and within seconds of closing (`deployment/config/onlyoffice-local-production-li
 
 ## Requirements
 
-ONLYOFFICE Docs pinned by digest (10.0.0.1); the patch is tied to that
-version's start page (checked by fingerprint in the tests).
+ONLYOFFICE Docs 10.0.0 build 169 (package `onlyoffice-documentserver` 10.0.0-169),
+pinned by digest. `upstream.json` records the image and the checksum of its own
+start page; the tests fail unless the stored original, that record and the image in
+`deployment/stacks/editor-onlyoffice.compose.json` agree, so an image change alone
+cannot mount the old patched page over a new editor (P91).
 
 ## Reuse
 
 Select `editor_product: onlyoffice` in the runtime profile. On an ONLYOFFICE
-upgrade, copy the new start page to `editor-wopi.original.ejs`, re-apply the
-marked `cloud-integrations` changes and update the fingerprint in the test.
+upgrade (register entries OFFICE-1 to OFFICE-5 in `docs/upstream-customizations.md`):
+
+1. On a host with Docker, run `tools/refresh_editor_original.py --image
+   onlyoffice/documentserver@sha256:<new digest> --version "<version> build <n>"`.
+   It copies the new image's start page to `editor-wopi.original.ejs` without
+   starting the image, and updates `upstream.json`.
+2. Re-apply the marked `cloud-integrations` changes to `editor-wopi.ejs` against the
+   new original (compare old and new original first).
+3. Change the image in the stack and in `deployment/upstream-watch.json`; run the tests.
+4. Check whether the sheet-view guard is still needed (below).
 
 ## Configuration
 

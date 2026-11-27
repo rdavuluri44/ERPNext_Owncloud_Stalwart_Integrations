@@ -62,7 +62,7 @@ describe('inbox screen', () => {
     serve();
     await openInbox();
     expect(await screen.findByText('WAITING FOR YOU (1)')).toBeOnTheScreen();
-    expect(screen.getByText('Purchase Order PO-0001')).toBeOnTheScreen();
+    expect(screen.getByText('Purchase Order')).toBeOnTheScreen();
     expect(screen.getByText('PO-0001 needs approval')).toBeOnTheScreen();
     expect(screen.getByText('Unread · 23-11-2026 10:01')).toBeOnTheScreen();
   });
@@ -78,7 +78,7 @@ describe('inbox screen', () => {
   it("an approval opens with ERPNext's actions; Face ID first, then the action is applied", async () => {
     const calls = serve();
     await openInbox();
-    await fireEvent.press(await screen.findByText('Purchase Order PO-0001'));
+    await fireEvent.press(await screen.findByText('Purchase Order'));
     await fireEvent.press(await screen.findByText('Approve'));
     expect(mockConfirm).toHaveBeenCalledWith('Confirm Approve for PO-0001');
     expect(await screen.findByText('Approve: done. Now: Approved.')).toBeOnTheScreen();
@@ -92,7 +92,7 @@ describe('inbox screen', () => {
     let confirm!: (value: boolean) => void;
     mockConfirm.mockImplementationOnce(() => new Promise<boolean>((resolve) => { confirm = resolve; }));
     await openInbox();
-    await fireEvent.press(await screen.findByText('Purchase Order PO-0001'));
+    await fireEvent.press(await screen.findByText('Purchase Order'));
 
     await screen.findByText('Approve');
     const approve = mockWorkflowPresses.get('Approve')!;
@@ -113,7 +113,7 @@ describe('inbox screen', () => {
     const calls = serve();
     mockConfirmed = false;
     await openInbox();
-    await fireEvent.press(await screen.findByText('Purchase Order PO-0001'));
+    await fireEvent.press(await screen.findByText('Purchase Order'));
     await fireEvent.press(await screen.findByText('Reject'));
     expect(await screen.findByText('Not confirmed. Nothing was changed.')).toBeOnTheScreen();
     expect(calls.some((c) => c.method === APPLY_METHOD)).toBe(false);
@@ -122,7 +122,7 @@ describe('inbox screen', () => {
   it("shows ERPNext's refusal as it gives it", async () => {
     serve({ status: 417, body: thrown('Self approval is not allowed') });
     await openInbox();
-    await fireEvent.press(await screen.findByText('Purchase Order PO-0001'));
+    await fireEvent.press(await screen.findByText('Purchase Order'));
     await fireEvent.press(await screen.findByText('Approve'));
     expect(await screen.findByText('Self approval is not allowed')).toBeOnTheScreen();
   });

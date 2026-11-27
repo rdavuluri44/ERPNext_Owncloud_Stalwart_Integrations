@@ -11,6 +11,7 @@ import { ThemeProvider } from '@/theme';
 // One ref for every render, as the real useApiRef gives (a new object each render would loop the effects).
 const mockApiRef = { current: async () => { throw new TypeError('offline in tests'); } };
 jest.mock('@/auth/session', () => ({
+  APP_NAME: 'ERP Mobile',
   SignedOutError: class SignedOutError extends Error {},
   useAuth: () => ({ user: { name: 'Worker A', email: 'a@example.com', roles: [] }, api: jest.fn() }),
   useApiRef: () => mockApiRef,
@@ -69,19 +70,19 @@ describe('app shell', () => {
     expect([...tabs].sort((a, b) => a - b)).toEqual(tabs);
   });
 
-  it('Today greets the person and says nothing is waiting', async () => {
+  it('Today shows the app header and says nothing is waiting', async () => {
     await renderRouter(app, { initialUrl: '/', wrapper });
-    expect(await screen.findByText('Hello, Worker A')).toBeOnTheScreen();
+    expect(await screen.findByText('ERP Mobile')).toBeOnTheScreen();
     expect(await screen.findByText('Nothing waiting to send')).toBeOnTheScreen();
   });
 
   it('Today counts what waits in the offline queue', async () => {
     for (const id of ['a', 'b']) {
-      await mockStore.put({ id, method: 'm', args: {}, createdAt: 1, attempts: 0, state: 'waiting' });
+      await mockStore.put({ id, method: 'm', args: {}, createdAt: Date.now(), attempts: 0, state: 'waiting' });
     }
-    await mockStore.put({ id: 'c', method: 'm', args: {}, createdAt: 1, attempts: 1, state: 'failed', error: 'refused' });
+    await mockStore.put({ id: 'c', method: 'm', args: {}, createdAt: Date.now(), attempts: 1, state: 'failed', error: 'refused' });
     await renderRouter(app, { initialUrl: '/', wrapper });
-    expect(await screen.findByText('2 waiting to send: sent by itself when you are online')).toBeOnTheScreen();
+    expect(await screen.findByText('2 captures waiting to send')).toBeOnTheScreen();
   });
 
   it('Menu lists Settings first, then the role menus, and opens Settings', async () => {

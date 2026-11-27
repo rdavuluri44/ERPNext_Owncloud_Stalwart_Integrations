@@ -1,0 +1,224 @@
+{
+  "doctype": "DocType",
+  "name": "Field Face Capture",
+  "module": "Custom HR",
+  "engine": "InnoDB",
+  "autoname": "hash",
+  "track_changes": 1,
+  "description": "A team photograph taken without choosing the worker (P95): matched by face on the server, or waiting for the project manager. Written only by custom_hr.face_queue.",
+  "field_order": [
+    "state",
+    "site",
+    "shift",
+    "attendance_date",
+    "captured_by",
+    "captured_at",
+    "capture_id",
+    "photo",
+    "latitude",
+    "longitude",
+    "accuracy_m",
+    "gps_captured_at",
+    "captured_offline",
+    "device_captured_at",
+    "clock_offset_s",
+    "decision",
+    "candidates",
+    "note",
+    "employee",
+    "entry",
+    "resolved_by",
+    "resolved_at",
+    "remarks"
+  ],
+  "fields": [
+    {
+      "fieldname": "state",
+      "label": "State",
+      "fieldtype": "Select",
+      "options": "Needs review\nMatched\nResolved\nRejected",
+      "reqd": 1,
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "site",
+      "label": "Site",
+      "fieldtype": "Link",
+      "options": "Field Site",
+      "reqd": 1,
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "shift",
+      "label": "Shift",
+      "fieldtype": "Link",
+      "options": "Shift Type",
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "attendance_date",
+      "label": "Shift date",
+      "fieldtype": "Date",
+      "reqd": 1,
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "captured_by",
+      "label": "Captured by",
+      "fieldtype": "Link",
+      "options": "User",
+      "reqd": 1,
+      "in_list_view": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "captured_at",
+      "label": "Captured at",
+      "fieldtype": "Datetime",
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "capture_id",
+      "label": "Capture identifier",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "unique": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "photo",
+      "label": "Photograph",
+      "fieldtype": "Attach Image",
+      "read_only": 1
+    },
+    {
+      "fieldname": "latitude",
+      "label": "Latitude",
+      "fieldtype": "Float",
+      "precision": "7",
+      "read_only": 1
+    },
+    {
+      "fieldname": "longitude",
+      "label": "Longitude",
+      "fieldtype": "Float",
+      "precision": "7",
+      "read_only": 1
+    },
+    {
+      "fieldname": "accuracy_m",
+      "label": "GPS accuracy (m)",
+      "fieldtype": "Float",
+      "read_only": 1
+    },
+    {
+      "fieldname": "gps_captured_at",
+      "label": "GPS time",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "captured_offline",
+      "label": "Captured offline",
+      "fieldtype": "Check",
+      "read_only": 1
+    },
+    {
+      "fieldname": "device_captured_at",
+      "label": "Phone clock at capture",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "clock_offset_s",
+      "label": "Clock difference (s)",
+      "fieldtype": "Int",
+      "read_only": 1
+    },
+    {
+      "fieldname": "decision",
+      "label": "Face match result",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "candidates",
+      "label": "Closest workers",
+      "fieldtype": "Small Text",
+      "read_only": 1
+    },
+    {
+      "fieldname": "note",
+      "label": "Note",
+      "fieldtype": "Small Text",
+      "read_only": 1
+    },
+    {
+      "fieldname": "employee",
+      "label": "Worker",
+      "fieldtype": "Link",
+      "options": "Employee",
+      "read_only": 1
+    },
+    {
+      "fieldname": "entry",
+      "label": "Attendance entry",
+      "fieldtype": "Link",
+      "options": "Field Attendance Entry",
+      "read_only": 1
+    },
+    {
+      "fieldname": "resolved_by",
+      "label": "Decided by",
+      "fieldtype": "Link",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "resolved_at",
+      "label": "Decided at",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "remarks",
+      "label": "Reason or remarks",
+      "fieldtype": "Small Text",
+      "read_only": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "Field Attendance Manager",
+      "read": 1,
+      "report": 1
+    },
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1
+    },
+    {
+      "role": "Field Attendance Approver",
+      "read": 1,
+      "report": 1
+    },
+    {
+      "role": "Field Supervisor",
+      "read": 1,
+      "report": 1
+    },
+    {
+      "role": "Field Attendance Verifier",
+      "read": 1,
+      "report": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

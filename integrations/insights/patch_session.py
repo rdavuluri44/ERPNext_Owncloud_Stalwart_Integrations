@@ -6,6 +6,12 @@ import re
 import sys
 
 
+def _replace_once(text, old, new):
+    if text.count(old) != 1:
+        raise ValueError("Pinned Insights sidebar changed; review the adapter")
+    return text.replace(old, new, 1)
+
+
 def patch_session(frontend):
     file = frontend / "session.ts"
     source = file.read_text()
@@ -56,14 +62,16 @@ def patch_workbook_navigation(frontend):
     active_binding = ':isActive="link.to === \'WorkbookList\' && isWorkbookRoute"'
     if active_binding not in links:
         target = ':to="link.to"'
-        if links.count(target) != 1 or "const links = ref([" not in links:
-            raise ValueError("Pinned Insights sidebar changed; review the adapter")
-        links = links.replace(target, target + "\n\t\t\t\t\t\t" + active_binding)
-        links = links.replace(
+        # Every sidebar change must find exactly one upstream line (P91, register INSIGHTS-1):
+        # a missed import would leave useRoute undefined at runtime, which the build does not catch.
+        links = _replace_once(links, target, target + "\n\t\t\t\t\t\t" + active_binding)
+        links = _replace_once(
+            links,
             "import { computed, ref } from 'vue'",
             "import { computed, ref } from 'vue'\nimport { useRoute } from 'vue-router'",
         )
-        links = links.replace(
+        links = _replace_once(
+            links,
             "const links = ref([",
             "const route = useRoute()\n"
             "const isWorkbookRoute = computed(() => route.matched.some(record => record.name === 'Workbook'))\n\n"

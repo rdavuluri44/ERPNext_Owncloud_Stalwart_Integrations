@@ -4,6 +4,9 @@ export const FLOW_SLUG = "cloud-first-time-enrollment";
 export const RECOVERY_FLOW_SLUG = "cloud-passkey-recovery-invitation";
 export const APPROVAL_GROUP = "Workspace Users";
 export const EXPIRY_HOURS = Object.freeze([1, 6, 12, 24, 48, 72]);
+// P78: how many times the link may be opened; a successful setup ends it earlier.
+export const ATTEMPTS = Object.freeze([1, 2, 3, 4, 5]);
+export const DEFAULT_ATTEMPTS = 5;
 const API_ROOT = "/api/v3/";
 const INVITATIONS = "stages/invitation/invitations/";
 
@@ -35,8 +38,9 @@ export function invitationKind(user, hasPasskey) {
 
 export class InvitationClient {
   constructor({ fetcher = (...args) => globalThis.fetch(...args), cookie = () => document.cookie, test = false,
-    origin = () => location.origin, now = () => Date.now(), uuid = () => crypto.randomUUID() } = {}) {
-    Object.assign(this, { fetcher, cookie, origin, now, uuid, test });
+    origin = () => location.origin, now = () => Date.now(), uuid = () => crypto.randomUUID(),
+    attemptsAvailable = false } = {}) {
+    Object.assign(this, { fetcher, cookie, origin, now, uuid, test, attemptsAvailable });
     this.busy = false;
   }
 
@@ -146,9 +150,11 @@ export class InvitationClient {
     });
   }
 
-  async send(userPk, hours) {
+  async send(userPk, hours, attempts = this.attemptsAvailable ? DEFAULT_ATTEMPTS : 1) {
     if (this.busy) throw new InvitationError("An invitation is already being processed.");
     if (!Number.isInteger(hours) || !EXPIRY_HOURS.includes(hours)) throw new InvitationError("Choose an available expiry.");
+    if (!Number.isInteger(attempts) || !ATTEMPTS.includes(attempts)) throw new InvitationError("Choose 1 to 5 attempts.");
+    if (attempts > 1 && !this.attemptsAvailable) throw new InvitationError("This site allows one attempt per link. No invitation was sent.");
     if (!/^\d+$/.test(String(userPk))) throw new InvitationError("Choose a user from the list.");
     this.busy = true;
     let created = null, creationAttempted = false, name = null;
@@ -165,7 +171,7 @@ export class InvitationClient {
       const flow = user.invitationKind === "recovery" ? recoveryFlow : enrollmentFlow;
       if (!flow?.pk) throw new InvitationError("The controlled passkey recovery flow is not yet available. No invitation was sent.");
       const invitations = await this.list(`${INVITATIONS}?flow__slug=${flow.slug}&page_size=100`);
-      if (invitations.some((entry) => entry.flow === flow.pk && entry.single_use === true
+      if (invitations.some((entry) => entry.flow === flow.pk
         && entry.fixed_data?.email?.toLowerCase() === user.email.toLowerCase()
         && Date.parse(entry.expires) > this.now())) {
         throw new InvitationError("This user already has a valid invitation. Open Invitations in Authentik to resend or expire it first.");
@@ -175,8 +181,9 @@ export class InvitationClient {
       const expires = new Date(this.now() + hours * 3600000).toISOString();
       creationAttempted = true;
       created = await this.api(INVITATIONS, { method: "POST", data: {
-        name, expires, flow: flow.pk, single_use: true,
-        fixed_data: { email: user.email, user_id: user.pk, ...(this.test ? { username: user.username } : {}) },
+        name, expires, flow: flow.pk, single_use: attempts === 1,
+        fixed_data: { email: user.email, user_id: user.pk, ...(this.test ? { username: user.username } : {}),
+          ...(attempts > 1 ? { attempts } : {}) },
       } });
       if (!created?.pk) throw new InvitationError("Invitation creation could not be confirmed.");
       await this.api(`${INVITATIONS}${encodeURIComponent(created.pk)}/send_email/`, {
@@ -184,7 +191,7 @@ export class InvitationClient {
           template: this.test ? "email/cloud-test-passkey-invitation.html" : user.invitationKind === "recovery"
             ? "email/cloud-recovery-invitation.html" : "email/cloud-enrollment-invitation.html" },
       });
-      return { email: this.test ? delivery : user.email, expires, kind: user.invitationKind };
+      return { email: this.test ? delivery : user.email, expires, kind: user.invitationKind, attempts };
     } catch (error) {
       if (creationAttempted) {
         try {

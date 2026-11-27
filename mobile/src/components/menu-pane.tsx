@@ -2,13 +2,14 @@ import { router } from 'expo-router';
 import { View } from 'react-native';
 
 import { Row, Status, T } from '@/components/ui';
+import { t as text } from '@/i18n';
 import { BOOT_PATH, type Boot, useErp } from '@/lib/erp';
 
 /** One ERPNext menu (module sidebar): its lists, under their headings. */
 export function MenuPane({ name }: { name: string }) {
   const { data } = useErp<{ message: Boot }>(BOOT_PATH);
   const menu = data?.message.menus.find((m) => m.name === name);
-  if (!menu) return <View style={{ padding: 16 }}><Status kind="danger" label="Menu not found" /></View>;
+  if (!menu) return <View style={{ padding: 16 }}><Status kind="info" label={text('menu.notFound')} /></View>;
   return (
     <View>
       {menu.items.map((item, i) =>

@@ -33,7 +33,7 @@
       "stop_grace_period": "60s"
     },
     "server": {
-      "image": "ghcr.io/goauthentik/server@sha256:602227a86455d6772e3d16b7d852713c4f864f40df5df894abd1285bb53979a5",
+      "image": "ghcr.io/goauthentik/server@sha256:1675a017c46ba7f4f15333aeafeeb64538c581673bcbcd36af872cdf7de4e7f7",
       "command": "server",
       "restart": "unless-stopped",
       "mem_limit": "3g",
@@ -79,7 +79,7 @@
       ]
     },
     "worker": {
-      "image": "ghcr.io/goauthentik/server@sha256:602227a86455d6772e3d16b7d852713c4f864f40df5df894abd1285bb53979a5",
+      "image": "ghcr.io/goauthentik/server@sha256:1675a017c46ba7f4f15333aeafeeb64538c581673bcbcd36af872cdf7de4e7f7",
       "command": "worker",
       "restart": "unless-stopped",
       "mem_limit": "1g",

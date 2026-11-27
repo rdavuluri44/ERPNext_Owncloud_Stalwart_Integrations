@@ -1,0 +1,8 @@
+.gradle/
+build/
+local.properties
+gradle/
+gradlew
+gradlew.bat
+# mobile/.gitignore ignores "example"; the trial package com.example.passkeytrial must be kept
+!example/

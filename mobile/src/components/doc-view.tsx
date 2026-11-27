@@ -1,6 +1,7 @@
 import { ActivityIndicator, View } from 'react-native';
 
 import { Button, Status, T } from '@/components/ui';
+import { t as text } from '@/i18n';
 import { type DocField, type DocMeta, useErp, useMeta } from '@/lib/erp';
 import { formatValue, HIDDEN_TYPES } from '@/lib/format';
 import { useTheme } from '@/theme';
@@ -8,9 +9,9 @@ import { useTheme } from '@/theme';
 type Doc = Record<string, unknown> & { name: string; docstatus?: number };
 
 export function docStatus(meta: DocMeta | undefined, doc: Record<string, unknown>) {
-  if (doc.docstatus === 2) return { kind: 'danger', label: 'Cancelled' } as const;
-  if (doc.docstatus === 1) return { kind: 'ok', label: typeof doc.status === 'string' ? doc.status : 'Submitted' } as const;
-  if (meta?.is_submittable) return { kind: 'warn', label: 'Draft' } as const;
+  if (doc.docstatus === 2) return { kind: 'danger', label: text('doc.cancelled') } as const;
+  if (doc.docstatus === 1) return { kind: 'ok', label: typeof doc.status === 'string' ? doc.status : text('doc.submitted') } as const;
+  if (meta?.is_submittable) return { kind: 'warn', label: text('doc.draft') } as const;
   if (typeof doc.status === 'string' && doc.status) return { kind: 'info', label: doc.status } as const;
   return null;
 }
@@ -29,8 +30,8 @@ export function DocView({ doctype, name }: { doctype: string; name: string }) {
   if (error || metaError) {
     return (
       <View style={{ padding: 16, gap: 12 }}>
-        <Status kind="danger" label={error ?? metaError ?? 'Error'} />
-        <Button label="Try again" icon="refresh" secondary onPress={reload} />
+        <Status kind="danger" label={error ?? metaError ?? text('erp.unexpected')} />
+        <Button label={text('inbox.retry')} icon="refresh" secondary onPress={reload} />
       </View>
     );
   }
@@ -54,7 +55,7 @@ export function DocView({ doctype, name }: { doctype: string; name: string }) {
       content = (
         <View style={{ gap: 6 }}>
           {tableRows.map((r, i) => (
-            <View key={i} style={{ borderLeftWidth: 4, borderLeftColor: t.c.border, paddingLeft: 10 }}>
+            <View key={i} style={{ borderLeftWidth: 3, borderLeftColor: t.c.divider, paddingLeft: 10 }}>
               <T variant="small">
                 {`${i + 1}. ${cols.map((c) => formatValue(c, r[c.fieldname])).filter(Boolean).join(' · ') || '—'}`}
               </T>

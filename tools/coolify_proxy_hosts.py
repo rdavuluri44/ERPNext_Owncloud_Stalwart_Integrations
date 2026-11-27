@@ -47,11 +47,27 @@ PROXY_FLAG = '--entrypoints.https.proxyprotocol.trustedips='
 FORWARDED_FLAG = '--entrypoints.https.forwardedheaders.trustedips='
 
 
-def apply(text, mapping, network=None, aliases=(), proxy_trusted=None, http3=None):
+TLS_RESOLVER = 'letsencrypt-tls'
+
+
+def tls_resolver_flags(name=TLS_RESOLVER):
+    # P11: a second Let's Encrypt resolver using the TLS-ALPN challenge (port
+    # 443), for names whose port-80 challenges belong to another host (the
+    # relayed test names: the test host renews through the port-80 relay).
+    if not re.fullmatch(r'[a-z0-9-]+', name): raise ValueError('Invalid resolver name')
+    return [f'--certificatesresolvers.{name}.acme.tlschallenge=true',
+            f'--certificatesresolvers.{name}.acme.storage=/traefik/acme.json']
+
+
+def apply(text, mapping, network=None, aliases=(), proxy_trusted=None, http3=None, tls_resolver=None):
     """Return compose text with these pinned hosts, workspace network and the
     HTTPS entry point's PROXY-protocol trusted sources (a relay host)."""
     data = yaml.safe_load(text)
     service = data['services']['traefik']
+    if tls_resolver:
+        prefix = f'--certificatesresolvers.{tls_resolver}.'
+        command = [c for c in service.get('command', []) if not str(c).startswith(prefix)]
+        service['command'] = command + tls_resolver_flags(tls_resolver)
     if http3 is False:
         # A relayed host is reached by TCP pass-through only; advertising
         # HTTP/3 (UDP) sends browsers to the relay host, which cannot pass it.
@@ -93,6 +109,7 @@ if __name__ == '__main__':
     if profile.get('tier') != 'test': raise ValueError('Only test hosts pin proxy hostnames')
     mapping = profile.get('proxy_hosts') or {}
     aliases = [profile['hosts'][k] for k in ['erp', 'drive', 'office', 'mail', 'dms', 'respond']]
+    aliases += [profile['hosts'][k] for k in ['chat', 'chat-auth'] if k in profile['hosts']]
     args_apply = (mapping, profile['network'], aliases, profile.get('proxy_protocol_trusted_ips'),
                   False if profile.get('relay_target') else None)
     text = apply(COMPOSE.read_text(), *args_apply)

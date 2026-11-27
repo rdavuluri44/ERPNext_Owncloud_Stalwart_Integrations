@@ -6,6 +6,7 @@ import { useApiRef } from '@/auth/session';
 import { NoScreenshots } from '@/components/no-screenshots';
 import { Button, Row, Status, T } from '@/components/ui';
 import { t as text } from '@/i18n';
+import { OfflineError } from '@/lib/erp';
 import { formatDate, formatMoney, localToday } from '@/lib/format';
 import { type MyHr as Data, type Section, loadMyHr, statusKind } from '@/lib/my-hr';
 import { useTheme } from '@/theme';
@@ -19,6 +20,8 @@ export default function MyHr() {
   const apiRef = useApiRef();
   const [data, setData] = useState<Data | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+  // Leave and payslips are never kept on the phone (owner, 23 November 2026): offline, My HR says so.
+  const [offline, setOffline] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(() => {
@@ -27,15 +30,25 @@ export default function MyHr() {
       (d) => {
         setData(d);
         setError(null);
+        setOffline(false);
         setLoading(false);
       },
       (e: unknown) => {
         setError(e instanceof Error ? e.message : String(e));
+        setOffline(e instanceof OfflineError);
         setLoading(false);
       },
     );
   }, [apiRef]);
   useFocusEffect(load);
+  // Screenshots are blocked while My HR is on screen; tabs stay mounted, so not after leaving it.
+  const [shown, setShown] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      setShown(true);
+      return () => setShown(false);
+    }, []),
+  );
 
   const heading = (key: Parameters<typeof text>[0]) => (
     <T variant="small" color="muted" style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 6, fontWeight: '700' }}>
@@ -59,10 +72,10 @@ export default function MyHr() {
     <ScrollView
       style={{ backgroundColor: t.c.bg }}
       refreshControl={<RefreshControl refreshing={loading && data !== undefined} onRefresh={load} />}>
-      <NoScreenshots />
+      {shown && <NoScreenshots />}
       {error && (
         <View style={{ padding: 16, gap: 12 }}>
-          <Status kind="danger" label={text('myHr.error', { error })} />
+          {offline ? <Status kind="info" label={text('myHr.offline')} /> : <Status kind="danger" label={text('myHr.error', { error })} />}
           <Button label={text('inbox.retry')} icon="refresh" secondary onPress={load} />
         </View>
       )}
@@ -71,12 +84,12 @@ export default function MyHr() {
           <Status kind="pending" label={text('myHr.loading')} />
         </View>
       )}
-      {data === null && (
+      {data === null && !error && (
         <View style={{ padding: 16 }}>
           <Status kind="warn" label={text('myHr.noEmployee')} />
         </View>
       )}
-      {data && (
+      {data && !offline && (
         <>
           <View style={{ padding: 16, gap: 4 }}>
             <T variant="title">{data.employee?.employee_name || data.employee?.name}</T>
@@ -105,16 +118,13 @@ export default function MyHr() {
             (l) => l.length === 0,
             (l) =>
               l.map((a) => (
-                <View key={a.name}>
-                  <Row
-                    title={`${a.leave_type}: ${formatDate(a.from_date)} – ${formatDate(a.to_date)}`}
-                    subtitle={text('myHr.days', { days: a.total_leave_days ?? 0 })}
-                    onPress={() => openDoc('Leave Application', a.name)}
-                  />
-                  <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
-                    <Status kind={statusKind(a.status)} label={a.status ?? ''} />
-                  </View>
-                </View>
+                <Row
+                  key={a.name}
+                  title={`${a.leave_type}: ${formatDate(a.from_date)} – ${formatDate(a.to_date)}`}
+                  subtitle={text('myHr.days', { days: a.total_leave_days ?? 0 })}
+                  onPress={() => openDoc('Leave Application', a.name)}>
+                  {a.status ? <Status kind={statusKind(a.status)} label={a.status} /> : null}
+                </Row>
               )),
           )}
 
@@ -136,16 +146,15 @@ export default function MyHr() {
             (c) => c.length === 0,
             (c) =>
               c.map((claim) => (
-                <View key={claim.name}>
-                  <Row
-                    title={`${claim.expense_type ?? claim.name}: ${formatMoney(claim.total_claimed_amount, claim.currency)}`}
-                    subtitle={formatDate(claim.posting_date)}
-                    onPress={() => openDoc('Expense Claim', claim.name)}
-                  />
-                  <View style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
+                <Row
+                  key={claim.name}
+                  title={`${claim.expense_type ?? claim.name}: ${formatMoney(claim.total_claimed_amount, claim.currency)}`}
+                  subtitle={formatDate(claim.posting_date)}
+                  onPress={() => openDoc('Expense Claim', claim.name)}>
+                  {claim.approval_status || claim.status ? (
                     <Status kind={statusKind(claim.approval_status)} label={claim.approval_status ?? claim.status ?? ''} />
-                  </View>
-                </View>
+                  ) : null}
+                </Row>
               )),
           )}
 

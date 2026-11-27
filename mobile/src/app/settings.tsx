@@ -1,28 +1,50 @@
 import Constants from 'expo-constants';
-import { useEffect, useState } from 'react';
-import { Pressable, Switch, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, Switch, TextInput, View } from 'react-native';
 
 import { RELOCK_AFTER_MS } from '@/auth/lock';
-import { useAuth } from '@/auth/session';
+import { useApiRef, useAuth } from '@/auth/session';
 import { Button, Screen, Status, T } from '@/components/ui';
 import { t as text } from '@/i18n';
-import { offlineStorageKind } from '@/lib/offline-store';
+import { offlineStorageKind, offlineStore } from '@/lib/offline-store';
+import { flushQueue } from '@/lib/sender';
 import { useTheme } from '@/theme';
+
+const CONFIRM_WORD = 'DELETE';
 
 export default function Settings() {
   const t = useTheme();
   const { user, signOut } = useAuth();
+  const apiRef = useApiRef();
   const toggle = () => t.setOutdoor(!t.outdoor);
   const [storage, setStorage] = useState<'encrypted' | 'memory' | null>(null);
+  // Owner decision 4 (23 November 2026): with unsent entries, signing out needs "Send now" or the word DELETE.
+  const [unsent, setUnsent] = useState(0);
+  const [typed, setTyped] = useState('');
+  const [sending, setSending] = useState(false);
+  const count = useCallback(
+    () =>
+      offlineStore()
+        .then((st) => st.all())
+        .then((items) => setUnsent(items.length), () => setUnsent(0)),
+    [],
+  );
   useEffect(() => {
     offlineStorageKind().then(setStorage, () => setStorage('memory'));
-  }, []);
+    count();
+  }, [count]);
+  const sendNow = async () => {
+    setSending(true);
+    await flushQueue(apiRef.current).catch(() => {});
+    await count();
+    setSending(false);
+  };
+  const mayLeave = unsent === 0 || typed.trim() === CONFIRM_WORD;
   return (
     <Screen>
       <View style={{ gap: 6 }}>
-        <T variant="title">{user?.name || 'Signed in'}</T>
+        <T variant="title">{user?.name || text('settings.signedIn')}</T>
         {user?.email ? <T color="muted">{user.email}</T> : null}
-        <Status kind="ok" label={user ? `Connected to ERPNext: ${user.roles.length} roles` : 'Connected to ERPNext'} />
       </View>
 
       <Pressable
@@ -40,7 +62,7 @@ export default function Settings() {
           borderRadius: 10,
         }}>
         <View style={{ flex: 1, gap: 4 }}>
-          <T style={{ fontWeight: '700' }}>Outdoor mode: {t.outdoor ? 'ON' : 'OFF'}</T>
+          <T style={{ fontWeight: '700' }}>{text('settings.outdoor', { state: text(t.outdoor ? 'settings.on' : 'settings.off') })}</T>
           <T variant="small" color="muted">
             {text('settings.outdoorHint')}
           </T>
@@ -61,9 +83,33 @@ export default function Settings() {
         />
       ) : null}
 
-      <Button label="Sign out" icon="logout" secondary onPress={signOut} />
+      {unsent > 0 && (
+        <View style={{ gap: 10 }}>
+          <Status kind="warn" label={text('signOut.unsent', { count: unsent })} />
+          <Button label={text('today.sendNow')} icon="upload" onPress={sendNow} disabled={sending} />
+          <TextInput
+            value={typed}
+            onChangeText={setTyped}
+            accessibilityLabel={text('signOut.typeDelete', { word: CONFIRM_WORD })}
+            placeholder={text('signOut.typeDelete', { word: CONFIRM_WORD })}
+            placeholderTextColor={t.c.muted}
+            autoCapitalize="characters"
+            autoCorrect={false}
+            style={{
+              minHeight: t.touch,
+              paddingHorizontal: 12,
+              borderWidth: 1,
+              borderColor: t.c.line,
+              borderRadius: 10,
+              color: t.c.text,
+              fontSize: t.font(16),
+            }}
+          />
+        </View>
+      )}
+      <Button label={text('settings.signOut')} icon="sign-out" secondary tone={unsent > 0 ? 'danger' : 'primary'} onPress={signOut} disabled={!mayLeave} />
       <T variant="small" color="muted">
-        Version {Constants.expoConfig?.version}
+        {text('settings.version', { version: Constants.expoConfig?.version ?? '' })}
       </T>
     </Screen>
   );

@@ -11,12 +11,16 @@ from django.db import transaction
 from django.utils.timezone import now
 from authentik.core.models import Token, TokenIntents, User
 from authentik.stages.authenticator_webauthn.models import WebAuthnDevice
+from authentik.stages.invitation.models import Invitation
 
 RECOVERY_SLUG = "cloud-passkey-recovery-invitation"
+MAX_ATTEMPTS = 5  # P78: the administrator chooses 1 to 5 attempts per link
 ALLOWED_AAGUIDS = {
     "fbfc3007-154e-4ecc-8c0b-6e020557d7bd",
     "dd4ec289-e01d-41c9-bb89-70fa845d4bf2",
     "d548826e-79b4-db40-a3d8-11116f7e8349",
+    "ea9b8d66-4d01-1d21-3ce4-b6b48cb575d4",
+    "adce0002-35bc-c60a-648b-0b25f1f05503",
 }
 
 
@@ -29,7 +33,9 @@ def invitation_identity(ctx, expected_slug=RECOVERY_SLUG):
     invite = ctx.get("invitation")
     if not ctx.get("invitation_in_effect") or not invite:
         return None
-    if not invite.single_use or not invite.expiring or not invite.expires or invite.expires <= now():
+    if not invite.expiring or not invite.expires or invite.expires <= now():
+        return None
+    if not invite.single_use and attempts_allowed(invite) is None:
         return None
     if not invite.flow_id or invite.flow.slug != expected_slug:
         return None
@@ -49,7 +55,52 @@ def invitation_identity(ctx, expected_slug=RECOVERY_SLUG):
     pending = ctx.get("pending_user")
     if pending and pending.pk != user.pk:
         return None
+    if not invite.single_use and not count_attempt(ctx, invite, user):
+        return None
     return invite, user
+
+
+def attempts_allowed(invite):
+    # P78: a reusable link carries its attempt count; native single use means 1.
+    value = (invite.fixed_data or {}).get("attempts")
+    return value if type(value) is int and 2 <= value <= MAX_ATTEMPTS else None
+
+
+def attempts_ledger(invite):
+    return "cloud-invite-attempts-" + hashlib.sha256(str(invite.pk).encode()).hexdigest()
+
+
+def count_attempt(ctx, invite, user):
+    """Count each opening of a reusable link once; remove it after the last attempt."""
+    allowed = attempts_allowed(invite)
+    if allowed is None or not invite.pk:
+        return False
+    if ctx.get("cloud_invitation_attempt") == str(invite.pk):
+        return True
+    with transaction.atomic():
+        row = Invitation.objects.select_for_update().filter(pk=invite.pk).first()
+        if not row:
+            return False
+        ledger, _ = Token.objects.including_expired().get_or_create(
+            identifier=attempts_ledger(invite), defaults={"user": user, "intent": TokenIntents.INTENT_VERIFICATION,
+                "description": "0", "expires": invite.expires, "expiring": True})
+        used = int(ledger.description or 0) + 1
+        if ledger.user_id != user.pk or used > allowed:
+            row.delete()
+            return False
+        ledger.description = str(used)
+        ledger.save(update_fields=["description"])
+        if used >= allowed:
+            row.delete()  # the last attempt: the link stops working, like native single use
+    ctx["cloud_invitation_attempt"] = str(invite.pk)
+    return True
+
+
+def end_invitation(invite):
+    """After a successful setup a reusable link stops working, whatever attempts remain."""
+    if invite is not None and not invite.single_use and invite.pk:
+        Invitation.objects.filter(pk=invite.pk).delete()
+        Token.objects.including_expired().filter(identifier=attempts_ledger(invite)).delete()
 
 
 def begin_recovery(ctx):
@@ -142,6 +193,7 @@ def commit_recovery(ctx):
         user.save(update_fields=["attributes"])
         ctx["pending_user"] = user
         ctx["cloud_recovery_completed"] = True
+        end_invitation(invite)
     return True
 
 
@@ -167,6 +219,7 @@ def single_email_enrollment(ctx):
         return False
     invite, user = identity
     if WebAuthnDevice.objects.filter(user=user).exists():
+        end_invitation(invite)
         return False
     ctx["pending_user"] = user
     ctx["email"] = user.email

@@ -14,6 +14,10 @@ Reproducible authentik setup: a retained blueprint of providers, applications an
 - `deployment/scope-mappings.example.json`
 - `tools/authentik_blueprint.py`
 - `tests/test_invitation_configuration.py`
+- `tests/test_first_admin.py`
+- `tests/test_passkey_providers.py`
+- `tools/sync_passkey_providers.py`
+- `archive-reader/` and `tests/test_archive_reader_signin.py` (P69 mail archive reader)
 
 ## Requirements
 
@@ -23,7 +27,9 @@ authentik (existing instance); run tools under the native `ak shell`.
 
 ## Reuse
 
-Apply `configuration.json` through `tools/authentik_blueprint.py`; reuse `invite-recovery/` on its own for single-email invitation recovery (see its README).
+The approved passkey providers are one setting, [`passkey-providers.json`](passkey-providers.json); after changing it run
+`tools/sync_passkey_providers.py` (P79). Choose the first administrator of a fresh instance and switch off `akadmin` with
+[`first-admin/`](first-admin/README.md). Apply `configuration.json` through `tools/authentik_blueprint.py`; reuse `invite-recovery/` on its own for single-email invitation recovery (see its README).
 
 The default Brand in the blueprint gives stacked sign-in flows a plain white background and
 uses Authentik's light theme by default. Use the deployment's own logo through the existing
@@ -52,6 +58,25 @@ Private inputs: template slugs, exact callbacks, approved group and gateway for 
   templates by file name, so an installation that already has its own names sets the prefix to keep them. The
   defaults leave every file unchanged.
 - **Webmail product name:** `CI_MAIL_WEBMAIL_APP_NAME` in the profile's `settings`; without it webmail shows "Mail".
+
+### Mail archive reader (P69)
+
+The mail archive (see `integrations/mail/README.md`) is read through one dedicated account, `archive-reader`, never
+a staff account. It signs in with a passkey like staff, but reaches only the mail application:
+
+- Group **Mail Archive Readers** (no administrator rights, no parents). The passkey sign-in gate
+  (`<namespace>-passkey-approved-account`) admits active administrators, the staff group and this group. Every
+  other check is unchanged: an approved passkey provider is still required.
+- The mail application admits the staff group **or** this group (policy engine mode "any"). Mode "any" is only
+  used where every binding is a plain group binding, so it cannot weaken a policy binding. No other application
+  binds the group, so the reader is refused everywhere else.
+- The reader is not in the test group either, so it does not reach the other test applications. Self-service
+  passkey recovery stays staff-only: an administrator re-enrols the reader's passkey by impersonating it.
+- On a test client, `also_groups` in `configure_test_clients.py`'s profile admits the group (e.g. on the test
+  webmail). A rerun keeps a group added earlier, so test mail never ends up requiring both groups.
+- On an existing instance use `archive-reader/archive_reader_access.py` in `ak shell`: `plan`, `apply` (writes the
+  before-state receipt first, refuses a gate that was edited by hand), `check` and `rollback`.
+  `archive-reader/test_native.py` tests it on a throwaway authentik of the release in use; everything rolls back.
 
 ### Identity stack tuning (P49, carried over from production, 20 November 2026)
 

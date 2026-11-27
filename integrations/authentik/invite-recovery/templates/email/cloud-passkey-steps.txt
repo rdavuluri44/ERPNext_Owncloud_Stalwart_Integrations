@@ -1,6 +1,6 @@
 GET READY BEFORE OPENING THE LINK
 
-Use Apple Passwords/iCloud Keychain or Bitwarden Password Manager. Google Password Manager and other providers are not accepted.
+Use Apple Passwords/iCloud Keychain, Bitwarden (or Vaultwarden), Google Password Manager, or Chrome on a Mac. Other providers are not accepted. A passkey saved in Chrome on a Mac stays on that Mac only.
 
 Bitwarden:
 * Create an account at https://vault.vaultwarden.com/, preferably using the same email address as your Cloud username.
@@ -17,7 +17,7 @@ REGISTER YOUR PASSKEY
 
 1. Once your password manager is ready, open the invitation link below.
 2. Confirm the page is on sso.example.com. This personal link verifies your email; no second email is required.
-3. When asked to create a passkey, save it in Bitwarden or Apple Passwords/iCloud Keychain. Chrome is fine when Bitwarden is the save location. Do not choose Google Password Manager.
+3. When asked to create a passkey, save it in Bitwarden, Apple Passwords/iCloud Keychain, Google Password Manager or Chrome on this Mac.
 4. Confirm with your fingerprint, face or device PIN when prompted, and finish the on-screen steps. Keep access to your password manager for future sign-ins.
 
 If neither approved provider appears, stop and contact your administrator. Never share your master password, device PIN or passkey.

@@ -3,7 +3,7 @@
   "rules": [
     {
       "name": "ERP add-on",
-      "paths": ["erpnext_drive_integrations/**", "pyproject.toml", "MANIFEST.in", "deployment/erp/Dockerfile.addon", "integrations/insights/**"],
+      "paths": ["erpnext_drive_integrations/**", "pyproject.toml", "MANIFEST.in", "deployment/erp/Dockerfile.addon", "deployment/face-models.json", "tools/fetch_face_models.py", "integrations/insights/**"],
       "stacks": ["erp"],
       "steps": ["build the ERP add-on image for this commit", "deploy that one image to every ERP service", "bench migrate (runs the add-on's after_migrate setup)", "check the assets (tools/verify_erp_assets.py)"],
       "restart": ["every ERP service"]
@@ -58,6 +58,13 @@
       "restart": ["Paperless"]
     },
     {
+      "name": "Chat (Matrix)",
+      "paths": ["integrations/chat/**", "deployment/stacks/chat.compose.json"],
+      "stacks": ["chat"],
+      "steps": ["render the chat stack and redeploy it (the configure service rewrites both configuration files; the signing key is kept)"],
+      "restart": ["Synapse", "Matrix Authentication Service"]
+    },
+    {
       "name": "Document worker",
       "paths": ["integrations/document-worker/**", "deployment/stacks/processing.compose.json"],
       "stacks": ["processing"],
@@ -90,27 +97,40 @@
     },
     {
       "name": "Sign-in configuration",
-      "paths": ["integrations/authentik/configuration.json", "integrations/authentik/configure_test_clients.py", "tools/authentik_blueprint.py", "tools/restore_identity.py", "deployment/scope-mappings.example.json"],
+      "paths": ["integrations/authentik/configuration.json", "integrations/authentik/passkey-providers.json", "tools/sync_passkey_providers.py", "integrations/authentik/configure_test_clients.py", "tools/authentik_blueprint.py", "tools/restore_identity.py", "deployment/scope-mappings.example.json"],
       "stacks": [],
       "live": ["authentik providers, flows, scope mappings and brand: apply the change in authentik (blueprint or by hand)"],
       "not_covered": "Test Authentik covers the isolated issuer; production provider mappings, mail transport and production recovery require separate validation."
     },
     {
+      "name": "Mail archive reader sign-in (operator tool, P69)",
+      "paths": ["integrations/authentik/archive-reader/**"],
+      "stacks": [],
+      "live": ["run archive-reader/archive_reader_access.py in ak shell (plan, apply with a receipt, check) on the instance whose mail applications should admit the reader"]
+    },
+    {
+      "name": "First administrator (operator tool, P77)",
+      "paths": ["integrations/authentik/first-admin/**"],
+      "stacks": [],
+      "live": ["only when (re)setting the first administrator: run first-admin.sh against the authentik server container; it creates or refreshes the administrator without a password, prints a one-time passkey link and switches off akadmin"],
+      "not_covered": "Test Authentik covers the tool; production has not run it. Check production's akadmin and that its sign-in flow admits the administrator's passkey before running it there."
+    },
+    {
       "name": "Production proxy routes",
-      "paths": ["deployment/config/proxy/**", "deployment/config/proxy-inputs.json", "deployment/production/**", "tools/prepare_auth_bridge.py", "tools/sso_proxy_trust.py", "tools/coolify_proxy_hosts.py", "tools/coolify_proxy_http3.py"],
+      "paths": ["deployment/config/proxy/**", "deployment/config/proxy-inputs.json", "deployment/production/**", "tools/prepare_auth_bridge.py", "tools/sso_proxy_trust.py", "tools/coolify_proxy_hosts.py", "tools/coolify_proxy_http3.py", "tools/coolify_proxy_image.py", "tools/coolify_proxy_tls_resolver.py", "deployment/coolify-proxy.json"],
       "stacks": ["proxy"],
-      "steps": ["install the changed route or proxy files on the production proxy (keep a copy of the old ones)"],
+      "steps": ["install the changed route or proxy files on the production proxy (keep a copy of the old ones)", "when deployment/coolify-proxy.json changed: run tools/coolify_proxy_image.py --restart on the host, then --check", "when tools/coolify_proxy_tls_resolver.py is new or changed (or the running proxy lacks the resolver: --check): run it with --restart on the host at a quiet moment (about 16 seconds without the proxy), then --check"],
       "not_covered": "production-only route and proxy files: browser and protocol check right after promotion"
     },
     {
       "name": "Rendering of every stack",
-      "paths": ["tools/prepare_runtime.py", "tools/render_runtime.py", "tools/coolify_native.py", "deployment/stacks/inputs.json", "deployment/stacks/mounts.json"],
-      "stacks": ["erp", "website", "drive", "editor", "mail", "dms", "processing", "private-dns", "identity", "identity-support"],
+      "paths": ["tools/prepare_runtime.py", "tools/runtime_mounts.py", "tools/render_runtime.py", "tools/coolify_native.py", "deployment/stacks/inputs.json", "deployment/stacks/mounts.json"],
+      "stacks": ["erp", "website", "drive", "editor", "mail", "dms", "processing", "private-dns", "identity", "identity-support", "chat"],
       "steps": ["render every stack and compare the result with what runs; redeploy the stacks whose rendered files changed"]
     },
     {
       "name": "Host checks and watches",
-      "paths": ["tools/host_check.py", "tools/render_host_checks.py", "deployment/host-checks.example.json", "tools/editor_safety.py", "integrations/onlyoffice/editor-safety.*", "tools/upstream_watch.py", "deployment/upstream-watch*", "tools/drift_check.py", "deployment/drift-check.*", "deployment/mail-retention-purge.*", "integrations/backup/**", "integrations/monitoring/**", "tools/export_snapshot.py", "tools/backup_to_snapshot.py", "tools/snapshot_archive.py"],
+      "paths": ["tools/host_check.py", "tools/render_host_checks.py", "deployment/host-checks.example.json", "tools/editor_safety.py", "integrations/onlyoffice/editor-safety.*", "tools/upstream_watch.py", "tools/upstream_posts.py", "deployment/upstream-watch*", "tools/drift_check.py", "deployment/drift-check.*", "integrations/backup/**", "integrations/monitoring/**", "tools/export_snapshot.py", "tools/backup_to_snapshot.py", "tools/snapshot_archive.py", "deployment/mail-retention-purge.*"],
       "stacks": ["host"],
       "steps": ["update the installed copy on each server that runs it (host checks, editor safety, upstream watch, drift check, backup, snapshot export)"]
     },
@@ -128,7 +148,7 @@
     },
     {
       "name": "No running stack (documents, tests, checks, operator tools)",
-      "paths": ["*.md", "**/*.md", "LICENSE", ".github/**", ".gitignore", ".gitattributes", ".dockerignore", "modules.json", "docs/**", "tests/**", "tools/check_repository.py", "tools/run_unit_tests.py", "tools/promotion_plan.py", "tools/initialize_erp.py", "tools/migrate_asset_references.py", "tools/verify_erp_assets.py", "deployment/runtime.example.json", "deployment/promotion-map.json", "integrations/onlyoffice/sheetview_sanitize.py", "integrations/onlyoffice/editor-wopi.original.ejs", "integrations/authentik/invite-recovery/test_*", "integrations/authentik/invite-recovery/smoke_*"],
+      "paths": ["*.md", "**/*.md", "LICENSE", ".github/**", ".gitignore", ".gitattributes", ".dockerignore", "modules.json", "docs/**", "tests/**", "tools/check_repository.py", "tools/check_client_identity.py", ".client-identity-fingerprints", "tools/open_source.py", "tools/run_unit_tests.py", "tools/refresh_editor_original.py", "tools/refresh_webmail_overlay_base.py", "integrations/onlyoffice/upstream.json", "tools/promotion_plan.py", "tools/archive_container_logs.py", "tools/initialize_erp.py", "tools/migrate_asset_references.py", "tools/verify_erp_assets.py", "deployment/runtime.example.json", "deployment/promotion-map.json", "integrations/onlyoffice/sheetview_sanitize.py", "integrations/onlyoffice/editor-wopi.original.ejs", "integrations/authentik/invite-recovery/test_*", "integrations/authentik/invite-recovery/smoke_*"],
       "stacks": []
     }
   ]

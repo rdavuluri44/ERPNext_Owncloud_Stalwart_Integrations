@@ -126,7 +126,7 @@ export async function loadTodayHr(api: Api, today: string) {
 /** ERPNext's own status word gets a matching icon (shown with the word, never colour alone). */
 export function statusKind(status?: string | null): StatusKind {
   if (!status) return 'info';
-  if (['Approved', 'Paid', 'Submitted'].includes(status)) return 'ok';
+  if (['Approved', 'Paid', 'Submitted', 'Verified'].includes(status)) return 'ok';
   if (['Rejected', 'Cancelled'].includes(status)) return 'danger';
   return 'pending';
 }

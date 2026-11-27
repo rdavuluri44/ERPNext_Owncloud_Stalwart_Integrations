@@ -1,0 +1,192 @@
+{
+  "services": {
+    "configure": {
+      "image": "ghcr.io/element-hq/synapse@sha256:2cdc84f1de4687af89e4b7b1fe7b5f93e0ee7913243b63f79b05319cb6a8f525",
+      "restart": "no",
+      "user": "0:0",
+      "entrypoint": [
+        "python3",
+        "/configure.py"
+      ],
+      "environment": {
+        "CHAT_SERVER_NAME": "${CI_CHAT_CONFIGURE_CHAT_SERVER_NAME:?Set CI_CHAT_CONFIGURE_CHAT_SERVER_NAME}",
+        "CHAT_PUBLIC_URL": "${CI_CHAT_CONFIGURE_CHAT_PUBLIC_URL:?Set CI_CHAT_CONFIGURE_CHAT_PUBLIC_URL}",
+        "CHAT_AUTH_URL": "${CI_CHAT_CONFIGURE_CHAT_AUTH_URL:?Set CI_CHAT_CONFIGURE_CHAT_AUTH_URL}",
+        "SYNAPSE_DB_PASSWORD": "${CI_CHAT_CONFIGURE_SYNAPSE_DB_PASSWORD:?Set CI_CHAT_CONFIGURE_SYNAPSE_DB_PASSWORD}",
+        "MAS_DB_PASSWORD": "${CI_CHAT_CONFIGURE_MAS_DB_PASSWORD:?Set CI_CHAT_CONFIGURE_MAS_DB_PASSWORD}",
+        "SHARED_SECRET": "${CI_CHAT_CONFIGURE_SHARED_SECRET:?Set CI_CHAT_CONFIGURE_SHARED_SECRET}",
+        "MACAROON_SECRET": "${CI_CHAT_CONFIGURE_MACAROON_SECRET:?Set CI_CHAT_CONFIGURE_MACAROON_SECRET}",
+        "FORM_SECRET": "${CI_CHAT_CONFIGURE_FORM_SECRET:?Set CI_CHAT_CONFIGURE_FORM_SECRET}",
+        "MAS_ENCRYPTION_SECRET": "${CI_CHAT_CONFIGURE_MAS_ENCRYPTION_SECRET:?Set CI_CHAT_CONFIGURE_MAS_ENCRYPTION_SECRET}",
+        "UPSTREAM_ID": "${CI_CHAT_CONFIGURE_UPSTREAM_ID:?Set CI_CHAT_CONFIGURE_UPSTREAM_ID}",
+        "UPSTREAM_ISSUER": "${CI_CHAT_CONFIGURE_UPSTREAM_ISSUER:?Set CI_CHAT_CONFIGURE_UPSTREAM_ISSUER}",
+        "UPSTREAM_CLIENT_ID": "${CI_CHAT_CONFIGURE_UPSTREAM_CLIENT_ID:?Set CI_CHAT_CONFIGURE_UPSTREAM_CLIENT_ID}",
+        "UPSTREAM_CLIENT_SECRET": "${CI_CHAT_CONFIGURE_UPSTREAM_CLIENT_SECRET:?Set CI_CHAT_CONFIGURE_UPSTREAM_CLIENT_SECRET}",
+        "UPSTREAM_NAME": "${CI_CHAT_CONFIGURE_UPSTREAM_NAME:?Set CI_CHAT_CONFIGURE_UPSTREAM_NAME}",
+        "LOCALPART_TEMPLATE": "${CI_CHAT_CONFIGURE_LOCALPART_TEMPLATE:?Set CI_CHAT_CONFIGURE_LOCALPART_TEMPLATE}",
+        "BRIDGE_AS_TOKEN": "${CI_CHAT_CONFIGURE_BRIDGE_AS_TOKEN:?Set CI_CHAT_CONFIGURE_BRIDGE_AS_TOKEN}",
+        "BRIDGE_HS_TOKEN": "${CI_CHAT_CONFIGURE_BRIDGE_HS_TOKEN:?Set CI_CHAT_CONFIGURE_BRIDGE_HS_TOKEN}"
+      },
+      "volumes": [
+        "${RUNTIME_ROOT:?Set RUNTIME_ROOT}/mounts/chat_configure_0:/configure.py:ro",
+        "synapse-config:/synapse-config",
+        "mas-config:/mas-config",
+        "synapse-data:/data"
+      ],
+      "mem_limit": "256m",
+      "ports": [],
+      "networks": {
+        "default": {}
+      }
+    },
+    "database-synapse": {
+      "image": "postgres@sha256:d3244e8ce3f165ee3c93d9c4a4b1d0fe48b3a89e2287b717fdcbbde92d405065",
+      "restart": "unless-stopped",
+      "volumes": [
+        "synapse-db:/var/lib/postgresql/data"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"
+        ],
+        "interval": "10s",
+        "timeout": "3s",
+        "retries": 10
+      },
+      "mem_limit": "768m",
+      "environment": {
+        "POSTGRES_DB": "synapse",
+        "POSTGRES_USER": "synapse",
+        "POSTGRES_PASSWORD": "${CI_CHAT_CONFIGURE_SYNAPSE_DB_PASSWORD:?Set CI_CHAT_CONFIGURE_SYNAPSE_DB_PASSWORD}",
+        "POSTGRES_INITDB_ARGS": "--encoding=UTF8 --locale=C"
+      },
+      "ports": [],
+      "networks": {
+        "default": {}
+      },
+      "stop_grace_period": "60s"
+    },
+    "database-mas": {
+      "image": "postgres@sha256:d3244e8ce3f165ee3c93d9c4a4b1d0fe48b3a89e2287b717fdcbbde92d405065",
+      "restart": "unless-stopped",
+      "volumes": [
+        "mas-db:/var/lib/postgresql/data"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"
+        ],
+        "interval": "10s",
+        "timeout": "3s",
+        "retries": 10
+      },
+      "mem_limit": "384m",
+      "environment": {
+        "POSTGRES_DB": "mas",
+        "POSTGRES_USER": "mas",
+        "POSTGRES_PASSWORD": "${CI_CHAT_CONFIGURE_MAS_DB_PASSWORD:?Set CI_CHAT_CONFIGURE_MAS_DB_PASSWORD}"
+      },
+      "ports": [],
+      "networks": {
+        "default": {}
+      },
+      "stop_grace_period": "60s"
+    },
+    "mas": {
+      "image": "ghcr.io/element-hq/matrix-authentication-service@sha256:9252ed4ae66a172864c73550eedb1e805ad52586cf1949d8172b9e6f0db44918",
+      "restart": "unless-stopped",
+      "command": [
+        "server"
+      ],
+      "environment": {
+        "MAS_CONFIG": "/config/config.yaml"
+      },
+      "depends_on": {
+        "configure": {
+          "condition": "service_completed_successfully"
+        },
+        "database-mas": {
+          "condition": "service_healthy"
+        }
+      },
+      "volumes": [
+        "mas-config:/config:ro"
+      ],
+      "mem_limit": "512m",
+      "ports": [
+        "127.0.0.1:${CI_CHAT_MAS_HOST_PORT:?Set private port}:8080"
+      ],
+      "networks": {
+        "default": {},
+        "workspace": {
+          "aliases": [
+            "chat-mas"
+          ]
+        }
+      }
+    },
+    "synapse": {
+      "image": "ghcr.io/element-hq/synapse@sha256:2cdc84f1de4687af89e4b7b1fe7b5f93e0ee7913243b63f79b05319cb6a8f525",
+      "restart": "unless-stopped",
+      "environment": {
+        "SYNAPSE_CONFIG_PATH": "/config/homeserver.yaml"
+      },
+      "depends_on": {
+        "configure": {
+          "condition": "service_completed_successfully"
+        },
+        "database-synapse": {
+          "condition": "service_healthy"
+        },
+        "mas": {
+          "condition": "service_started"
+        }
+      },
+      "volumes": [
+        "synapse-config:/config:ro",
+        "synapse-data:/data"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:8008/health || exit 1"
+        ],
+        "interval": "15s",
+        "timeout": "5s",
+        "retries": 10,
+        "start_period": "30s"
+      },
+      "mem_limit": "1536m",
+      "ports": [
+        "127.0.0.1:${CI_CHAT_SYNAPSE_HOST_PORT:?Set private port}:8008"
+      ],
+      "networks": {
+        "default": {},
+        "workspace": {
+          "aliases": [
+            "chat-synapse"
+          ]
+        }
+      },
+      "stop_grace_period": "30s"
+    }
+  },
+  "networks": {
+    "workspace": {
+      "external": true,
+      "name": "${WORKSPACE_NETWORK:?Create the workspace network}"
+    },
+    "default": {
+      "internal": true
+    }
+  },
+  "volumes": {
+    "synapse-config": {},
+    "mas-config": {},
+    "synapse-data": {},
+    "synapse-db": {},
+    "mas-db": {}
+  }
+}

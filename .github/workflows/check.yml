@@ -7,6 +7,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.14'
@@ -14,6 +16,17 @@ jobs:
         with:
           node-version: '24'
       - run: pip install 'PyJWT[crypto]>=2.8,<3' 'requests>=2.32,<3' 'PyYAML==6.0.3'
+      - name: Client identity stays private (P84)
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          if [ -n "$BASE_REF" ]; then
+            python tools/check_client_identity.py --text "$PR_TITLE" --text "$PR_BODY" --commits "origin/$BASE_REF..HEAD"
+          else
+            python tools/check_client_identity.py
+          fi
       - run: python tools/check_repository.py
       - run: python tools/run_unit_tests.py
       - run: python test_recovery_guard.py

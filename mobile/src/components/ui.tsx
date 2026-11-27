@@ -1,14 +1,15 @@
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import type { ComponentProps, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Pressable, ScrollView, Text, TextInput, View, type TextProps } from 'react-native';
 
+import { Icon, type IconName } from '@/components/icon';
 import { t as text } from '@/i18n';
 import type { PaletteColor } from '@/theme/colors';
 import { useTheme } from '@/theme';
 
-export type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
+export type { IconName } from '@/components/icon';
 
-const SIZES = { small: 16, body: 18, title: 24 } as const;
+// Owner's minimum is 16 pt; hierarchy comes from weight and colour (titles 20 pt, secondary text in `muted`).
+const SIZES = { small: 16, body: 16, title: 20 } as const;
 
 /** Text. Minimum 16 pt so it stays readable in sunlight; bolder in Outdoor mode. */
 export function T({
@@ -25,11 +26,64 @@ export function T({
         {
           color: t.c[color],
           fontSize: t.font(SIZES[variant]),
-          fontWeight: variant === 'title' || t.outdoor ? '700' : '500',
+          fontWeight: variant === 'title' || t.outdoor ? '700' : '400',
         },
         style,
       ]}
     />
+  );
+}
+
+/** A labelled text box (several lines), large text and a visible border. */
+export function TextArea({ label, value, onChange }: { label: string; value: string; onChange: (text: string) => void }) {
+  const t = useTheme();
+  return (
+    <View style={{ gap: 6 }}>
+      <T style={{ fontWeight: '700' }}>{label}</T>
+      <TextInput
+        value={value}
+        onChangeText={onChange}
+        accessibilityLabel={label}
+        multiline
+        style={{
+          minHeight: t.touch * 2,
+          padding: 12,
+          borderWidth: t.border,
+          borderColor: t.c.border,
+          borderRadius: 10,
+          color: t.c.text,
+          fontSize: t.font(16),
+          textAlignVertical: 'top',
+        }}
+      />
+    </View>
+  );
+}
+
+/** One choice of several (Present / Absent, Operating / Standby): selected is shown by a tick and a thick border. */
+export function Choice({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
+  const t = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={{
+        minHeight: t.touch,
+        justifyContent: 'center',
+        paddingHorizontal: 12,
+        borderRadius: 10,
+        borderWidth: selected ? t.border + 2 : t.border,
+        borderColor: selected ? t.c.primary : t.c.border,
+        backgroundColor: selected ? t.c.infoTint : t.c.bg,
+      }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {selected && <Icon name="check" size={t.font(22)} color={t.c.primary} />}
+        <T style={{ fontWeight: selected ? '700' : '400' }} color={selected ? 'primary' : 'text'}>
+          {label}
+        </T>
+      </View>
+    </Pressable>
   );
 }
 
@@ -58,7 +112,7 @@ export function SearchField({
         borderRadius: 10,
         backgroundColor: t.c.bg,
       }}>
-      <MaterialCommunityIcons name="magnify" size={t.font(24)} color={t.c.text} />
+      <Icon name="search" size={t.font(24)} color={t.c.text} />
       <TextInput
         value={value}
         onChangeText={onChange}
@@ -68,7 +122,7 @@ export function SearchField({
         autoCorrect={false}
         autoCapitalize="none"
         returnKeyType="search"
-        style={{ flex: 1, minHeight: t.touch, color: t.c.text, fontSize: t.font(18) }}
+        style={{ flex: 1, minHeight: t.touch, color: t.c.text, fontSize: t.font(16) }}
       />
       {value ? (
         <Pressable
@@ -77,7 +131,7 @@ export function SearchField({
           onPress={() => onChange('')}
           hitSlop={12}
           style={{ minWidth: t.touch, minHeight: t.touch, alignItems: 'center', justifyContent: 'center' }}>
-          <MaterialCommunityIcons name="close-circle" size={t.font(24)} color={t.c.text} />
+          <Icon name="clear" size={t.font(24)} color={t.c.text} />
         </Pressable>
       ) : null}
     </View>
@@ -90,16 +144,20 @@ export function Button({
   icon,
   secondary,
   disabled,
+  tone = 'primary',
 }: {
   label: string;
   onPress: () => void;
   icon?: IconName;
   secondary?: boolean;
+  /** Filled colour: primary (blue), ok (green, approve), danger (red, return). */
+  tone?: 'primary' | 'ok' | 'danger';
   /** While an action is being sent: the button cannot be pressed again. */
   disabled?: boolean;
 }) {
   const t = useTheme();
-  const fg = secondary ? t.c.primary : t.c.onPrimary;
+  const fill = t.c[tone];
+  const fg = secondary ? fill : t.c.onPrimary;
   return (
     <Pressable
       accessibilityRole="button"
@@ -114,25 +172,26 @@ export function Button({
         gap: 10,
         paddingHorizontal: 20,
         borderRadius: 10,
-        borderWidth: t.border,
-        borderColor: t.c.primary,
-        backgroundColor: secondary ? t.c.bg : t.c.primary,
+        borderWidth: secondary ? Math.max(t.border, 1.5) : 0,
+        borderColor: fill,
+        backgroundColor: secondary ? t.c.bg : fill,
         opacity: pressed && !disabled ? 0.75 : 1, // no dimming: text keeps its 7:1 contrast
       })}>
-      {icon && <MaterialCommunityIcons name={icon} size={t.font(24)} color={fg} />}
-      <Text style={{ color: fg, fontSize: t.font(18), fontWeight: '700' }}>{label}</Text>
+      {icon && <Icon name={icon} size={t.font(22)} color={fg} />}
+      <Text style={{ color: fg, fontSize: t.font(16), fontWeight: '700' }}>{label}</Text>
     </Pressable>
   );
 }
 
 // Status is always icon + text, never colour alone (rule 13).
 const STATUS = {
-  ok: { icon: 'check-circle', color: 'ok' },
-  warn: { icon: 'alert', color: 'warn' },
-  danger: { icon: 'close-octagon', color: 'danger' },
-  info: { icon: 'information', color: 'primary' },
-  pending: { icon: 'cloud-upload-outline', color: 'primary' },
-  offline: { icon: 'cloud-off-outline', color: 'muted' },
+  ok: { icon: 'ok', color: 'ok' },
+  warn: { icon: 'warn', color: 'warn' },
+  danger: { icon: 'danger', color: 'danger' },
+  info: { icon: 'info', color: 'primary' },
+  pending: { icon: 'pending', color: 'primary' },
+  offline: { icon: 'offline', color: 'muted' },
+  none: { icon: 'ok', color: 'muted' },
 } as const satisfies Record<string, { icon: IconName; color: PaletteColor }>;
 
 export type StatusKind = keyof typeof STATUS;
@@ -144,22 +203,60 @@ export function Status({ kind, label }: { kind: StatusKind; label: string }) {
     <View
       accessible
       accessibilityLabel={label}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        alignSelf: 'flex-start',
-        paddingVertical: 6,
-        paddingHorizontal: 12,
-        borderRadius: 999,
-        borderWidth: t.border,
-        borderColor: t.c[s.color],
-        backgroundColor: t.c.bg,
-      }}>
-      <MaterialCommunityIcons name={s.icon} size={t.font(20)} color={t.c[s.color]} />
-      <T variant="small" color={s.color} style={{ fontWeight: '700' }}>
+      // A status line, not a box: icon and words (the colour is never the only signal).
+      style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingVertical: 2 }}>
+      <Icon name={s.icon} size={t.font(20)} color={t.c[s.color]} />
+      <T variant="small" color={s.color} style={{ flex: 1, fontWeight: '600' }}>
         {label}
       </T>
+    </View>
+  );
+}
+
+/** A white card on the grey page (owner's reference design); `accent` adds a coloured left edge. */
+export function Panel({ accent, children }: { accent?: 'primary' | 'ok' | 'warn' | 'danger'; children: ReactNode }) {
+  const t = useTheme();
+  return (
+    <View
+      style={{
+        gap: 10,
+        padding: 16,
+        borderRadius: 14,
+        backgroundColor: t.c.bg,
+        borderWidth: 1,
+        borderColor: t.c.divider,
+        borderLeftWidth: accent ? 5 : 1,
+        borderLeftColor: accent ? t.c[accent] : t.c.divider,
+      }}>
+      {children}
+    </View>
+  );
+}
+
+/** A small label in capitals on a tinted strip, as the design's card headings. */
+export function Label({ text: label, tone = 'primary' }: { text: string; tone?: 'primary' | 'ok' | 'warn' | 'danger' }) {
+  const t = useTheme();
+  const tint = { primary: t.c.infoTint, ok: t.c.okTint, warn: t.c.warnTint, danger: t.c.dangerTint }[tone];
+  return (
+    <View style={{ alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, backgroundColor: tint }}>
+      <T variant="small" color={tone} style={{ fontWeight: '700', letterSpacing: 0.4 }}>
+        {label.toUpperCase()}
+      </T>
+    </View>
+  );
+}
+
+/** A progress bar (always shown with its numbers in words next to it; never the only information). */
+export function Progress({ done, total, label }: { done: number; total: number; label: string }) {
+  const t = useTheme();
+  const share = total > 0 ? Math.min(1, done / total) : 0;
+  return (
+    <View
+      accessibilityRole="progressbar"
+      accessibilityLabel={label}
+      accessibilityValue={{ min: 0, max: total, now: done }}
+      style={{ height: 10, borderRadius: 5, backgroundColor: t.c.surface, borderWidth: t.outdoor ? 1 : 0, borderColor: t.c.border, overflow: 'hidden' }}>
+      <View style={{ width: `${share * 100}%`, height: '100%', backgroundColor: t.c.primary }} />
     </View>
   );
 }
@@ -191,12 +288,12 @@ export function Card({
         alignItems: 'center',
         gap: 14,
         padding: 16,
-        borderWidth: t.border,
-        borderColor: t.c.border,
-        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: t.c.divider,
+        borderRadius: 14,
         backgroundColor: pressed ? t.c.surface : t.c.bg,
       })}>
-      <MaterialCommunityIcons name={icon} size={t.font(30)} color={t.c.primary} />
+      <Icon name={icon} size={t.font(26)} color={t.c.primary} />
       <View style={{ flex: 1, gap: 4 }}>
         <T style={{ fontWeight: '700' }}>{title}</T>
         {detail ? (
@@ -210,7 +307,7 @@ export function Card({
           {count}
         </T>
       )}
-      {onPress && <MaterialCommunityIcons name="chevron-right" size={t.font(28)} color={t.c.text} />}
+      {onPress && <Icon name="chevron-right" size={t.font(24)} color={t.c.text} />}
     </Pressable>
   );
 }
@@ -221,11 +318,14 @@ export function Row({
   subtitle,
   onPress,
   selected,
+  children,
 }: {
   title: string;
   subtitle?: string;
   onPress?: () => void;
   selected?: boolean;
+  /** Status lines of this row, shown under the title inside the row. */
+  children?: ReactNode;
 }) {
   const t = useTheme();
   return (
@@ -241,20 +341,21 @@ export function Row({
         paddingHorizontal: 16,
         paddingVertical: 10,
         borderBottomWidth: 1,
-        borderBottomColor: t.c.border,
-        borderLeftWidth: selected ? 6 : 0,
+        borderBottomColor: t.c.divider,
+        borderLeftWidth: selected ? 5 : 0,
         borderLeftColor: t.c.primary,
         backgroundColor: selected || pressed ? t.c.surface : t.c.bg,
       })}>
       <View style={{ flex: 1, gap: 2 }}>
-        <T style={{ fontWeight: '700' }}>{title}</T>
-        {subtitle && (
+        <T style={{ fontWeight: '600' }}>{title}</T>
+        {subtitle ? (
           <T variant="small" color="muted">
             {subtitle}
           </T>
-        )}
+        ) : null}
+        {children ? <View style={{ gap: 2, paddingTop: 4 }}>{children}</View> : null}
       </View>
-      {onPress && <MaterialCommunityIcons name="chevron-right" size={t.font(28)} color={t.c.text} />}
+      {onPress && <Icon name="chevron-right" size={t.font(22)} color={t.c.muted} />}
     </Pressable>
   );
 }

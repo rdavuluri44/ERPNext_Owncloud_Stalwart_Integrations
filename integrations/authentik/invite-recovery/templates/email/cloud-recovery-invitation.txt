@@ -4,7 +4,7 @@ Your administrator has sent you a passkey recovery invitation.
 
 Your old Cloud passkeys will be deleted only after you successfully register AND verify your replacement. Incomplete recovery will leave your old keys working.
 
-Before opening the link, prepare Apple Passwords/iCloud Keychain or Bitwarden. Google Password Manager and other providers are not accepted.
+Before opening the link, prepare Apple Passwords/iCloud Keychain, Bitwarden (or Vaultwarden), Google Password Manager, or Chrome on a Mac. Other providers are not accepted. A passkey saved in Chrome on a Mac stays on that Mac only.
 
 Bitwarden:
 * Create an account at https://vault.vaultwarden.com/ if you do not already have one, preferably using the same email address as your Cloud username.

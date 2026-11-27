@@ -1,0 +1,868 @@
+{
+  "note": "Every open-source project we use, borrow code from or evaluate (P35; working agreements). Edit here; tools/open_source.py renders the README acknowledgements and docs/open-source.md and checks this list against the upstream watch and modules.json. Licences as read from each repository on 26 November 2026 unless marked \"to verify\".",
+  "projects": [
+    {
+      "name": "Frappe Framework",
+      "repo": "https://github.com/frappe/frappe",
+      "licence": "MIT",
+      "used_in": [
+        "erp-addon-shell",
+        "portal-sso",
+        "drive-store"
+      ],
+      "status": "adopted",
+      "watch": [
+        "frappe"
+      ]
+    },
+    {
+      "name": "ERPNext",
+      "repo": "https://github.com/frappe/erpnext",
+      "licence": "GPL-3.0",
+      "used_in": [
+        "erp-addon-shell",
+        "custom-hr",
+        "onboarding"
+      ],
+      "status": "adopted",
+      "watch": [
+        "erpnext"
+      ]
+    },
+    {
+      "name": "Frappe HR",
+      "repo": "https://github.com/frappe/hrms",
+      "licence": "GPL-3.0",
+      "used_in": [
+        "erp-addon-shell",
+        "custom-hr"
+      ],
+      "status": "adopted",
+      "watch": [
+        "hrms"
+      ]
+    },
+    {
+      "name": "India Compliance",
+      "repo": "https://github.com/resilient-tech/india-compliance",
+      "licence": "GPL-3.0",
+      "used_in": [
+        "onboarding"
+      ],
+      "status": "adopted",
+      "watch": [
+        "india_compliance"
+      ]
+    },
+    {
+      "name": "India Payroll",
+      "repo": "https://github.com/frappe/india-payroll",
+      "licence": "GPL-3.0",
+      "used_in": [
+        "erp image"
+      ],
+      "status": "adopted",
+      "watch": [
+        "india_payroll"
+      ]
+    },
+    {
+      "name": "Frappe Insights",
+      "repo": "https://github.com/frappe/insights",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "insights-adapter"
+      ],
+      "status": "adopted",
+      "watch": [
+        "insights"
+      ]
+    },
+    {
+      "name": "Raven",
+      "repo": "https://github.com/frappe/raven",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "erp image"
+      ],
+      "status": "retired",
+      "note": "removed from the ERP image in P108 (owner, 27 November 2026); Matrix replaces it as the internal chat (P73)"
+    },
+    {
+      "name": "Payment Integration Utils",
+      "repo": "https://github.com/resilient-tech/payment_integration_utils",
+      "licence": "GPL-3.0",
+      "used_in": [
+        "erp image"
+      ],
+      "status": "adopted",
+      "watch": [
+        "payment_integration_utils"
+      ]
+    },
+    {
+      "name": "RazorpayX Integration",
+      "repo": "https://github.com/resilient-tech/razorpayx-integration",
+      "licence": "GPL-3.0",
+      "used_in": [
+        "erp image"
+      ],
+      "status": "adopted",
+      "watch": [
+        "razorpayx_integration"
+      ]
+    },
+    {
+      "name": "Frappe Bench",
+      "repo": "https://github.com/frappe/bench",
+      "licence": "GPL-3.0",
+      "used_in": [
+        "deployment (build)"
+      ],
+      "status": "adopted",
+      "watch": [
+        "frappe-bench"
+      ]
+    },
+    {
+      "name": "frappe_docker (official build recipe)",
+      "repo": "https://github.com/frappe/frappe_docker",
+      "licence": "MIT",
+      "used_in": [
+        "deployment"
+      ],
+      "status": "adopted",
+      "watch": [
+        "frappe_docker"
+      ]
+    },
+    {
+      "name": "Frappe Suite app logos",
+      "repo": "https://github.com/frappe/suite",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "erp-addon-shell"
+      ],
+      "status": "adopted",
+      "not_watched": "artwork copied once (LICENSES.md); no code runs",
+      "credit": "Frappe Suite (app icons)"
+    },
+    {
+      "name": "eKYC India",
+      "repo": "",
+      "licence": "to verify",
+      "used_in": [
+        "P03"
+      ],
+      "status": "evaluating",
+      "note": "official source staged, app not installed (P03); record its repository and licence when adopted"
+    },
+    {
+      "name": "frappe_whatsapp",
+      "repo": "https://github.com/shridarpatil/frappe_whatsapp",
+      "licence": "to verify (GitHub reports no standard licence)",
+      "used_in": [
+        "P04"
+      ],
+      "status": "evaluating",
+      "note": "planned under P04, not installed"
+    },
+    {
+      "name": "authentik",
+      "repo": "https://github.com/goauthentik/authentik",
+      "licence": "MIT (core; enterprise features under their own licence)",
+      "used_in": [
+        "authentik-identity",
+        "portal-sso"
+      ],
+      "status": "adopted",
+      "watch": [
+        "ghcr.io/goauthentik/server"
+      ]
+    },
+    {
+      "name": "ownCloud Infinite Scale",
+      "repo": "https://github.com/owncloud/ocis",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "drive",
+        "drive-store"
+      ],
+      "status": "adopted",
+      "watch": [
+        "owncloud/ocis"
+      ]
+    },
+    {
+      "name": "ownCloud Web",
+      "repo": "https://github.com/owncloud/web",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "drive"
+      ],
+      "status": "adopted",
+      "not_watched": "shipped inside ownCloud Infinite Scale releases, which are watched",
+      "note": "upstream repository archived on 23 November 2026; the web client lives on in ocis (services/web); to verify where development continues"
+    },
+    {
+      "name": "ocis-konnectd",
+      "repo": "https://github.com/owncloud/ocis-konnectd",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "deployment (native clients)"
+      ],
+      "status": "adopted",
+      "watch": [
+        "ocis-konnectd"
+      ],
+      "note": "upstream repository archived since 2020; we pin it for the native sign-in clients"
+    },
+    {
+      "name": "ONLYOFFICE Docs",
+      "repo": "https://github.com/ONLYOFFICE/DocumentServer",
+      "licence": "AGPL-3.0-only with additional terms",
+      "used_in": [
+        "onlyoffice-editor"
+      ],
+      "status": "adopted",
+      "watch": [
+        "onlyoffice/documentserver"
+      ]
+    },
+    {
+      "name": "Collabora Online",
+      "repo": "https://github.com/CollaboraOnline/online",
+      "licence": "MPL-2.0 (to verify; GitHub reports no standard licence)",
+      "used_in": [
+        "editor"
+      ],
+      "status": "retired",
+      "note": "used until November 2026, replaced by ONLYOFFICE Docs, P42"
+    },
+    {
+      "name": "Stalwart Mail Server",
+      "repo": "https://github.com/stalwartlabs/stalwart",
+      "licence": "AGPL-3.0 (or the commercial SEL)",
+      "used_in": [
+        "mail"
+      ],
+      "status": "adopted",
+      "watch": [
+        "stalwartlabs/stalwart"
+      ]
+    },
+    {
+      "name": "Bulwark Webmail",
+      "repo": "https://github.com/bulwarkmail/webmail",
+      "licence": "AGPL-3.0-only (integrations/mail/LICENSE.upstream)",
+      "used_in": [
+        "mail"
+      ],
+      "status": "adopted",
+      "watch": [
+        "bulwark-webmail"
+      ]
+    },
+    {
+      "name": "Paperless-ngx",
+      "repo": "https://github.com/paperless-ngx/paperless-ngx",
+      "licence": "GPL-3.0",
+      "used_in": [
+        "dms"
+      ],
+      "status": "adopted",
+      "watch": [
+        "ghcr.io/paperless-ngx/paperless-ngx"
+      ]
+    },
+    {
+      "name": "Apache Tika",
+      "repo": "https://github.com/apache/tika",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "document-worker"
+      ],
+      "status": "adopted",
+      "watch": [
+        "apache/tika"
+      ]
+    },
+    {
+      "name": "Gotenberg",
+      "repo": "https://github.com/gotenberg/gotenberg",
+      "licence": "MIT",
+      "used_in": [
+        "document-worker"
+      ],
+      "status": "adopted",
+      "watch": [
+        "gotenberg/gotenberg"
+      ]
+    },
+    {
+      "name": "Coolify",
+      "repo": "https://github.com/coollabsio/coolify",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "deployment"
+      ],
+      "status": "adopted",
+      "watch": [
+        "coolify"
+      ]
+    },
+    {
+      "name": "Traefik",
+      "repo": "https://github.com/traefik/traefik",
+      "licence": "MIT",
+      "used_in": [
+        "deployment"
+      ],
+      "status": "adopted",
+      "watch": [
+        "traefik"
+      ]
+    },
+    {
+      "name": "nginx",
+      "repo": "https://nginx.org",
+      "licence": "BSD-2-Clause",
+      "used_in": [
+        "deployment",
+        "website"
+      ],
+      "status": "adopted",
+      "watch": [
+        "nginx"
+      ]
+    },
+    {
+      "name": "Docker Engine (Moby)",
+      "repo": "https://github.com/moby/moby",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "hosts"
+      ],
+      "status": "adopted",
+      "watch": [
+        "docker"
+      ]
+    },
+    {
+      "name": "MariaDB",
+      "repo": "https://github.com/MariaDB/server",
+      "licence": "GPL-2.0",
+      "used_in": [
+        "erp"
+      ],
+      "status": "adopted",
+      "watch": [
+        "mariadb"
+      ]
+    },
+    {
+      "name": "PostgreSQL",
+      "repo": "https://www.postgresql.org",
+      "licence": "PostgreSQL License",
+      "used_in": [
+        "dms",
+        "identity"
+      ],
+      "status": "adopted",
+      "watch": [
+        "postgres"
+      ]
+    },
+    {
+      "name": "Redis",
+      "repo": "https://github.com/redis/redis",
+      "licence": "AGPL-3.0, RSALv2 or SSPLv1 (Redis 8; we run 8.x)",
+      "used_in": [
+        "erp",
+        "dms",
+        "identity"
+      ],
+      "status": "adopted",
+      "watch": [
+        "redis"
+      ]
+    },
+    {
+      "name": "Python",
+      "repo": "https://github.com/python/cpython",
+      "licence": "PSF-2.0",
+      "used_in": [
+        "erp image",
+        "tools"
+      ],
+      "status": "adopted",
+      "watch": [
+        "python"
+      ]
+    },
+    {
+      "name": "Node.js",
+      "repo": "https://github.com/nodejs/node",
+      "licence": "MIT",
+      "used_in": [
+        "erp image (build)",
+        "mail overlay (build)"
+      ],
+      "status": "adopted",
+      "watch": [
+        "node",
+        "node-build"
+      ]
+    },
+    {
+      "name": "CoreDNS",
+      "repo": "https://github.com/coredns/coredns",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "private DNS"
+      ],
+      "status": "adopted",
+      "watch": [
+        "coredns/coredns"
+      ]
+    },
+    {
+      "name": "Tailscale",
+      "repo": "https://github.com/tailscale/tailscale",
+      "licence": "BSD-3-Clause",
+      "used_in": [
+        "hosts (mesh)"
+      ],
+      "status": "adopted",
+      "watch": [
+        "tailscale"
+      ]
+    },
+    {
+      "name": "Headscale",
+      "repo": "https://github.com/juanfont/headscale",
+      "licence": "BSD-3-Clause",
+      "used_in": [
+        "P29",
+        "P82"
+      ],
+      "status": "evaluating",
+      "note": "planned own mesh server (P29); also the later complement for computer binding (P82)"
+    },
+    {
+      "name": "Linux kernel",
+      "repo": "https://kernel.org",
+      "licence": "GPL-2.0",
+      "used_in": [
+        "hosts"
+      ],
+      "status": "adopted",
+      "watch": [
+        "linux"
+      ]
+    },
+    {
+      "name": "Ubuntu",
+      "repo": "https://ubuntu.com",
+      "licence": "various free licences (Canonical)",
+      "used_in": [
+        "hosts"
+      ],
+      "status": "adopted",
+      "watch": [
+        "ubuntu"
+      ]
+    },
+    {
+      "name": "TrueNAS",
+      "repo": "https://www.truenas.com",
+      "licence": "GPL-3.0 (to verify)",
+      "used_in": [
+        "backup host",
+        "test host"
+      ],
+      "status": "adopted",
+      "watch": [
+        "truenas"
+      ]
+    },
+    {
+      "name": "restic",
+      "repo": "https://github.com/restic/restic",
+      "licence": "BSD-2-Clause",
+      "used_in": [
+        "backup"
+      ],
+      "status": "adopted",
+      "watch": [
+        "restic"
+      ]
+    },
+    {
+      "name": "RustFS",
+      "repo": "https://github.com/rustfs/rustfs",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "backup"
+      ],
+      "status": "adopted",
+      "watch": [
+        "rustfs"
+      ]
+    },
+    {
+      "name": "Grafana",
+      "repo": "https://github.com/grafana/grafana",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "monitoring"
+      ],
+      "status": "adopted",
+      "watch": [
+        "grafana/grafana"
+      ]
+    },
+    {
+      "name": "Loki",
+      "repo": "https://github.com/grafana/loki",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "monitoring"
+      ],
+      "status": "adopted",
+      "watch": [
+        "grafana/loki"
+      ]
+    },
+    {
+      "name": "Alloy",
+      "repo": "https://github.com/grafana/alloy",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "monitoring"
+      ],
+      "status": "adopted",
+      "watch": [
+        "grafana/alloy"
+      ]
+    },
+    {
+      "name": "Prometheus",
+      "repo": "https://github.com/prometheus/prometheus",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "monitoring"
+      ],
+      "status": "adopted",
+      "watch": [
+        "prom/prometheus"
+      ],
+      "also": [
+        "https://prometheus.io/"
+      ]
+    },
+    {
+      "name": "node_exporter",
+      "repo": "https://github.com/prometheus/node_exporter",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "monitoring"
+      ],
+      "status": "adopted",
+      "watch": [
+        "prom/node-exporter"
+      ]
+    },
+    {
+      "name": "cAdvisor",
+      "repo": "https://github.com/google/cadvisor",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "monitoring"
+      ],
+      "status": "adopted",
+      "watch": [
+        "ghcr.io/google/cadvisor"
+      ]
+    },
+    {
+      "name": "Expo and Expo Router",
+      "repo": "https://github.com/expo/expo",
+      "licence": "MIT",
+      "used_in": [
+        "mobile-app"
+      ],
+      "status": "adopted",
+      "not_watched": "app dependencies follow the app lock file; not yet in the daily watch (gap, P35)"
+    },
+    {
+      "name": "React Native",
+      "repo": "https://github.com/react/react-native",
+      "licence": "MIT",
+      "used_in": [
+        "mobile-app"
+      ],
+      "status": "adopted",
+      "not_watched": "app dependencies follow the app lock file; not yet in the daily watch (gap, P35)",
+      "also": [
+        "https://github.com/facebook/react-native"
+      ]
+    },
+    {
+      "name": "React",
+      "repo": "https://github.com/react/react",
+      "licence": "MIT",
+      "used_in": [
+        "mobile-app"
+      ],
+      "status": "adopted",
+      "not_watched": "app dependencies follow the app lock file; not yet in the daily watch (gap, P35)",
+      "also": [
+        "https://github.com/facebook/react"
+      ]
+    },
+    {
+      "name": "MediaPipe (Face Landmarker)",
+      "repo": "https://github.com/google-ai-edge/mediapipe",
+      "licence": "Apache-2.0 (code and model)",
+      "used_in": [
+        "P95"
+      ],
+      "status": "evaluating",
+      "note": "chosen for liveness on the phone; adoption check 26 November 2026"
+    },
+    {
+      "name": "OpenCV (opencv-python-headless)",
+      "repo": "https://github.com/opencv/opencv",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "custom-hr (P95)",
+        "erp image"
+      ],
+      "status": "adopted",
+      "note": "runs the face models on the server",
+      "not_watched": "already in the ERP image through an upstream app, pinned at 5.0.0.93 in deployment/python-constraints.txt (no advisories, OSV, 26 November 2026); Python packages are not in the daily watch yet (gap)"
+    },
+    {
+      "name": "OpenCV Zoo: SFace and YuNet",
+      "repo": "https://github.com/opencv/opencv_zoo",
+      "licence": "Apache-2.0 (SFace), MIT (YuNet)",
+      "used_in": [
+        "custom-hr (P95)"
+      ],
+      "status": "adopted",
+      "note": "model files pinned by commit and SHA-256 (deployment/face-models.json); SFace training data unverified, asked upstream (opencv/opencv_zoo#313)",
+      "watch": [
+        "opencv_zoo"
+      ]
+    },
+    {
+      "name": "Silent-Face-Anti-Spoofing",
+      "repo": "https://github.com/minivision-ai/Silent-Face-Anti-Spoofing",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "P95"
+      ],
+      "status": "evaluating",
+      "note": "unmaintained since 2020; one liveness signal only"
+    },
+    {
+      "name": "UniFace",
+      "repo": "https://github.com/yakhyo/uniface",
+      "licence": "MIT (some weights under their own licence)",
+      "used_in": [
+        "P95"
+      ],
+      "status": "evaluating",
+      "note": "maintained packaging of the anti-spoofing weights"
+    },
+    {
+      "name": "smallstep step-ca",
+      "repo": "https://github.com/smallstep/certificates",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "P82"
+      ],
+      "status": "evaluating",
+      "note": "chosen for computer certificates (owner, 26 November 2026); advisories to check before adoption"
+    },
+    {
+      "name": "Android identity-samples (MyVault)",
+      "repo": "https://github.com/android/identity-samples",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "P82"
+      ],
+      "status": "evaluating",
+      "note": "structure to borrow for the passkey provider; credit and notice when code is copied"
+    },
+    {
+      "name": "KeePassDX",
+      "repo": "https://github.com/Kunzisoft/KeePassDX",
+      "licence": "GPL-3.0",
+      "used_in": [
+        "P82"
+      ],
+      "status": "evaluating",
+      "note": "reference passkey provider; GPL code only in the public mobile module"
+    },
+    {
+      "name": "Password Store, Passkey Edition",
+      "repo": "https://github.com/pando85/Android-Password-Store",
+      "licence": "GPL-3.0",
+      "used_in": [
+        "P82"
+      ],
+      "status": "evaluating",
+      "note": "reference passkey provider (fork of the archived Android-Password-Store)"
+    },
+    {
+      "name": "React Native VisionCamera",
+      "repo": "https://github.com/margelo/react-native-vision-camera",
+      "licence": "MIT",
+      "used_in": [
+        "P95"
+      ],
+      "status": "evaluating",
+      "note": "camera frames for our own MediaPipe plugin",
+      "also": [
+        "https://github.com/mrousavy/react-native-vision-camera"
+      ]
+    },
+    {
+      "name": "microG (GmsCore)",
+      "repo": "https://github.com/microg/GmsCore",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "P82"
+      ],
+      "status": "evaluating",
+      "note": "reference for the message layouts of the own QR route in the P82 trial app (mobile/trials/passkey-android; written from the public standard, no file copied); its adoption check as a component is still to be recorded in P82"
+    },
+    {
+      "name": "DB-IP Lite (IP to city database)",
+      "repo": "https://db-ip.com/db/lite.php",
+      "licence": "CC BY 4.0",
+      "used_in": [
+        "P82"
+      ],
+      "status": "evaluating",
+      "note": "one of two free IP location databases for unusual-sign-in alerts; attribution required"
+    },
+    {
+      "name": "MaxMind GeoLite2",
+      "repo": "https://dev.maxmind.com/geoip/geolite2-free-geolocation-data",
+      "licence": "GeoLite2 End User Licence Agreement (free, not an open-source licence)",
+      "used_in": [
+        "P82"
+      ],
+      "status": "evaluating",
+      "note": "the other candidate; the format authentik reads natively; needs a free account"
+    },
+    {
+      "name": "AndroidX Credentials and Biometric",
+      "repo": "https://github.com/androidx/androidx",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "P82"
+      ],
+      "status": "evaluating",
+      "note": "P82 trial app (mobile/trials/passkey-android), never shipped; credentials 1.6.0 and biometric 1.1.0, no open advisories (OSV, 26 November 2026)"
+    },
+    {
+      "name": "OkHttp",
+      "repo": "https://github.com/square/okhttp",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "P82"
+      ],
+      "status": "evaluating",
+      "note": "P82 trial app (mobile/trials/passkey-android), never shipped; 4.12.0 for the relay connection, no open advisories (OSV, 26 November 2026)"
+    },
+    {
+      "name": "JUnit 4",
+      "repo": "https://github.com/junit-team/junit4",
+      "licence": "EPL-1.0",
+      "used_in": [
+        "P82"
+      ],
+      "status": "evaluating",
+      "note": "P82 trial app (mobile/trials/passkey-android), never shipped; 4.13.2, tests only"
+    },
+    {
+      "name": "Google code scanner (play-services-code-scanner)",
+      "repo": "https://developers.google.com/ml-kit/vision/barcode-scanning/code-scanner",
+      "licence": "Android Software Development Kit licence (not open source)",
+      "used_in": [
+        "P82"
+      ],
+      "status": "evaluating",
+      "note": "P82 trial app (mobile/trials/passkey-android), never shipped; 16.1.0 reads the QR code; needs Google Play services, so the real app needs another reader for phones without them"
+    },
+    {
+      "name": "Pebble",
+      "repo": "https://github.com/letsencrypt/pebble",
+      "licence": "MPL-2.0",
+      "used_in": [
+        "P11"
+      ],
+      "status": "evaluating",
+      "note": "Let's Encrypt's ACME test server, for a local rehearsal of the certificate switch (P11) only; not shipped. v2.10.3 (11 Nov 2026), release checksums verified."
+    },
+    {
+      "name": "Synapse",
+      "repo": "https://github.com/element-hq/synapse",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "chat"
+      ],
+      "status": "adopted",
+      "watch": [
+        "ghcr.io/element-hq/synapse"
+      ]
+    },
+    {
+      "name": "Matrix Authentication Service",
+      "repo": "https://github.com/element-hq/matrix-authentication-service",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "chat"
+      ],
+      "status": "adopted",
+      "watch": [
+        "ghcr.io/element-hq/matrix-authentication-service"
+      ]
+    },
+    {
+      "name": "matrix-rust-sdk",
+      "repo": "https://github.com/matrix-org/matrix-rust-sdk",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "P73",
+        "P50"
+      ],
+      "status": "evaluating",
+      "note": "Matrix client library for the phone app, through its Kotlin bindings; adoption check passed 27 November 2026 (use 0.20.0 or later)"
+    },
+    {
+      "name": "Ltt.rs",
+      "repo": "https://codeberg.org/iNPUTmice/lttrs-android",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "P109"
+      ],
+      "status": "evaluating",
+      "note": "Android JMAP client; its JMAP library code may be borrowed for the light mail client. Little upkeep (library last changed April 2025), so we maintain our copy"
+    },
+    {
+      "name": "Sygnal",
+      "repo": "https://github.com/element-hq/sygnal",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "P73"
+      ],
+      "status": "evaluating",
+      "note": "Matrix push gateway for chat alerts on phones; adoption check passed 27 November 2026 (v0.17.0; the matrix-org repository is archived)"
+    }
+  ]
+}

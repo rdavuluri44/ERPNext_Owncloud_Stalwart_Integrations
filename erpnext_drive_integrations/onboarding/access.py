@@ -10,7 +10,7 @@ import frappe
 GENERIC_ROLES = {"All", "Guest", "Desk User"}
 OPENABLE = {"DocType", "Report", "Page"}
 # Desktop apps whose icon follows this rule (Suite / Insights are handled by cloud_integration).
-RULED_APPS = {"erpnext", "hrms", "india_compliance", "raven", "onboarding"}
+RULED_APPS = {"erpnext", "hrms", "india_compliance", "onboarding"}
 
 
 def own_roles(user=None):

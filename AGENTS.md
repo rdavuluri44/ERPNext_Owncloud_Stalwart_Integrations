@@ -70,6 +70,21 @@ private repository; agents working here follow them. The essentials, binding in 
    and record it in `docs/decisions.md`. Read the latest upstream-watch digest (P62) when it exists;
    security fixes for what we run come before new features unless the owner decides otherwise.
 
+# Branding and client identity (owner, 26 November 2026)
+
+- **Our own Unformat branding is public** and the default look; deployments replace it through their
+  profile or build settings (P85).
+- **A client's identity is never in this repository:** its name in every form (short, legal,
+  abbreviation), logo, favicons, domains, mail addresses, people, documents and data. Not in code,
+  tests, fixtures, comments, file names, commit messages or pull request text. Code and tests read
+  such values from the private deployment profile and work with neutral defaults without it.
+- **Checked automatically:** `tools/check_client_identity.py` runs on every push and pull request
+  (files, file names, pull request title and description, commit messages). The repository holds
+  only fingerprints (`.client-identity-fingerprints`); the list of identifiers stays private. To add a
+  client, generate its fingerprints from the private list (`--make`) and commit only those lines.
+- If a client identifier reaches this repository, tell the owner at once and remove it; the owner
+  decides whether the history is rewritten.
+
 # Project principles (owner, 17 November 2026)
 
 These are nonnegotiable and apply to this and all future projects:
@@ -83,7 +98,12 @@ These are nonnegotiable and apply to this and all future projects:
    since 19 November 2026 under AGPL-3.0-or-later; operations records stay in
    a private repository).
 4. **Acknowledge the open-source stack** we use, integrate or configure (see
-   the README acknowledgements).
+   the README acknowledgements). Every project is in `docs/open-source.json` (owner, 26 November 2026; P35):
+   add it when it is evaluated (status `evaluating`, with the item and what is checked), and credit and track it
+   in the same pull request that adopts it or copies its code (status `adopted` or `borrowed`, its daily-watch
+   key or the reason it is not watched, the licence, and a notice for copied files). Then
+   `python3 tools/open_source.py render`; `check` (in the tests) fails when the list, the upstream watch,
+   `modules.json` and the README disagree.
 5. **Disclose AI assistance.** Development is assisted by AI agents; say so in
    the README, user-facing notes and public posts. Contributors remain
    responsible for understanding, testing and standing behind every change.
@@ -108,3 +128,34 @@ document; never give production the ability to delete protected backups.
 Record every adopted plan change in `docs/decisions.md` in the same change
 that implements it: what was decided and why (not the discussion), so others
 can build a similar setup from scratch.
+
+# Our changes to upstream apps (owner, 26 November 2026)
+
+`docs/upstream-customizations.md` lists every change we make to software we did not write
+(Frappe and its apps, authentik, ownCloud, ONLYOFFICE, Stalwart, Paperless-ngx and the rest):
+build-time patches, overrides, overlays on their screens, proxy rules, objects and settings made
+in their admin screens, and workarounds for their bugs. Each entry says what must be done on an
+upgrade: **re-apply**, **re-check** or **none**. Details that cannot be public (host names, live
+object names, the client brand) are in the private companion in the operations repository.
+
+1. A pull request that changes or starts relying on an upstream app's behaviour updates the
+   register in the same pull request.
+2. An upgrade (a version in `deployment/upstream-lock.json` or `deployment/build-lock.json`, or
+   an image pin in `deployment/upstream-watch.json`) follows the checklist at the top of the register: every entry
+   for that app is re-applied or re-checked on the test site, and the result is recorded in the
+   pull request and the release record.
+3. When upstream fixes something we worked around, remove the workaround, update the entry and its
+   `workaround` note in `deployment/upstream-watch.json`, and say so on the upstream issue.
+
+# Our posts on other projects (owner, 26 November 2026; P35)
+
+Every bug report, feature request, comment or workaround we post upstream is listed in
+`docs/upstream-posts.json` (page: `docs/upstream-posts.md`; private reports such as security advisories go in the
+private companion) with why, the P item, the register entry and a log of every check and follow-up.
+
+1. Add the post to the list in the same session it is made, then `python3 tools/upstream_posts.py render`.
+2. At the start of every session, with the upstream-watch digest: `python3 tools/upstream_posts.py check --gh
+   --record`. It reports replies and state changes since the last check and threads the account posted on that the
+   list lacks; act on them (answer questions, test a fix, remove a workaround as in rule 3 above) and log any
+   follow-up in the post's entry. The daily upstream watch also reports new replies (`YYYY-MM-DD-posts.md`).
+3. A post stops being watched only when we no longer use that project: status `stopped` with the reason.

@@ -1,6 +1,6 @@
 # Editor: P items
 
-> **Generated file: do not edit by hand.** Published from the maintainers' private list on 22 November 2026
+> **Generated file: do not edit by hand.** Published from the maintainers' private list on 27 November 2026
 > with every line kept; only identifying names, addresses, paths and links to private records are
 > replaced by placeholders (see the [P list index](../p-list.md) for the rules).
 
@@ -35,6 +35,24 @@ ONLYOFFICE period; they are not the cause. A second parked file (a different sma
 workbook, 3 sheets) holds edits that never reached Drive: copy in
 `<rollback folder>` on production, owner to say whose it is.
 
+**Update 25 November 2026 (read-only debug):** the same workbook's document (ONLYOFFICE key used since
+20 Nov 11:32 UTC) still raised `changesError` after the 21 Nov guard: 23 Nov 12:40 (`reading 'c'` of null) and
+24 Nov 05:41 to 08:28 UTC (7 x `reading 'Tm'` of undefined, 1 x `'c'`, 1 x `waitAuth`), from two people's sessions.
+`Tm` is the editor's get-index method of a sheet or sheet view, so a change from one person referred to a sheet or view
+the other person's copy did not have (scenario 12). Saving was **not** affected: Drive kept a version every few minutes
+all through, and nothing was parked as forgotten. The server log has no client stack, so the exact code path is not
+proven. Also found: the editor-page changes of PR #34 (view cap) and PR #42 (retry keeper), merged 23 Nov, are not on
+production (it runs `2c542f0`) and are not in the release records; `tools/editor_safety.py` is not installed on
+production. Next steps proposed in the 25 Nov handover.
+
+**Owner decision (26 November 2026): option A, private sheet views stay on for everyone.** Production check the same
+day (read-only): no `changesError`, no forgotten file and no failed save logged since 24 November 08:28 UTC, while 15
+documents were edited on 25 November and 84 on 26 November (editor cache folders). This shows the problem has not
+returned, not that its cause is gone: it needed two people in the same workbook at once. If it returns, switch the
+views off for that file only (option C) until the fix. **Item stays open (owner) for the test-site work:** reproduce
+the two-person case with a synthetic workbook, make the editor page log the full error stack, then release PR #34 and
+#42 with the P61 safety tool (test first, then production).
+
 **Scenarios (seen = happened to us) and the safeguard for each**
 
 | # | Scenario | Seen | Safeguard |
@@ -61,3 +79,60 @@ save; (f) cache and disk alerts; (g) PR #12 and the view cap. Related: P57, P59,
 **Honest limit:** nothing guarantees that a save never fails; the aim is that a failure
 is seen within minutes, no edit is lost, and a stuck file is recoverable without deleting
 it.
+
+### P80 — Editor stays registered with Drive after every Drive restart
+
+**App:** editor · **Also touches:** drive, general · **State:** open
+
+**Status:** open, owner go 25 November 2026 ("A, B and D together as one P item"). Not started.
+Incident: release log, 25 November "office files only download in Drive"; receipt
+`production-editor-bridge-restart-20261125`.
+
+**Why:** Drive (oCIS 8.2.3) learns which editors exist only when the editor bridge
+(`collaboration`) starts and registers. When `ocis` is recreated or restarted alone,
+office files offer only a download until the bridge is restarted. On 25 Nov this cut
+editing on production for about 6.5 hours after the P74 window. The nightly backup
+starts both together, and the bridge's first registration failed on 24 and 25 Nov
+(Docker's restart policy recovered it).
+
+**Scope (one branch, tested and released together):**
+- **A. One shared "restart Drive" step.** A small versioned helper that recreates or
+  starts `ocis`, waits until healthy, restarts `collaboration`, then checks the
+  bridge's log for registration errors and runs the check in D. Every release window,
+  its recover branch and the test deploy script use it. The test deploy script
+  (today host-private, not in Git) moves into the private repository.
+- **B. Backup start order.** `integrations/backup/backup.py` `stop_and_copy` starts
+  the group's containers in order: `ocis` first, waits for healthy (bounded), then
+  `collaboration`, and still always restarts everything on failure. Public module
+  change with unit tests.
+- **D. A check that can see a missing editor.** Signed-in check that ONLYOFFICE is in
+  Drive's app list, using a dedicated low-rights Drive account whose token stays on the
+  server. Runs in the P57 host checks every 5 minutes and after every release and
+  backup, and alerts the owner. First step of P61 (d), the open-and-save probe.
+
+**Acceptance:** on the test site: (1) recreate `ocis` alone with the helper, and the
+editor opens a document right after; (2) recreate `ocis` without the helper, and the
+check in D alerts within 5 minutes; (3) a backup run leaves the bridge registered with
+no `AddAppProvider failed` or NATS errors, three runs in a row; (4) unit tests for the
+start order and the check pass in CI. Then production via the normal release, with a
+browser check of one document and one spreadsheet right after.
+
+**Depends on / relates to:** P57 (host checks), P59 (promotion plan), P61 (d), P72
+(monitoring alerts). Follow-up: P81.
+
+### P81 — Editor follow-ups: Compose safety net and release rule
+
+**App:** editor · **Also touches:** drive, general · **State:** open
+
+**Status:** open, owner 25 November 2026 ("then C and E"); after P80.
+
+- **C. Compose safety net:** add `restart: true` to the bridge's `depends_on: ocis` in
+  the Drive template, so Compose restarts the bridge whenever it recreates `ocis`. Test
+  first on the test VM whether it also applies with `up --no-deps` as our scripts use;
+  keep it as a safety net beside P80 A, not a replacement.
+- **E. Release rule:** a Drive or editor change is not done until a document has been
+  opened right after the window (agent's headless browser on a test account, or the
+  owner). "Not covered" for that check blocks calling the release done. Goes into the
+  promotion README and the P59 plan template.
+- **F (when convenient):** check oCIS issues for the registration behaviour and report
+  it upstream if it is not known.

@@ -31,9 +31,8 @@ class PortalDeepLinkTests(unittest.TestCase):
         target = load('portal_open_target')
         self.assertEqual(target('/desk/assets/asset', b'status=Draft'), '/desk/assets/asset?status=Draft')
         self.assertEqual(target('/desk/stock/item', b''), '/desk/stock/item')
-        self.assertEqual(target('/raven/channel/general', b''), '/raven/channel/general')
         self.assertEqual(target('/insights', b''), '/insights')
-        for bad in ['/api/method/x', '//evil.example/desk/x', '/desk/x\\\\y', '/login', '/ravenous', '/insightsx/y']:
+        for bad in ['/api/method/x', '//evil.example/desk/x', '/desk/x\\\\y', '/login', '/raven/channel/general', '/insightsx/y']:
             with self.assertRaises(ValueError):
                 target(bad)
 
@@ -49,21 +48,21 @@ class PortalDeepLinkTests(unittest.TestCase):
         pattern = re.search(r"open&&/(\^.*?\$)/\.test\(open\)", PORTAL).group(1)
         rx = re.compile(pattern)
         self.assertTrue(rx.match('/desk/assets/asset?x=1'))
-        for good in ['/raven', '/raven/channel/general', '/insights/dashboard/x', '/raven?x=1']:
+        for good in ['/insights', '/insights/dashboard/x', '/insights?x=1']:
             self.assertTrue(rx.match(good), good)
-        for bad in ['https://evil.example/', '//evil.example/x', '/api/method/x', 'javascript:alert(1)', '/ravenous', '/insightsx']:
+        for bad in ['https://evil.example/', '//evil.example/x', '/api/method/x', 'javascript:alert(1)', '/raven', '/insightsx']:
             self.assertFalse(rx.match(bad), bad)
 
 
 class ClientGuardTests(unittest.TestCase):
-    """Raven's service worker fetches navigations itself, so the server cannot
+    """A single-page app's service worker can fetch navigations itself, so the server cannot
     tell a whole tab from a frame; session.js (on every HTML page) decides."""
     def test_session_guard_reopens_top_level_app_pages_in_the_portal(self):
         js = (ROOT / 'erpnext_drive_integrations/public/session.js').read_text()
         block = js[js.index('const portalApp'):js.index('const portalApp') + 700]
         self.assertIn('window.self === window.top', block)
         self.assertIn("display-mode: standalone", block)
-        self.assertIn("/^\\/(raven|insights)(\\/|$)/", block)
+        self.assertIn("/^\\/insights(\\/|$)/", block)
         self.assertIn("path !== '/desk/cloud-apps'", block)
         self.assertIn("location.replace('/?' + new URLSearchParams({ open: location.pathname + location.search }))", block)
 

@@ -1,0 +1,107 @@
+{
+  "doctype": "DocType",
+  "name": "Field Face Enrolment",
+  "module": "Custom HR",
+  "engine": "InnoDB",
+  "autoname": "field:employee",
+  "track_changes": 0,
+  "description": "Encrypted face templates of one field worker (P95). The templates field is readable by no role; photographs are not stored.",
+  "field_order": [
+    "employee",
+    "employee_name",
+    "site",
+    "model_id",
+    "angle_count",
+    "consent",
+    "enrolled_by",
+    "enrolled_at",
+    "templates"
+  ],
+  "fields": [
+    {
+      "fieldname": "employee",
+      "label": "Employee",
+      "fieldtype": "Link",
+      "options": "Employee",
+      "reqd": 1,
+      "unique": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "employee_name",
+      "label": "Employee name",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "site",
+      "label": "Site at enrolment",
+      "fieldtype": "Link",
+      "options": "Field Site"
+    },
+    {
+      "fieldname": "model_id",
+      "label": "Face model",
+      "fieldtype": "Data",
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "angle_count",
+      "label": "Angles",
+      "fieldtype": "Int",
+      "read_only": 1
+    },
+    {
+      "fieldname": "consent",
+      "label": "Consent",
+      "fieldtype": "Link",
+      "options": "Biometric Consent",
+      "reqd": 1,
+      "read_only": 1
+    },
+    {
+      "fieldname": "enrolled_by",
+      "label": "Enrolled by",
+      "fieldtype": "Link",
+      "options": "User",
+      "read_only": 1
+    },
+    {
+      "fieldname": "enrolled_at",
+      "label": "Enrolled at",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "templates",
+      "label": "Encrypted templates",
+      "fieldtype": "Long Text",
+      "permlevel": 1,
+      "hidden": 1,
+      "read_only": 1,
+      "print_hide": 1,
+      "report_hide": 1
+    }
+  ],
+  "permissions": [
+    {
+      "role": "HR Manager",
+      "read": 1,
+      "report": 1
+    },
+    {
+      "role": "Field Attendance Manager",
+      "read": 1,
+      "report": 1
+    },
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

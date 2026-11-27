@@ -2,7 +2,7 @@ SET UP YOUR CLOUD PASSKEY
 
 Your administrator has invited you to register your sign-in passkey.
 
-Before opening the link, prepare Apple Passwords/iCloud Keychain or Bitwarden. Google Password Manager and other providers are not accepted.
+Before opening the link, prepare Apple Passwords/iCloud Keychain, Bitwarden (or Vaultwarden), Google Password Manager, or Chrome on a Mac. Other providers are not accepted. A passkey saved in Chrome on a Mac stays on that Mac only.
 
 Bitwarden:
 * Create an account at https://vault.vaultwarden.com/, preferably using the same email address as your Cloud username.

@@ -290,8 +290,15 @@ class RepositoryInventoryTests(unittest.TestCase):
             self.assertIn(c['exposure'], {'public', 'tailnet', 'internal', 'build'}, c['key'])
         names = {c['key'] for c in items}
         for key in ['frappe', 'erpnext', 'bulwark-webmail', 'onlyoffice/documentserver', 'ghcr.io/goauthentik/server',
-                    'stalwartlabs/stalwart', 'owncloud/ocis', 'postgres', 'node', 'coolify']:
+                    'stalwartlabs/stalwart', 'owncloud/ocis', 'postgres', 'node', 'coolify',
+                    'prom/prometheus', 'grafana/grafana', 'grafana/loki', 'grafana/alloy', 'prom/node-exporter',
+                    'ghcr.io/google/cadvisor']:
             self.assertIn(key, names)
+        # P91: every app with a workaround in docs/upstream-customizations.md points to its entries there.
+        for key in ['insights', 'bulwark-webmail', 'onlyoffice/documentserver', 'ghcr.io/goauthentik/server',
+                    'owncloud/ocis', 'stalwartlabs/stalwart', 'ghcr.io/paperless-ngx/paperless-ngx', 'coolify',
+                    'traefik', 'tailscale']:
+            self.assertIn('docs/upstream-customizations.md', catalog['sources'][key].get('workaround', ''), key)
 
     def test_service_runs_unprivileged_and_daily(self):
         service = (ROOT / 'deployment/upstream-watch.service.example').read_text()

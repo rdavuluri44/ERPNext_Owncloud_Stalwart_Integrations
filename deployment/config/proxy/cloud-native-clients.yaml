@@ -1,6 +1,6 @@
 http:
   routers:
-    cloud-raven-token:
+    cloud-native-token:
       rule: Host(`erp.example.com`) && Path(`/api/method/frappe.integrations.oauth2.get_token`)
         && Method(`POST`)
       entryPoints:
@@ -10,7 +10,7 @@ http:
       middlewares:
       - cloud-native-clean-headers
       tls: {}
-    cloud-raven-native:
+    cloud-native-bearer:
       rule: Host(`erp.example.com`) && (PathPrefix(`/api/`) || PathPrefix(`/private/files/`)
         || PathPrefix(`/socket.io`)) && HeaderRegexp(`Authorization`, `(?i)^Bearer
         [A-Za-z0-9._~+/-]+=*$`)
@@ -20,19 +20,7 @@ http:
       service: public-erp@file
       middlewares:
       - cloud-native-clean-headers
-      - cloud-raven-native-auth
-      tls: {}
-    cloud-raven-preflight:
-      rule: Host(`erp.example.com`) && Method(`OPTIONS`) && PathPrefix(`/api/`) &&
-        (Header(`Origin`, `capacitor://localhost`) || Header(`Origin`, `https://localhost`))
-        && HeaderRegexp(`Access-Control-Request-Headers`, `(?i)(^|, *)x-raven-app(
-        *,|$)`)
-      entryPoints:
-      - https
-      priority: 335
-      service: public-erp@file
-      middlewares:
-      - cloud-native-clean-headers
+      - cloud-native-auth
       tls: {}
   middlewares:
     cloud-native-clean-headers:
@@ -44,7 +32,7 @@ http:
           X-authentik-uid: ''
           X-authentik-jwt: ''
           X-authentik-meta-jwks: ''
-    cloud-raven-native-auth:
+    cloud-native-auth:
       forwardAuth:
         address: http://erp-frontend:8080/api/method/erpnext_drive_integrations.portal.mobile.check_access
         trustForwardHeader: false

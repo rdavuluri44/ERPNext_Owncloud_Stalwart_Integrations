@@ -33,12 +33,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     SecureStore.setItemAsync(OUTDOOR_KEY, on ? '1' : '0').catch(() => {});
   };
   const theme: Theme = {
-    c: outdoor ? { ...palette, surface: palette.bg } : palette,
+    // Outdoor (sunlight): white surfaces, near-black outlines, strong row lines.
+    c: outdoor ? { ...palette, surface: palette.bg, border: '#1F1F1F', divider: palette.line } : palette,
     outdoor,
     setOutdoor,
     font: (size) => Math.round(size * (outdoor ? 1.2 : 1)),
     touch: outdoor ? 56 : 48,
-    border: outdoor ? 3 : 2,
+    border: outdoor ? 3 : 1,
   };
   return <ThemeContext.Provider value={theme}>{children}</ThemeContext.Provider>;
 }

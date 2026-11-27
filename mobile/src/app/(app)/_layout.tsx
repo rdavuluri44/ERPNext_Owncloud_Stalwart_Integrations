@@ -1,12 +1,12 @@
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Tabs } from 'expo-router';
 import { useEffect } from 'react';
 import { AppState } from 'react-native';
 
 import { useApiRef } from '@/auth/session';
-import type { IconName } from '@/components/ui';
+import { Icon, type IconName } from '@/components/icon';
 import { type TextKey, t as text } from '@/i18n';
 import { refreshInbox, unreadCount, useInbox } from '@/lib/inbox';
+import { flushQueue } from '@/lib/sender';
 import { useSideRail, useTheme } from '@/theme';
 
 /** Owner decision 2: Today · Inbox · My HR · Menu. Phones: bottom tabs; 600 dp and wider: a side rail. */
@@ -17,14 +17,18 @@ export default function AppTabs() {
   const waiting = unreadCount(useInbox());
   // The Inbox count is fresh when the app opens and whenever it comes back to the front (no polling).
   useEffect(() => {
-    refreshInbox(apiRef.current);
-    const sub = AppState.addEventListener('change', (s) => s === 'active' && refreshInbox(apiRef.current));
+    const fresh = () => {
+      refreshInbox(apiRef.current);
+      flushQueue(apiRef.current).catch(() => {}); // unsent captures go when the app is back in front
+    };
+    fresh();
+    const sub = AppState.addEventListener('change', (s) => s === 'active' && fresh());
     return () => sub.remove();
   }, [apiRef]);
   const tab = (label: TextKey, icon: IconName) => ({
     title: text(label),
     tabBarIcon: ({ focused }: { focused: boolean }) => (
-      <MaterialCommunityIcons name={icon} size={t.font(28)} color={focused ? t.c.primary : t.c.muted} />
+      <Icon name={icon} size={t.font(26)} color={focused ? t.c.primary : t.c.muted} />
     ),
   });
   return (
@@ -46,16 +50,17 @@ export default function AppTabs() {
           : { backgroundColor: t.c.bg, borderTopWidth: t.border, borderTopColor: t.c.border },
         sceneStyle: { backgroundColor: t.c.bg },
       }}>
-      <Tabs.Screen name="index" options={tab('tab.today', 'calendar-today')} />
+      {/* Today draws its own header (project, site, shift), as in the owner's reference design. */}
+      <Tabs.Screen name="index" options={{ ...tab('tab.today', 'today'), headerShown: false }} />
       <Tabs.Screen
         name="inbox"
         options={{
-          ...tab('tab.inbox', 'inbox-outline'),
+          ...tab('tab.inbox', 'inbox'),
           tabBarBadge: waiting || undefined,
           tabBarBadgeStyle: { backgroundColor: t.c.danger, color: t.c.onPrimary, fontWeight: '700' },
         }}
       />
-      <Tabs.Screen name="my-hr" options={tab('tab.myHr', 'account-circle-outline')} />
+      <Tabs.Screen name="my-hr" options={tab('tab.myHr', 'person')} />
       <Tabs.Screen name="menu" options={tab('tab.menu', 'menu')} />
     </Tabs>
   );

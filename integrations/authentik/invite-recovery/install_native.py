@@ -20,9 +20,9 @@ from authentik.stages.user_login.models import UserLoginStage
 
 ROOT = Path("/data/cloud-invitations")
 source = (ROOT / "native_recovery.py").read_text()
-allowed = ["fbfc3007-154e-4ecc-8c0b-6e020557d7bd", "dd4ec289-e01d-41c9-bb89-70fa845d4bf2", "d548826e-79b4-db40-a3d8-11116f7e8349"]
+allowed = ["fbfc3007-154e-4ecc-8c0b-6e020557d7bd", "dd4ec289-e01d-41c9-bb89-70fa845d4bf2", "d548826e-79b4-db40-a3d8-11116f7e8349", "ea9b8d66-4d01-1d21-3ce4-b6b48cb575d4", "adce0002-35bc-c60a-648b-0b25f1f05503"]
 types = list(WebAuthnDeviceType.objects.filter(aaguid__in=allowed))
-assert {str(t.aaguid) for t in types} == set(allowed), "Required Apple/Bitwarden metadata is missing"
+assert {str(t.aaguid) for t in types} == set(allowed), "Required approved-provider metadata is missing"
 admin = User.objects.get(username="alex@example.com", is_active=True)
 assert admin.is_superuser and WebAuthnDevice.objects.filter(user=admin, confirmed=True, aaguid__in=allowed).exists(), "No allowed administrator key"
 baseline = Flow.objects.get(slug="cloud-first-time-enrollment")
@@ -69,7 +69,7 @@ with transaction.atomic():
         "use_global_settings": True, "activate_user_on_success": False, "token_expiry": "minutes=15",
         "subject": "Verify your email to replace your Cloud passkeys", "template": "email/account_confirmation.html"})
     setup, _ = AuthenticatorWebAuthnStage.objects.update_or_create(name="cloud-recovery-passkey", defaults={
-        "friendly_name": "Create your replacement Apple Passwords or Bitwarden passkey",
+        "friendly_name": "Create your replacement passkey",
         "user_verification": "required", "resident_key_requirement": "required", "authenticator_attachment": None, "hints": []})
     validate, _ = AuthenticatorValidateStage.objects.update_or_create(name="cloud-recovery-verify-replacement", defaults={
         "device_classes": ["webauthn"], "not_configured_action": "deny", "last_auth_threshold": "seconds=0",

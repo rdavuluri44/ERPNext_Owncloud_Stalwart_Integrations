@@ -3,8 +3,12 @@
 
 For each stack named in the private settings, finds the commit it runs and compares it with main:
 the stack is behind when a file it owns (deployment/promotion-map.json) changed since that commit.
-Also compares served content with a local file (for example the landing page script). Read-only:
-it reads git, the commit records and public pages, and changes nothing.
+Also compares served content with a local file (for example the landing page script), and (P99) every
+read-only runtime file the running containers mount from this repository: a mounted file that equals main
+does not count as behind even when the stack's commit is older; one that differs from what was deployed
+("changed by hand") or is older than main counts as drift; one with no record and no exact match is listed as
+not compared. Read-only: it reads git, the commit records, the mounted files and public pages, and changes
+nothing.
 
 Where a stack's commit comes from ("commit_from" per stack):
   {"coolify_service": NAME}    the "Source commit <sha>" description written by tools/coolify_native.py
@@ -27,6 +31,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from promotion_plan import parse_rules, rules_for  # noqa: E402
+import runtime_mounts  # noqa: E402
 
 SHA = re.compile(r'[0-9a-f]{7,40}')
 IMAGE_TAG = re.compile(r'([0-9a-f]{7,40})(?:-runtime)?')
@@ -101,6 +106,92 @@ def expected_hash(item):
     return digest
 
 
+def mounted_files(source, main):
+    """Read-only bind mounts of the running containers that are made from repository files (P99)."""
+    try:
+        listed = git(source, 'ls-tree', '--name-only', main, 'deployment/stacks/mounts.json')
+    except RuntimeError:
+        listed = ''
+    if not listed:
+        return []  # a checkout without the stack mounts list (sample repositories in tests)
+    catalogue = {m['path']: m for m in json.loads(git(source, 'show', main + ':deployment/stacks/mounts.json'))}
+    found = {}
+    for name in run(['docker', 'ps', '--format', '{{.Names}}']).split():
+        for mount in json.loads(run(['docker', 'inspect', '--format', '{{json .Mounts}}', name]) or '[]') or []:
+            if mount.get('Type') != 'bind' or mount.get('RW', True):
+                continue
+            path = Path(mount.get('Source', ''))
+            item = catalogue.get(path.name)
+            if path.parent.name != 'mounts' or item is None:
+                continue
+            relative = runtime_mounts.source_of(item)
+            if not relative:
+                continue  # data, secrets and operator-owned files are not compared
+            entry = found.setdefault(str(path), {'mount': path.name, 'stack': item['stack'], 'source': relative,
+                                                 'path': path, 'runtime': path.parent.parent, 'containers': []})
+            entry['containers'].append(name)
+    return [found[key] for key in sorted(found)]
+
+
+def mount_state(source, main, entry):
+    """'equal to main', 'behind', 'changed by hand' or 'not compared', with a reason."""
+    path, relative = entry['path'], entry['source']
+    if path.is_file() and not path.is_symlink():
+        try:
+            same = git(source, 'hash-object', '--no-filters', '--', str(path)) == git(source, 'rev-parse', main + ':' + relative)
+        except RuntimeError:
+            same = False
+        if same:
+            return 'equal to main', 'same bytes as the file on main'
+    record = runtime_mounts.read_record(entry['runtime']).get(entry['mount'])
+    if not record:
+        return 'not compared', 'no record of what was deployed, and not byte-equal to main'
+    if record.get('sha256') != runtime_mounts.digest(path):
+        return 'changed by hand', 'differs from what was deployed from ' + str(record.get('commit') or 'an unknown commit')[:12]
+    commit = record.get('commit')
+    if not commit:
+        return 'not compared', 'the record names no commit'
+    try:
+        commit = git(source, 'rev-parse', '--verify', '--quiet', commit + '^{commit}')
+    except RuntimeError:
+        return 'not compared', 'deployed from ' + commit[:12] + ', which this checkout does not know'
+    if git(source, 'diff', '--name-only', commit, main, '--', relative):
+        return 'behind', 'deployed from ' + commit[:12] + '; the source changed on main since'
+    return 'equal to main', 'deployed from ' + commit[:12] + '; the source is unchanged on main'
+
+
+def compare_mounts(source, main, results, problems):
+    rows = []
+    try:
+        entries = mounted_files(source, main)
+    except (RuntimeError, ValueError, OSError) as exc:
+        problems.append('mounted files: ' + str(exc))
+        return rows
+    for entry in entries:
+        try:
+            state, reason = mount_state(source, main, entry)
+        except (RuntimeError, ValueError, OSError) as exc:
+            state, reason = 'not compared', str(exc)
+        rows.append({'mount': entry['mount'], 'stack': entry['stack'], 'source': entry['source'],
+                     'runtime': str(entry['runtime']), 'state': state, 'reason': reason})
+        stack = results.get(entry['stack'])
+        if not stack or stack.get('state') not in ('clean', 'behind'):
+            continue
+        relative = entry['source']
+        inside = (lambda f: f == relative or f.startswith(relative + '/'))
+        if state == 'equal to main' and stack.get('files'):
+            stack['files'] = [f for f in stack['files'] if not inside(f)]
+            stack.setdefault('equal_mounts', []).append(entry['mount'])
+        elif state == 'behind' and not any(inside(f) for f in stack.get('files', [])):
+            stack.setdefault('files', []).append(relative)
+    for stack in results.values():
+        if stack.get('state') in ('clean', 'behind'):
+            stack['state'] = 'behind' if stack.get('files') else 'clean'
+            if not stack.get('files'):
+                stack.pop('files', None)
+    return rows
+
+
 def check(config, today=None):
     source = Path(config['source'])
     if config.get('fetch', True):
@@ -136,7 +227,6 @@ def check(config, today=None):
                         changed.append(path)
                 if changed:
                     entry.update(state='behind', files=changed)
-                    drift.append(stack + ' is behind main (' + str(len(changed)) + ' file(s), e.g. ' + changed[0] + ')')
                     results[stack] = entry
                     continue
             entry['state'] = 'clean'
@@ -144,6 +234,15 @@ def check(config, today=None):
         except (RuntimeError, ValueError, OSError) as exc:
             results[stack] = {'state': 'unknown', 'error': str(exc)}
             problems.append(stack + ': ' + str(exc))
+    mounts = compare_mounts(source, main, results, problems) if config.get('mounts', True) else []
+    for stack, entry in sorted(results.items()):
+        if entry.get('state') == 'behind':
+            drift.append(stack + ' is behind main (' + str(len(entry['files'])) + ' file(s), e.g. ' + entry['files'][0] + ')')
+    for row in mounts:
+        if row['state'] == 'changed by hand':
+            drift.append(row['stack'] + ': mounted ' + row['mount'] + ' (' + row['source'] + ') ' + row['reason'])
+        elif row['state'] == 'behind' and row['stack'] not in results:
+            drift.append(row['stack'] + ': mounted ' + row['mount'] + ' (' + row['source'] + ') is behind main')
     served = []
     for item in config.get('served', []):
         try:
@@ -156,7 +255,7 @@ def check(config, today=None):
             served.append({'url': item['url'], 'error': str(exc)})
             problems.append(item['url'] + ': ' + str(exc))
     return {'time': (today or datetime.datetime.now(datetime.timezone.utc)).strftime('%Y-%m-%dT%H:%M:%SZ'),
-            'main': main, 'stacks': results, 'served': served, 'drift': drift, 'problems': problems}
+            'main': main, 'stacks': results, 'mounts': mounts, 'served': served, 'drift': drift, 'problems': problems}
 
 
 def main(argv=None):
@@ -176,6 +275,8 @@ def main(argv=None):
     print('drift-check main ' + status['main'][:12] + ': ' +
           ('DRIFT: ' + '; '.join(status['drift']) if status['drift'] else 'clean') +
           (' | could not check: ' + '; '.join(status['problems']) if status['problems'] else '') +
+          (' | mounted files not compared: ' + str(sum(r['state'] == 'not compared' for r in status['mounts']))
+           if any(r['state'] == 'not compared' for r in status['mounts']) else '') +
           ' | clean: ' + (', '.join(clean) or 'none'))
     return 2 if status['drift'] else 1 if status['problems'] else 0
 
