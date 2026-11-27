@@ -670,6 +670,19 @@ against the upstream release tag. The security fix comes before the mail archive
 Release notes: [authentik 2026.8.7](https://docs.goauthentik.io/releases/2026.8#fixed-in-202687);
 [advisories](https://github.com/goauthentik/authentik/security/advisories).
 
+### Mobile alerts go directly to Google FCM, data only (owner)
+
+- **Decision:** alerts to the closed app are sent by ERPNext **directly to Google's Firebase Cloud Messaging**
+  (HTTP v1), as high-priority **data-only** messages; the app writes the visible text and shows the full-page
+  ringing alert for **every approval** (owner), a normal alert when an entry is returned. Alerts only for what
+  waits for the person and what was returned to them. iPhone later, directly to Apple (APNs). This replaces the
+  earlier plan to relay through Expo's push service.
+- **Why:** the way large apps do it, one company less between ERPNext and the phone; the message carries no
+  text, names or amounts, so Google sees only a kind, a document type and ID, and a site. FCM costs nothing.
+- **How:** the service-account key is a file on each server (`mobile_push_fcm_key_file`), never in the
+  repository; one phone per person; dead push addresses are switched off on Google's 404 / `UNREGISTERED`.
+- **Where:** `erpnext_drive_integrations/mobile_push/` (server), `mobile/` (app).
+
 ## 2026-11-25
 
 ### The office editor stays registered with Drive after every Drive restart (P80)

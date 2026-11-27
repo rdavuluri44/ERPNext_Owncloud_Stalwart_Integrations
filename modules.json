@@ -241,6 +241,19 @@
       ]
     },
     {
+      "id": "mobile-push",
+      "title": "Mobile push",
+      "summary": "Alerts to the mobile app while it is closed: the Mobile Device list, register / unregister calls, and data-only messages to Google FCM when something waits for a person or was returned to them.",
+      "readme": "erpnext_drive_integrations/mobile_push/README.md",
+      "paths": ["erpnext_drive_integrations/mobile_push/**", "tests/test_mobile_push.py"],
+      "depends_on": ["erp-addon-shell"],
+      "tests": ["tests/test_mobile_push.py"],
+      "upstream": [
+        {"name": "Frappe Framework", "license": "MIT", "url": "https://github.com/frappe/frappe"},
+        {"name": "Firebase Cloud Messaging HTTP v1 (Google service, no code included)", "license": "Google APIs Terms of Service", "url": "https://firebase.google.com/docs/cloud-messaging"}
+      ]
+    },
+    {
       "id": "onboarding",
       "title": "Vendor onboarding and response links",
       "summary": "Vendor onboarding with KYC and amendments, single-use device-bound response links (yes/no, documents) with audit trail, WhatsApp consent capture, construction schedule page and monitoring.",
