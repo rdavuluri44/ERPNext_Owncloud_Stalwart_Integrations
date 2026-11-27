@@ -66,7 +66,8 @@ Signed-out hand-over (P56 follow-up): `/login?logged_out=1` and `/signed-out` fo
 
 ### Sign-out on the Desk (P53)
 
-The portal page (the Desk) has one bar at the top right; its last item is **Sign out**. It asks every open
+The portal page (the Desk) has one bar at the top right; its last item is **Sign out**. The bar shows on the Desk
+home only and is hidden while an application is open. It asks every open
 application for unsaved work (`{source:'cloud-desk', type:'unsaved?'}`), warns the person, tells each application to
 end its own session (`type:'signout'`), waits at most 2.5 seconds for their `{source:'cloud-session', type:'logout'}`
 answers, then calls `finish_logout`. Inside the Desk each application's own sign-out item is hidden by that

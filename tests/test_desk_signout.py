@@ -27,6 +27,11 @@ class DeskSide(unittest.TestCase):
         self.assertIn('<div id="ph-bar" role="toolbar"', DESK)
         self.assertRegex(DESK, r"#ph-bar\{position:fixed;top:\d+px;right:\d+px")
 
+    def test_the_bar_shows_on_the_desk_home_only_never_over_an_open_application(self):
+        # Owner, 27 November 2026: the bar belongs to the Desk; over an application it hid that
+        # application's own controls.
+        self.assertIn(".ph-active #ph-bar{display:none}", DESK)
+
     def test_sign_out_is_the_last_item_of_the_bar(self):
         bar = re.search(r'<div id="ph-bar".*?</div>', DESK, re.S).group(0)
         last = re.findall(r'<(?:button|a) id="([a-z-]+)"', bar)[-1]

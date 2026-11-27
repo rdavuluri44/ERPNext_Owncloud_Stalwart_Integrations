@@ -1408,7 +1408,9 @@ check themselves in keep their existing workflows.
 
 - **Decision:** Help, notifications, search and sign-out leave each application's own screen and
   become one set of controls on the Desk (the portal page), at the top right, with sign-out
-  last. This change is the first step: the bar and sign-out. The Desk asks each open
+  last. The bar shows on the Desk home only: while an application is open it is hidden, so it
+  never covers that application's own controls, and the person returns to the Desk home to
+  use it. This change is the first step: the bar and sign-out. The Desk asks each open
   application for unsaved work, warns the person, tells each application to end its own
   session, and then ends the single sign-on session. Inside the Desk every application's own
   sign-out item is hidden. An application opened on its own (a direct link) shows "Back to
