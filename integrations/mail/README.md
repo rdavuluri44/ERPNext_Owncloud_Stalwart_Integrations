@@ -28,9 +28,45 @@ Run `tools/prepare_mail.py` to apply the overlay to the pinned Bulwark commit an
 
 Webmail OIDC settings are rendered by the runtime renderer into the mail stack; Stalwart is initialised with `integrations/mail/stalwart_bootstrap.py`. Credentials stay in Stalwart's native store.
 
+## Mail retention (P69)
+
+Company mail is kept and users cannot delete it for good. This uses Stalwart Community only; the
+Enterprise "deleted items" archive is not used. `integrations/mail/retention.py` runs on the mail host
+with a private profile and does the following:
+
+- **Journal copy:** a system Sieve script copies every message that passes the SMTP DATA stage to an
+  archive account. That covers inbound mail, authenticated submission and webmail (JMAP) submission.
+  The archive account has no sign-in and may only receive mail.
+- **No permanent deletion:** the built-in User and Group roles lose IMAP `EXPUNGE`/`DELETE`, JMAP
+  destroy and POP3 `DELE`, and Trash and Junk are no longer emptied automatically. A delete only moves
+  mail to Trash. The administrator role is unchanged, because the purge needs it.
+- **Read access:** one reader account gets read-only access to the archive Inbox. Its sign-ins
+  (`auth.success` with the account name) are the access log. The log tracer is moved to
+  `/var/lib/stalwart/logs/` on the data volume, as plain text, so the log is kept and backed up. The
+  default `/var/log/stalwart/` does not exist in the image, so nothing was logged before.
+- **Restart:** Stalwart applies a changed DATA stage and tracer only after a restart. `apply`
+  restarts the container and then verifies every setting.
+- **Backfill:** `backfill` copies mail received before the journal started into the archive once
+  (resumable and idempotent).
+- **Purge:** `purge` counts mail older than `retention_days` (default seven years) in every account,
+  the archive included. `purge --apply` removes it; see `deployment/mail-retention-purge.*.example`
+  for a daily timer, to be enabled only after a counting run has been reviewed.
+- **Status:** `status` lists any setting that is not in place and the stored sizes in bytes.
+- **Rollback:** `apply` writes the settings it replaces to a receipt first; `rollback` restores them
+  and switches the journal off. It keeps the archive, its mail and the reader's access.
+
+Webmail matches the policy:
+
+- `tools/prepare_runtime.py` locks the delete action to "move to Trash" and hides the Enterprise-only
+  "Recover deleted items" page.
+- `tools/prepare_mail.py` replaces the English texts that promise a permanent delete with
+  `integrations/mail/locale-overrides.json`. It changes only those texts in place and fails the build
+  if upstream changed one of them.
+
 ## Tests
 
 - `tests/test_rebuild_templates.py`
+- `tests/test_mail_retention.py` (retention tool against a fake server, webmail texts and policy)
 
 Run all suites offline with `python tools/run_unit_tests.py` in the matching ERP Python environment.
 

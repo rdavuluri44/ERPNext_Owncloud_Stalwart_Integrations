@@ -350,7 +350,8 @@
         "deployment/stacks/mail.compose.json",
         "tools/prepare_mail.py",
         "tools/refresh_webmail_overlay_base.py",
-        "tests/test_webmail_overlay_base.py"
+        "tests/test_webmail_overlay_base.py",
+        "tests/test_mail_retention.py"
       ],
       "depends_on": [
         "authentik-identity",
@@ -358,7 +359,8 @@
       ],
       "tests": [
         "tests/test_rebuild_templates.py",
-        "tests/test_webmail_overlay_base.py"
+        "tests/test_webmail_overlay_base.py",
+        "tests/test_mail_retention.py"
       ],
       "upstream": [
         {

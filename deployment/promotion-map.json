@@ -130,7 +130,7 @@
     },
     {
       "name": "Host checks and watches",
-      "paths": ["tools/host_check.py", "tools/send_alert.py", "tools/render_host_checks.py", "deployment/host-checks.example.json", "tools/editor_safety.py", "integrations/onlyoffice/editor-safety.*", "tools/upstream_watch.py", "tools/upstream_posts.py", "deployment/upstream-watch*", "tools/drift_check.py", "deployment/drift-check.*", "integrations/backup/**", "integrations/monitoring/**", "tools/export_snapshot.py", "tools/backup_to_snapshot.py", "tools/snapshot_archive.py"],
+      "paths": ["tools/host_check.py", "tools/render_host_checks.py", "deployment/host-checks.example.json", "tools/editor_safety.py", "integrations/onlyoffice/editor-safety.*", "tools/upstream_watch.py", "tools/upstream_posts.py", "deployment/upstream-watch*", "tools/drift_check.py", "deployment/drift-check.*", "integrations/backup/**", "integrations/monitoring/**", "tools/export_snapshot.py", "tools/backup_to_snapshot.py", "tools/snapshot_archive.py", "deployment/mail-retention-purge.*", "tools/send_alert.py"],
       "stacks": ["host"],
       "steps": ["update the installed copy on each server that runs it (host checks, editor safety, upstream watch, drift check, backup, snapshot export)"]
     },

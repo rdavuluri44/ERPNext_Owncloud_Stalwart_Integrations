@@ -22,14 +22,17 @@ class NativeError(RuntimeError):
         self.bootstrap='bootstrap mode' in result.get('description','').lower()
         self.invalid_fields=[field for section in ['notCreated','notUpdated']
             for problem in (result.get(section) or {}).values() for field in problem.get('properties',[])]
+        # Error codes only (for example alreadyExists); never descriptions or payloads.
+        self.item_types=sorted({problem.get('type') for section in ['notCreated','notUpdated','notDestroyed']
+            for problem in (result.get(section) or {}).values()})
 
 
 class Client:
     def __init__(self,url,credential):
         self.url=url.rstrip('/');self.authorization='Basic '+base64.b64encode(credential.encode()).decode()
 
-    def call(self,method,arguments):
-        body=json.dumps({'using':['urn:ietf:params:jmap:core'],'methodCalls':[[method,arguments,'operation']]}).encode()
+    def call(self,method,arguments,using=('urn:ietf:params:jmap:core',)):
+        body=json.dumps({'using':list(using),'methodCalls':[[method,arguments,'operation']]}).encode()
         request=urllib.request.Request(self.url+'/jmap',data=body,
             headers={'Authorization':self.authorization,'Content-Type':'application/json'})
         with urllib.request.urlopen(request,timeout=60) as response:data=response.read()
