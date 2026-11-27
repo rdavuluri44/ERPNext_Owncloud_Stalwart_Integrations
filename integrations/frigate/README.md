@@ -12,7 +12,8 @@ internet.
 
 - `config.yml`: Frigate settings (login on, no MQTT, detection with OpenVINO on
   the processor, 3 days of continuous recording, 14 days of alerts, detections
-  and snapshots). It has no cameras until one is installed.
+  and snapshots) and the trial camera `cam1`, whose address and login come
+  from app environment variables.
 - `../../tests/test_frigate.py`: checks the settings and the version pin.
 
 ## Requirements
@@ -43,26 +44,32 @@ internet.
 
 ## Configuration
 
-Add a camera under `cameras:`, with the password in an app environment variable
-such as `FRIGATE_CAM1_PASSWORD`, never in the file. A camera account with
-view rights only is safer than the camera's administrator. For an Annke I51DS
-(Hikvision-style paths; some firmware uses `/h264/0/main/av_stream` and
-`/h264/0/sub/av_stream` instead):
+The camera `cam1` in `config.yml` reads three app environment variables, so the
+file holds no address and no login and is deployed unchanged:
 
-```yaml
-cameras:
-  cam1:
-    ffmpeg:
-      inputs:
-        - path: rtsp://{FRIGATE_CAM1_USER}:{FRIGATE_CAM1_PASSWORD}@CAMERA_ADDRESS:554/Streaming/Channels/101
-          roles: [record]
-        - path: rtsp://{FRIGATE_CAM1_USER}:{FRIGATE_CAM1_PASSWORD}@CAMERA_ADDRESS:554/Streaming/Channels/102
-          roles: [detect]
-    detect:
-      width: 640
-      height: 360
-      fps: 5
-```
+| Variable | Value |
+|---|---|
+| `FRIGATE_CAM1_HOST` | the camera's fixed address on the local network |
+| `FRIGATE_CAM1_USER` | the camera's view-only user |
+| `FRIGATE_CAM1_PASSWORD` | that user's password (from the password store, never in Git) |
+
+Stream paths are Hikvision style (`/Streaming/Channels/101` main, `102`
+sub-stream); some Annke firmware uses `/h264/0/main/av_stream` and
+`/h264/0/sub/av_stream` instead. Add more cameras the same way (`cam2`,
+`FRIGATE_CAM2_*`).
+
+### Preparing an Annke (Hikvision-based) camera
+
+1. Give it a fixed address (a reservation in the router, or a static address).
+2. Activate it: a new camera has no administrator password and refuses logins
+   until one is set (web page, or the vendor's discovery tool). Use a random
+   password and keep it in the password store.
+3. Create a separate user with the **Viewer** level and give it only the
+   remote **live view** (preview) right for channel 1. The camera creates
+   viewers with no rights at all, and the stream then answers 401.
+4. Set the time zone and NTP so recordings carry the right time.
+5. Keep both streams on H.264: the main stream is recorded without
+   re-encoding; the sub-stream (for example 1280×720) is used for detection.
 
 Detection runs on the small stream; the main stream is recorded as it arrives,
 without re-encoding. A host with an Intel graphics chip or an Intel Arc card can
