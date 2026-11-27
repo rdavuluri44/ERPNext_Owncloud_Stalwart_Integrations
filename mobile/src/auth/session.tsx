@@ -1,5 +1,5 @@
 // Sign-in: authentik passkey in the system browser + ERPNext OAuth with PKCE S256.
-// No client secret in the app (public client, like Raven). Tokens live only in Keychain / Keystore.
+// No client secret in the app (public client). Tokens live only in Keychain / Keystore.
 // The server binds tokens to the authentik browser session (erpnext_drive_integrations/portal/mobile.py),
 // so signing out on the web also ends the app's access.
 import Constants from 'expo-constants';

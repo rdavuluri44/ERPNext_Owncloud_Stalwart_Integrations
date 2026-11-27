@@ -92,7 +92,7 @@ class TestOAuthClients(unittest.TestCase):
     def test_only_native_clients_with_fixed_ids_enable_native_sign_in(self):
         self.assertEqual(native_site_settings([{'app_name': 'Web', 'redirect_uris': 'https://x/cb'}]), {})
         self.assertEqual(native_site_settings([{'app_name': 'ERP Mobile', 'client_id': 'mobile0test1', 'native': True}]),
-                         {'cloud_raven_mobile_enabled': True, 'cloud_native_mobile_clients': ['mobile0test1']})
+                         {'cloud_native_mobile_enabled': True, 'cloud_native_mobile_clients': ['mobile0test1']})
         with self.assertRaises(ValueError):
             native_site_settings([{'app_name': 'ERP Mobile', 'native': True}])
 

@@ -31,7 +31,7 @@ def configure(profile_path):
         'cloud_test_refresh_users':profile.get('refresh_users',[profile.get('administrator_email')]) if tier=='test' else []})
     if tier=='test':
         config.update({'pause_scheduler':True,'disable_scheduler':True,'mute_emails':True,
-                       'cloud_push_enabled':False,'cloud_raven_mobile_enabled':False})
+                       'cloud_push_enabled':False,'cloud_native_mobile_enabled':False})
     config.update(profile.get('site_settings', {}))
     # A private profile cannot turn a production host into a refresh target.
     config['cloud_test_copy'] = tier=='test'
@@ -82,7 +82,7 @@ def restore_test_oauth_clients(clients):
     A spec with a fixed `client_id` is created when the copy has no client of
     that app name yet (an app not registered on production at all): a public
     native client (no client secret at the token endpoint, PKCE enforced by
-    portal/mobile.py) with the consent screen shown, like Raven's.
+    portal/mobile.py) with the consent screen shown.
     `"skip_authorization": true` drops that screen for the deployment's own
     first-party app (owner decision per app); it is applied on every bootstrap.
     """

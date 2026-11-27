@@ -58,6 +58,13 @@
       "restart": ["Paperless"]
     },
     {
+      "name": "Chat (Matrix)",
+      "paths": ["integrations/chat/**", "deployment/stacks/chat.compose.json"],
+      "stacks": ["chat"],
+      "steps": ["render the chat stack and redeploy it (the configure service rewrites both configuration files; the signing key is kept)"],
+      "restart": ["Synapse", "Matrix Authentication Service"]
+    },
+    {
       "name": "Document worker",
       "paths": ["integrations/document-worker/**", "deployment/stacks/processing.compose.json"],
       "stacks": ["processing"],
@@ -118,7 +125,7 @@
     {
       "name": "Rendering of every stack",
       "paths": ["tools/prepare_runtime.py", "tools/runtime_mounts.py", "tools/render_runtime.py", "tools/coolify_native.py", "deployment/stacks/inputs.json", "deployment/stacks/mounts.json"],
-      "stacks": ["erp", "website", "drive", "editor", "mail", "dms", "processing", "private-dns", "identity", "identity-support"],
+      "stacks": ["erp", "website", "drive", "editor", "mail", "dms", "processing", "private-dns", "identity", "identity-support", "chat"],
       "steps": ["render every stack and compare the result with what runs; redeploy the stacks whose rendered files changed"]
     },
     {

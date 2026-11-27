@@ -10,7 +10,8 @@ challenges and redirects work; the relay host proves the same names on port
 443 instead (TLS-ALPN resolver, P11), so both hosts renew their own
 certificates.
 
-Only the six test hostnames from a test profile are relayed; nothing else.
+Only the six test hostnames from a test profile are relayed, plus the chat stack's two when the profile names
+them; nothing else.
 """
 import argparse
 import ipaddress
@@ -20,6 +21,8 @@ import re
 import yaml
 
 NAMES = ['erp', 'drive', 'office', 'mail', 'dms', 'respond']
+# Relayed only when the test profile names them (the chat stack, P73).
+OPTIONAL = ['chat', 'chat-auth']
 
 
 def prepare(profile):
@@ -27,7 +30,7 @@ def prepare(profile):
         raise ValueError('Only a test workspace may be relayed')
     prefix = profile.get('ingress_prefix', 'cloud-test')
     if not re.fullmatch('[a-z0-9-]+', prefix): raise ValueError('Invalid route prefix')
-    hosts = [profile['hosts'][name] for name in NAMES]
+    hosts = [profile['hosts'][name] for name in NAMES] + [profile['hosts'][name] for name in OPTIONAL if name in profile['hosts']]
     for host in hosts:
         if not re.fullmatch(r'test[a-z0-9-]*\.[a-z0-9.-]+', host):
             raise ValueError('Only test hostnames may be relayed: ' + host)

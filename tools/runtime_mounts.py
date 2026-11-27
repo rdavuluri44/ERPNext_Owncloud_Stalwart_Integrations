@@ -31,6 +31,7 @@ copy_files = {
     '/templates/nginx/frappe.conf.template': 'deployment/erp/frappe.conf.template',
     '/app/document-worker.py': 'integrations/document-worker/document-worker.py',
     '/etc/nginx/conf.d/default.conf': 'integrations/website/nginx-default.conf',
+    '/configure.py': 'integrations/chat/configure.py',
 }
 # Mount name -> repository file (the two identity proxies share the target /etc/nginx/nginx.conf).
 identity_proxy_files = {

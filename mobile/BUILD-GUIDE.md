@@ -16,7 +16,8 @@ Status: owner decisions of 22 and 23 November 2026; nothing in sections 6 to 12 
 3. **Web parity by role:** everything a person can do on the web (all their DocTypes, onboarding forms, reports
    they may open) is possible in the app. Hand-designed screens for the top daily tasks; every other DocType
    through the generic form engine built from ERPNext's own metadata.
-4. **Incident report:** a pop-up to pick the kind, photos, the person chooses one or more Raven threads (channels
+4. **Incident report** (owner, 27 November 2026: Raven is removed, P108; where incident reports go instead is being
+   decided, so the Raven parts of this guide no longer apply)**:** a pop-up to pick the kind, photos, the person chooses one or more Raven threads (channels
    they belong to), the post carries a colour code and banner so others notice at once. The lock-screen text of
    the resulting notification may name the incident kind and the site, never a person. No separate safety
    register for now.

@@ -1,24 +1,28 @@
-"""Native-app OAuth binding (Raven, Onboarding ERP) to the existing approved passkey browser session.
+"""Native-app OAuth binding (our phone apps) to the existing approved passkey browser session.
 
 Traefik's native-client route is forward-authenticated here; a Bearer header alone
 never grants access. Frappe still validates token expiry/scopes/user and resource
 permissions. Store only token/code digests in the private session registry.
 
-Approved native clients (site config): the Raven client `cloud_raven_mobile_client` plus the list
-`cloud_native_mobile_clients`; master switch `cloud_raven_mobile_enabled`. Any other OAuth client
-is ignored here exactly as before.
+Approved native clients (site config): the list `cloud_native_mobile_clients`; master switch
+`cloud_native_mobile_enabled`. Any other OAuth client is ignored here. The switch was called
+`cloud_raven_mobile_enabled` while Raven's phone app was the first client (Raven was removed in P108): that
+name is still read when the new one is absent, so a site keeps working until its config is renamed.
 """
 import hashlib
 import time
 import frappe
 from . import sso
 
+def enabled():
+    value=frappe.conf.get('cloud_native_mobile_enabled')
+    return bool(frappe.conf.get('cloud_raven_mobile_enabled') if value is None else value)
+
 def clients():
-    if not frappe.conf.get('cloud_raven_mobile_enabled'):return frozenset()
+    if not enabled():return frozenset()
     ids=frappe.conf.get('cloud_native_mobile_clients') or []
     if isinstance(ids,str):ids=[ids]
-    ids=[str(i) for i in ids]+[frappe.conf.get('cloud_raven_mobile_client')]
-    return frozenset(i for i in ids if i)
+    return frozenset(str(i) for i in ids if i)
 
 def digest(value):return hashlib.sha256(str(value).encode()).hexdigest()
 

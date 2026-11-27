@@ -718,6 +718,48 @@ places or networks (P82) reach the admin the same way: on the widget, by mail, o
 
 **App:** general · **Also touches:** mobile, raven, erp, signin · **State:** open · **Category:** long-term plan
 
+**Owner, 27 November 2026, evening: all at once and now.** Production is not in real use yet, so there are no live
+chats to move. Raven's removal with the notification service (P108), Matrix chat (P73) and the light mail client
+(P109) start now, in parallel. The agent had recommended deciding all together but building the app parts after
+attendance and approvals, because the same app developer builds Phase 1 to 3; the owner chose parallel work and
+accepts that risk.
+
+**Matrix now (owner, 27 November 2026, evening):**
+- **Server: Synapse** with the **Matrix Authentication Service** (MAS) signing in through authentik: the proven
+  route for an outside sign-in service (MAS works only with Synapse today). Lighter servers (Tuwunel, continuwuity)
+  stay on record as alternatives. Synapse needs about 1 to 2 GB of memory at minimum: check room on the test VM and
+  the production server first.
+- **App library:** Matrix's Rust SDK through its Kotlin bindings (Apache-2.0). Element X Android's screens may be
+  reused (AGPL-3.0-only, compatible with this repository's AGPL; reused files keep their notices).
+- **Company rooms unencrypted** so the company can keep, search and export them (record keeping); direct messages
+  the same unless the owner decides otherwise.
+- **ERPNext bot:** posts document events and approvals into the right rooms, rooms per project or site, people and
+  groups from ERPNext and authentik.
+- **Server name (owner, 27 November 2026, evening): `chat.<company domain>`**, so addresses are
+  `@name:chat.<company domain>`. Chosen over the bare domain (which would tie chat to the website serving two
+  well-known files for ever): the chat server stands on its own address, separate and replaceable. The name can
+  never be changed afterwards, so production starts on the company domain people keep (P70's split), not the demo
+  domain. The test server has its own throwaway name.
+- **Chat name (owner, 27 November 2026, night): `firstname.initial`**, with a number on a clash (`rajesh.d`, then
+  `rajesh.d2`); made once at onboarding, never changed and never reused; addresses are `@rajesh.d:chat.<domain>`.
+  The sign-in user name stays the full mail address (which Matrix does not accept as a name). The sign-in service
+  holds the chat name as a user attribute `chat_name` and gives it to the chat sign-in as a claim; without it a
+  person cannot sign in to chat. The sign-up service (P82) generates it; until P82 is built it is set by hand.
+- **Every new server part gets** monitoring, backups and a test copy from the first deployment (working agreements).
+- **Progress (27 November 2026, night):** the stack is public PR #139 (`p73/matrix-stack`, `9890da2`) and runs on the
+  test VM since 14:41 UTC (receipt `p73-test-chat-stack-9890da2`), with sign-in set up in the test sign-in service.
+  Not reachable from outside until #139 is on main and the production relay carries the two test names. Not built:
+  the push gateway, the ERPNext bot and rooms, monitoring, backups and the drift check for the stack, the production
+  route file.
+- **First step:** the adoption check (licence, maintenance, security history, how fixes are published) for Synapse,
+  MAS, the Rust SDK and the push gateway, recorded in the decision log; then Synapse and MAS on the test site.
+
+**Owner, 27 November 2026 (amends the plan below):** **Matrix**, not XMPP, as the internal chat, built into the
+native app (P50) later. Raven is removed from ERPNext **before** this chat exists (P108), so step 4 below becomes "use
+the Raven export from P108", and "run both for a period" no longer applies. The app is now native Kotlin, so the
+client library to check is Matrix's Rust SDK through its Kotlin bindings (as Element X Android uses it; licence and
+maturity to verify), not the React Native packages in the first findings.
+
 **Plan (owner, 26 November 2026; replaces the "idea" below as the goal):** replace Raven with a federated chat
 (Matrix or XMPP), built into ERP Mobile as its Chat tab (P50), and retire Raven once the new chat carries the work.
 It must keep what Raven gives today inside ERPNext: the same users and roles (authentik sign-in), sharing ERP
@@ -1104,4 +1146,182 @@ checklist and the admin's daily line are recorded.
   - the tailnet's own login never depends on authentik (also when Headscale replaces hosted Tailscale, P29);
   - the backup door is tried at every quarterly recovery check (P41), with an SOP.
 - **Order:** after the admin alerts (P72 with P53); one tool at a time, test first.
+
+
+### P107 — User support: "Report a problem" in the apps, and an admin support desk
+
+**App:** general · **Also touches:** erp, mobile, portal, signin · **State:** parked
+
+**Status:** parked by the owner, 27 November 2026 ("we'll take this up later"). Nothing is built or decided beyond the
+owner's decisions below. Do not start until the owner says.
+
+**Why (owner, 27 November 2026):** support users without a remote-control tool. The owner first asked whether
+RustDesk (a free server with single sign-on) would help, then chose help built into the apps. Admin work has grown
+beyond a few Desk widgets: the admin needs one place to receive user problems, organise and track cases, keep a
+record of finished ones, and reach server alerts and logs.
+
+**Owner decisions (27 November 2026):**
+- **No RustDesk.** No paid tool ("paying is not an option").
+- **Not every user can be on the tailnet.** Field phones and some users stay off it.
+- **Help built into the apps is the way forward**, on the phone app and on the web app (desktops).
+- **An admin app is needed** for user complaints as well as server logs and alerts, "instead of just a few widgets
+  over the Desk".
+
+**What was found (research of 27 November 2026; re-check before taking this up):**
+- **RustDesk** (rejected by the owner):
+  - the free server (`hbbs`/`hbbr`, AGPL-3.0, version 1.1.16) only connects and relays devices: no user accounts, no
+    web console, no single sign-on, no audit log, and no documented browser client;
+  - single sign-on (OIDC) needs Server Pro "Basic", USD 23.88 a month billed yearly (10 staff, 100 devices);
+  - the browser client needs a plan with (staff × 10) + devices of 400 or more ("Customized", about USD 48 a month,
+    our own sum);
+  - commercial use is allowed (AGPL-3.0; Pro is licensed for internal business use);
+  - Android can be controlled (screen-capture and input permissions, granted again at every start); iPhones can only
+    control;
+  - 2026 security record: a batch of client CVEs in March (CVE-2026-30797 rated 9.3, some later lowered or
+    withdrawn), CVE-2026-57850 (fixed in 1.4.9), CVE-2026-58056 (fix not confirmed), CVE-2026-131827 (Windows local
+    privilege escalation, November, fixed);
+  - its server ports (21115 to 21119) would have to be public for users off the tailnet.
+- **Alternatives looked at** (not chosen):
+  - MeshCentral: Apache-2.0, free, OIDC with authentik, browser-based for the helper. 1.3.1 (October 2026) was an
+    urgent security update, released while servers were being actively attacked. Its server would have to be public
+    for users off the tailnet. Android agent abilities not confirmed.
+  - Apache Guacamole: Apache-2.0, browser-based RDP, VNC and SSH, OIDC (implicit flow). Suited to reaching servers,
+    not to helping users; no phones; last release 1.6.0 on 22 June 2025.
+- **Phones:** no remote-control app on workers' phones. Remote input on a phone that holds the ERP Mobile passkeys
+  (P82) could approve things in the app, and the phones may be personal.
+
+**What (proposal, to settle when taken up):**
+1. **"Report a problem" in the native Android app (P50):**
+   - a screenshot of the app's own screen (no special permission; other apps are never captured); the user sees it
+     and can blur parts before sending;
+   - diagnostics, shown to the user before sending:
+     - app version, Android version, phone model, network type, offline or not;
+     - the current screen;
+     - the last request IDs and their results (P103);
+     - the data-flow tracker state (P50 Phase 0);
+     - saves waiting to upload;
+     - a short app log with personal values removed;
+   - never sent: passkeys, sign-in tokens, passwords, face images or location history;
+   - sent with the user's own sign-in; queued when offline; a crash report offered at the next start.
+2. **"Report a problem" in the ERP web app (desktops):**
+   - in the Desk help menu: page, record, browser, user, recent browser errors, request IDs;
+   - the server adds its own error log entries for that user and time;
+   - screenshot: the browser's own "share this tab" prompt (recommended; accurate, no new library), with paste or
+     attach as a fallback; a page-redrawing library is not recommended (inaccurate, a new dependency);
+   - apps we did not write (Drive, the editor, webmail, DMS): no button inside them; the same form in ERP with a
+     choice of app, and a support mail address that opens a case; their server logs come from Loki.
+3. **The admin support desk: Frappe Helpdesk** (recommended over building our own):
+   - free and open source (AGPL-3.0 on the repository page; licence file not yet read), no paid self-hosted edition,
+     same framework as the ERP; a version-16 branch, v16.2.2 released 25 November 2026;
+   - an agent screen, a portal where users follow and reply to their case, statuses, assignment rules, response and
+     resolution targets, saved replies, a knowledge base, analytics;
+   - advisories: GHSA-xf93-jjcj-44vm (moderate, fixed in 1.26.0, September 2026); a breaking change in 1.31.1 fixed
+     agent-only fields set through the REST API; the install page still names the old `main` branch, so install the
+     version-16 branch;
+   - alternative on record: ERPNext's built-in Issue (statuses and response targets, a weaker agent screen, no user
+     portal).
+4. **Case flow:**
+   - a report becomes a ticket, with the screenshot as a private attachment and the diagnostics stored with it;
+   - the server adds its error log entries for the request IDs and a Grafana or Loki link filtered to that user,
+     time and request;
+   - assignment by app or type, with repeats grouped;
+   - the admin replies inside the ticket, and the user is told in the app and by mail;
+   - a bug is linked to a P item or a public issue with personal details removed;
+   - resolved, then closed, and kept as the record; analytics show what keeps going wrong.
+5. **One admin home: an "Operations" workspace in the ERP Desk for the admin role:**
+   - user cases (Helpdesk);
+   - system alerts (P72, public #134); critical alerts can also open a case;
+   - links to Grafana, Loki, TrueNAS, Coolify and Frigate;
+   - logs and metrics stay in Grafana and Loki, tailnet-only (P102), and are not copied into the public ERP;
+   - later, an admin section in the native app for alerts and cases.
+
+**Decisions for the owner when taken up:**
+1. Case system: Frappe Helpdesk (recommended), ERPNext Issue, or our own.
+2. Whether critical system alerts also open a case (recommended: yes).
+3. The web screenshot method (recommended: "share this tab", with attach as a fallback).
+4. How long screenshots and diagnostics are kept after a case closes (suggested: 90 days for attachments, case text
+   kept).
+5. Who handles cases: admin only, or also first-line helpers (HR for HR questions, supervisors for field problems).
+
+**How it is tested (when built):**
+- on the test site, report from a phone and from a desktop browser;
+- check that the ticket holds the screenshot and diagnostics and that nothing listed as "never sent" appears;
+- check that the server's evidence and the filtered log link are added;
+- reply, resolve and close, and check what the user sees;
+- check that a non-admin cannot see other people's cases.
+
+**Depends on / with:**
+- P103 (request IDs) first; P50 (native app);
+- P72 and public #134 (alert inbox); P53's admin part (becomes the Operations workspace); P102 (admin tools
+  tailnet-only).
+
+**When taken up:**
+- the adoption check for Frappe Helpdesk (licence file, maintenance, security history) in the decision log and the
+  open-source list;
+- a row in the working-agreements stack table (support desk);
+- SOPs for handling a support case and for screenshot privacy (`docs/sop/`).
+
+### P108 — Remove Raven from ERPNext; all messages through our own channels
+
+**App:** erp · **Also touches:** raven, mail, mobile, portal, signin, general · **State:** open
+
+**Owner, 27 November 2026, evening: all at once and now.** Production is not in real use yet, so there are no live
+chats to move. Raven's removal with the notification service (P108), Matrix chat (P73) and the light mail client
+(P109) start now, in parallel. The agent had recommended deciding all together but building the app parts after
+attendance and approvals, because the same app developer builds Phase 1 to 3; the owner chose parallel work and
+accepts that risk.
+
+**Why (owner, 27 November 2026):** the phone app holds the person's key, and sharing it with Raven's and a mail app's
+own phone apps is not possible. The owner's plan: (1) no Raven and no mail in the phone app for now; (2) remove Raven
+from ERPNext and send every message through our own channels: mail, WhatsApp (P04) and an SMS gateway; (3) later,
+Matrix chat (P73) and a light mail client (P109) inside the app.
+
+**What:**
+1. **One notification service in our ERP add-on:** every message the system sends to a person (approvals, document
+   changes, attendance, incidents, alerts) goes through one function that picks the channel by the person's
+   preference and the message's urgency (in the app and phone alert, mail, WhatsApp, SMS), sends each event once,
+   records what was sent and delivered, and follows the test-site safeguards (allow list, test marker). P72's alert
+   inbox and P22's notifications use it rather than their own senders.
+2. **Replace what Raven does today:** Raven document notifications (P22 step 1) become ERPNext notifications through
+   the service; incident reports that were to go to Raven threads (decision of 22 November) go to Matrix rooms
+   (owner, 27 November; see below).
+3. **Remove Raven:** from the ERP image and app list, the portal's app frames, onboarding's app rules, the phone menu,
+   the Raven proxy route, tests and documents. **Keep the phone sign-in check** (`portal/mobile.py`): it was written for
+   Raven but now signs in every phone app, ours included; rename its settings (`cloud_raven_mobile_enabled`,
+   `cloud_raven_mobile_client`) on test and production in the same release.
+4. **Raven's data:** uninstalling Raven deletes every message, channel and attachment record for good. Count them on
+   production first (read-only, with the owner's OK), then export to Drive as a read-only archive or let them go
+   (owner decides). Keep the export until P73's retention rule is set.
+5. **Test site first** (uninstall, all checks, the phone app still signs in), then production at a quiet moment with a
+   backup.
+6. **SMS gateway:** sending SMS to Indian numbers needs DLT registration (the company, a sender name and every message
+   template) with a telecom operator, and costs per message. Choose a provider after the licence and adoption checks;
+   use SMS only where WhatsApp and mail do not reach.
+7. **For the phone app (owner, 27 November 2026, night; public #114):** every message carries its kind ("needs a
+   decision" or "informs"); a "what waits for me" call (per kind: count, longest wait, nearest deadline); a
+   content-free "remove this alert" signal when something is decided anywhere; a reminder for a waiting decision
+   every 4 hours between 07:00 and 21:00 only, counted by the server; approvals themselves alert round the clock; a
+   per-site summary.
+
+**Settled (owner, 27 November 2026, evening):** no gap to manage and no history to export, because production is not
+in real use (count Raven's messages on production before uninstalling all the same, read-only). **External messages:**
+mail, forms (the Respond app and ERPNext web forms) and WhatsApp (P04); SMS only where those do not reach.
+
+**Progress (27 November 2026):** part 1, the removal, is public PR #138, merged at `86d5cd9` (13:59 UTC; tested commit
+`5cc6d1a`, later commits documents only). On the test ERP since 13:52 UTC on a new core image without Raven (receipt
+`p108-test-erp-remove-raven-5cc6d1a`). **Merged, not deployed** to production: it needs a new core image there, the
+uninstall with the old image first, the config keys and the proxy files, at a quiet moment (decision log, 27 November).
+Not yet built: the notification service (part 2); the SMS gateway choice.
+
+**Incident reports go to Matrix (owner, 27 November 2026, evening):** the person picks one or more rooms, as the
+22 November design did with Raven threads; the photos (and later clips, P106) still go to the project's Drive
+through ERPNext (P74) and the room message links to them. Reason: the long-term plan is not to use ERPNext for
+everything; modules stay separate and replaceable. The agent had proposed ERPNext records; it noted that chat
+does not track whether an incident is open or closed, so a small separate incident tracker can be added later
+if that is needed.
+
+**Closes when done (owner decides each):** P16 (Raven attachments); the Raven parts of P14; the "Raven Mobile" client
+question in P64; P22's "Raven inside the company" channel.
+
+**Related:** P73 (Matrix), P04 (WhatsApp), P109 (mail in the app), P22, P72, P107, P50.
 

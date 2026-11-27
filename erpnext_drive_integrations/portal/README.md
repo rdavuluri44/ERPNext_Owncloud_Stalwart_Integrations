@@ -32,7 +32,7 @@ Reusable for any Frappe 16 site behind an authentik forward-auth proxy: keep `po
 
 ## Configuration
 
-Site config keys: `cloud_sso_enforced`, `cloud_sso_auto_provision`, `cloud_oidc_issuer`, `cloud_combined_site`, `cloud_dashboard_host`, `cloud_default_app`, `cloud_cookie_host_only`, `cloud_native_mobile_clients`, `cloud_raven_mobile_enabled`, `cloud_raven_mobile_client`, `cloud_push_enabled`, `push_relay_server_url`, `host_name`. A site's own portal look (unset = production's page): `cloud_portal_hide_entity_name` (no company name beside the logo), `cloud_portal_logo_height` (40 to 100 px), `cloud_portal_logo_position` (`{"top": px, "left": px}`, 0 to 80), `cloud_portal_clean_root_address` (show `/` instead of `/place_holder` where the host serves the portal at its root). Asset URLs are versioned by the runtime renderer.
+Site config keys: `cloud_sso_enforced`, `cloud_sso_auto_provision`, `cloud_oidc_issuer`, `cloud_combined_site`, `cloud_dashboard_host`, `cloud_default_app`, `cloud_cookie_host_only`, `cloud_native_mobile_clients`, `cloud_native_mobile_enabled` (the old name `cloud_raven_mobile_enabled` is still read when the new one is absent), `cloud_push_enabled`, `push_relay_server_url`, `host_name`. A site's own portal look (unset = production's page): `cloud_portal_hide_entity_name` (no company name beside the logo), `cloud_portal_logo_height` (40 to 100 px), `cloud_portal_logo_position` (`{"top": px, "left": px}`, 0 to 80), `cloud_portal_clean_root_address` (show `/` instead of `/place_holder` where the host serves the portal at its root). Asset URLs are versioned by the runtime renderer.
 
 ## Tests
 

@@ -6,6 +6,154 @@ discussion that led to a decision is not repeated here.
 
 ## 2026-11-27
 
+### Chat: the business system acts through a bot that invites; nothing holds an admin token (P73)
+
+- **Decision:** the business system has one chat identity, the bot `@erp`, with its own token. It creates the site
+  and team rooms and each person's read-only Notices room, invites people, posts, and removes people whose
+  assignment ended. Synapse accepts invitations from this server automatically, so people are in their rooms
+  without a tap. There is no admin client and no admin user for this.
+- **Why:** tried on the test site on 27 November 2026: the authentication service gives a client its own admin
+  scope but not Synapse's, which needs an admin person's token. Inviting needs no such right, and one credential
+  less with full power over every room is safer. With no federation, only people on this server can invite, so
+  automatic acceptance cannot be used from outside. Synapse's own "server notices" need the admin interface too,
+  so the Notices room is an ordinary room in which only the bot may write.
+- **Where:** `integrations/chat/configure.py` (`bridge`, `auto_accept_invites`), register CHAT-4, the chat README.
+
+### The chat stack: two settings files written by a one-time service; the server name is `chat.<domain>` (P73)
+
+- **Decision:**
+  - The server name is `chat.<domain>`, so addresses are `@name:chat.<domain>`. It can never be changed, so
+    production starts on the domain people keep.
+  - The stack is Synapse, the Matrix Authentication Service and one PostgreSQL each. A `configure` service runs
+    once before them, in the Synapse image, and writes both configuration files from the stack's settings; it makes
+    the authentication service's signing key the first time and keeps it afterwards.
+  - Fixed in that script: sign-in only through the sign-in service, no federation at first, rooms not encrypted by
+    default, and people cannot change the name or mail address the sign-in service gives.
+  - The stack is opt-in (`chat` in the profile's `projects`) and needs two host names, `chat` and `chat-auth`.
+- **Why:**
+  - Owner, 27 November 2026: `chat.<domain>` over the bare domain, which would tie chat to the website serving two
+    files for ever. The chat server stands on its own address, separate and replaceable.
+  - Neither service reads secrets from environment variables, and the authentication service's image has no shell.
+    The renderer only fills values into stack files, so a service that turns its environment into the two files
+    keeps every secret where the other stacks keep theirs, with no new mechanism in the renderer.
+  - The configuration is written as JSON, which both services read as YAML, so the script needs no YAML library
+    and is tested offline.
+- **Where:** `deployment/stacks/chat.compose.json`, `integrations/chat/configure.py`, `tools/prepare_ingress.py`
+  (test routes), `tools/prepare_runtime.py` (the two host names), `tests/test_chat_stack.py`, register CHAT-1 to -3.
+
+### Raven leaves ERPNext; Matrix chat and a light mail client in the phone app, all now (P108, P73, P109)
+
+- **Decision (owner, 27 November 2026), all started now and in parallel:**
+  1. **Raven is removed from ERPNext.** System messages to people go through one notification service in our add-on,
+     which picks the channel for each person and message: in the app, mail, or WhatsApp. SMS is used only where those
+     don't reach. Outside the company: mail, forms (the Respond app and ERPNext web forms) and WhatsApp.
+  2. **Matrix is the internal chat, built into the phone app.** The server is Synapse, with the Matrix Authentication
+     Service signing in through authentik. The app uses Matrix's Rust SDK through its Kotlin bindings. Company rooms
+     are unencrypted so the company can keep and search them.
+  3. **A light JMAP mail client in the phone app**, read and reply first. It borrows the mail-server code of Ltt.rs
+     (Apache-2.0); the screens are our own.
+  4. **The app's sign-in** (Phase 1) is built so one passkey sign-in gives every token: ERPNext's, and the sign-in
+     service's for mail and Matrix.
+
+  This replaces three earlier decisions: "Chat, Mail and Drive stay separate apps" (22 November) for chat and mail;
+  "incidents go to Raven threads"; and "Raven inside the company" (P22).
+- **Why:**
+  - The app holds each person's key in the phone's secure hardware, and Android cannot share it with another app. So
+    chat and mail must be inside our app, whichever server they use.
+  - Matrix over Raven: an open standard, independent of ERPNext's uptime, able to connect separate companies later,
+    with a maintained Android library and calls. The costs are a new server (with monitoring, backups and a test
+    copy), an ERPNext bot for document messages, and about three months of work.
+  - Synapse because the Matrix Authentication Service supports only Synapse today. The lighter Tuwunel and
+    continuwuity are on record as alternatives.
+  - Production is not in real use, so no live chats need moving.
+  - The owner chose parallel work over the agent's suggestion to build the app parts after attendance and approvals.
+- **Kept:** the phone sign-in check (`portal/mobile.py`). It was written for Raven's app but signs in every phone app
+  now, so its settings are renamed, not removed.
+- **Adoption check (27 November 2026; GitHub and Codeberg repositories and GitHub Security Advisories):**
+  - **Synapse** (element-hq/synapse): AGPL-3.0, a release every one to two weeks (v1.166.0 on 24 November 2026).
+    13 advisories in the last 12 months (7 high), published in two batches with the fixed versions (1.152.1 and
+    1.157.2); none open at 1.166.0. Verdict: adopt, pinned by version and digest, in the daily upstream watch.
+  - **Matrix Authentication Service** (element-hq/matrix-authentication-service): AGPL-3.0, v1.30.0 on 24 November
+    2026, no advisories in the last 12 months. Verdict: adopt.
+  - **matrix-rust-sdk** (matrix-org/matrix-rust-sdk): Apache-2.0, v0.20.0 on 25 November 2026. 4 advisories in the
+    last 12 months (1 high), all fixed by 0.19.0. Verdict: adopt at 0.20.0 or later.
+  - **Sygnal**, the push gateway: the matrix-org repository is archived; it continues at element-hq/sygnal
+    (AGPL-3.0, v0.17.0 of 5 November 2025, commits in November 2026, no advisories). Verdict: adopt from element-hq
+    when the app's chat alerts are built.
+  - **Ltt.rs** and its JMAP library (codeberg.org/iNPUTmice): Apache-2.0. Little upkeep: the library's last commit
+    was April 2025, the app's last code change October 2025. Verdict: borrow the JMAP library code with caution and
+    maintain our copy ourselves; do not depend on upstream fixes.
+  - All stay `evaluating` in the open-source list until each is deployed or copied.
+  - **Room on the test VM:** 8 GB memory with about 3.5 GB available, 3 CPUs, 120 GB disk free: enough for Synapse,
+    its database and the authentication service on test. Production's room is checked before promotion.
+- **Where:** P108, P73, P109, P50, P04.
+
+### Removing Raven: the phone sign-in keeps working under a neutral name; uninstall before the new image (P108)
+
+- **Decision:** Raven leaves the ERP build (the app list, the version lock, the daily watch), the portal's app
+  frames, onboarding's app rules, the phone menu and the proxy (its discovery route and its preflight route). The
+  phone sign-in check stays: its switch is now `cloud_native_mobile_enabled`, the old name
+  `cloud_raven_mobile_enabled` is still read when the new one is absent, and the single-client setting
+  `cloud_raven_mobile_client` approves nothing any more. The proxy file is `cloud-native-clients.yaml`
+  (routers `cloud-native-token` and `cloud-native-bearer`, middleware `cloud-native-auth`).
+- **Order on each site (it matters):** (1) with the **old** image still running, `bench --site <site> uninstall-app
+  raven` after a database backup (this deletes Raven's messages and channels); (2) deploy the new image, built on a
+  core without Raven; (3) set `cloud_native_mobile_enabled` in the site config and remove the two old keys;
+  (4) install the renamed proxy file and remove the two old ones. An image without Raven's code on a site that
+  still lists Raven as installed does not start.
+- **Why:** owner, 27 November 2026 (see the decision on Matrix and the notification service). The sign-in check
+  was written for Raven's phone app but signs in every phone app; reading the old switch name keeps a site working
+  between the image and the config change.
+- **Where:** `portal/mobile.py` (`enabled`, `clients`), `deployment/config/proxy/cloud-native-clients.yaml`,
+  `tools/prepare_ingress.py`, `deployment/upstream-lock.json`, `deployment/stacks/erp.compose.json`,
+  `tools/initialize_erp.py`, `portal/sso.py`, `public/session.js`, `www/place_holder.html`, `onboarding/access.py`,
+  `tests/portal/test_mobile.py`, `tests/test_portal_deep_link.py`, the register (Raven section removed).
+
+### Native app Phase 1 and sign-up: lock, offline window, photo cache, user name, verification codes, video (P50, P74, P82, P04, P106)
+
+- **Decision:**
+  - The app asks for the fingerprint again after **3 minutes** away (another app opened or the screen off).
+  - Without a connection it still opens for **12 hours**, then it needs a connection.
+  - **Photos offline:** the app keeps previews and the photos a person has opened, of their own sites only, in its
+    encrypted store: at most 200 MB and 7 days. They are wiped at sign-out, when the key is lost, and for a site the
+    person no longer belongs to.
+  - **Sign-up:** full name (first name required, surname optional). The **user name is the full mail address**. The
+    mail address is verified with a **6-digit code from our own mail server**, the mobile number with a **6-digit
+    code over WhatsApp**. Each code expires after 10 minutes, allows 5 tries, and a new one can be asked after 60
+    seconds.
+  - **Incident videos:** clips of up to 60 seconds, compressed on the phone at 720p, **HEVC where the phone records
+    it, otherwise H.264**.
+- **Why:** owner, 27 November 2026.
+  - 12 hours covers one site shift. Offline attendance must work for a whole shift without signal, and a switched-off
+    person is refused at the next connection.
+  - The mail address is already ERPNext's user ID, so one identity runs through every app.
+  - Six digits suit a phone's number pad. The expiry and the try limit, not the alphabet, protect the code.
+  - Our mail server sends codes for free, while Firebase only sends sign-in links by mail and charges for SMS.
+    WhatsApp replaces SMS later as well.
+  - HEVC is about 40% smaller than H.264. H.264 remains as the fallback, and a browser without HEVC offers the clip
+    as a download.
+- **Where:** the native app (`mobile-native`, PR #114) for the lock, offline window and cache; P82 sign-up; P04
+  (WhatsApp); P106 (video upload, to build).
+
+### Face enrolment: also the worker's own supervisor or engineer; the agreement in English, other languages on choice (P95)
+
+- **Decision:** besides HR, a Field Attendance Manager and the project manager of the worker's site, the worker's own
+  supervisor (the responsible supervisor on their Field Worker Assignment) and the engineer assigned to that
+  supervisor at that site may enrol a face and record a withdrawal. Another team's supervisor or engineer is refused.
+  The face attendance agreement opens in English; the worker may choose to read a translation in the language of
+  their choice, and the language they read is recorded with their consent (as before, every acceptance records the
+  agreement version and language). If a translation and the English differ, the English version governs, and the
+  agreement tells the worker so. By ticking "I agree" the worker also confirms that the person enrolling them
+  explained the terms in a language they understand; the consent record names that person and the language.
+- **Why:** owner, 27 November 2026, answering the native app's request on PR #114. Supervisors and engineers are the
+  ones at the site with the team, so enrolment does not wait for HR or the project manager to visit. Limiting it to
+  the worker's own team keeps it to people who know the worker; the consent record names who recorded it, and the
+  project manager looks over new enrolments (SOP). English as the default with a free choice of translation keeps one
+  reference text and still lets every worker read it in a language they understand.
+- **Where:** `custom_hr/face_service.py` (`may_enrol`, `require_enroller`), `tests/test_custom_hr_face_enrolers.py`,
+  `custom_hr/face_queue_integration_tests.py` (part 6), the module README, `docs/sop/field-face-enrolment-and-consent.md`,
+  `docs/sop/face-attendance-agreement.md` (draft 2), `docs/sop/README.md`.
+
 ### Face attendance has an off switch, and it is off unless the site turns it on (P95)
 
 - **Decision:** every face function that takes in or uses a face (enrolment, identification, the capture queue's

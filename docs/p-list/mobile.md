@@ -16,7 +16,7 @@ Part of the P list: back to the [index and priority order](../p-list.md). Items 
 
 **Status:** approved-session OAuth/PKCE binding, refresh/revocation and push modules are retained; current-stack native Raven and fresh-device acceptance remain incomplete. Earlier ERP/HR notification receipt is recorded at its earlier deployment checkpoint, not re-certified on the current portal.
 
-Verify the new portal's per-device opt-in controls, ERP/HR notification receipt and tapping, and Raven background delivery from another user on actual devices. Native relay credentials and registrations stay private. Mocked tests and a provider HTTP success do not prove device delivery. No notification test or business approval message was sent during consolidation.
+Verify the new portal's per-device opt-in controls, ERP/HR notification receipt and tapping, and Raven background delivery from another user on actual devices. (Owner, 27 November 2026: the Raven parts fall away with P108.) Native relay credentials and registrations stay private. Mocked tests and a provider HTTP success do not prove device delivery. No notification test or business approval message was sent during consolidation.
 
 Recheck native Raven login/chat/refresh and revoked-token refusal, and coordinate realtime recovery with P01. Preserve exact validated callbacks and existing workers/drafts. See [push and Raven scope](../roadmap.md#1-push-and-session-bound-native-raven).
 
@@ -27,6 +27,11 @@ Recheck native Raven login/chat/refresh and revoked-token refusal, and coordinat
 **Status:** opened 19 November 2026. The Expo app (module `mobile-app`) is the app in use on test. The native
 Android rebuild (module `mobile-native`, Kotlin with Jetpack Compose) is under way: Phase 0 (foundation, no
 sign-in, no server calls) in the colleague's draft PR #114, review fixes added 27 November 2026.
+**Test-site request (27 November 2026):** the developer asked for the five-phone test preparation (PR #114,
+issuecomment-7214300268). The owner said "go for rest of all"; the answers were posted (issuecomment-7214761500): Part D
+decided (P95, PR #131); A5 and B4 answered from the code; B1 not needed (two bootstrap calls exist); B2 and B3 opened as
+P103 and P104; the test-site preparation as P105 (blocked on the testers' mail addresses and the test build's signing
+fingerprint).
 Own app (not the colleague's P38 app), native on Android and iOS, one codebase
 for phones and tablets, in this repository as a self-contained module. No
 Supabase: ERPNext is the data backend, authentik the sign-in (native-client
@@ -104,6 +109,61 @@ sentences and no longer crashes on sign-out during a save. Still open in Phase 0
 comparison, texts in one file, a real tablet, vibration, icon and start screen, detekt, crash reports. Not for
 merging yet; nothing to deploy (no server stack).
 
+**Incident reports go to Matrix (owner, 27 November 2026, evening):** the person picks one or more rooms, as the
+22 November design did with Raven threads; the photos (and later clips, P106) still go to the project's Drive
+through ERPNext (P74) and the room message links to them. Reason: the long-term plan is not to use ERPNext for
+everything; modules stay separate and replaceable. The agent had proposed ERPNext records; it noted that chat
+does not track whether an incident is open or closed, so a small separate incident tracker can be added later
+if that is needed.
+
+**Today, Inbox and alerts: the developer's plan and the owner's answers (27 November 2026, night; public #114,
+issuecomment-7220894102):**
+- **Every approval rings, round the clock** (owner; the agent had recommended 07:00 to 21:00 only).
+- **Reminders every 4 hours, only between 07:00 and 21:00** (owner); the server applies the hours.
+- Agreed as proposed: no decision without a connection; no amounts on Today; every thing has one home (Today,
+  Inbox, Notices, Chat, Mail); alerts carry no content; the numbers on the places come from the server.
+- **Server side owes the app (P108 part 2 unless noted):** one "what waits for me" call for everything ERPNext
+  knows (count, longest wait, nearest deadline per kind); a content-free "remove this alert" signal; the reminder;
+  a per-site summary for people who look after sites. Chat and mail unread are asked from their own servers, not
+  through ERPNext.
+- **Open for the owner, later:** who decides while someone is on leave.
+
+**The developer's screen plan and the owner's answers (27 November 2026; public #114, issuecomment-7219041831 and
+issuecomment-7219386949):**
+- **Bottom bar: Today, Inbox, Chat, Mail, More** (owner; replaces Today, Inbox, My HR, Menu of 22 November; "Inbox"
+  stays the approvals place, not renamed "To do").
+- **Chat kept on the phone for 7 days** (the developer proposed 14), locked with the fingerprint key.
+- **"Save to phone" for mail attachments is a setting, off by default** (the developer proposed it for everyone): a
+  saved file leaves the app's locked store.
+- Agreed as proposed: the "Outside" pill on mail from outside, remote pictures only after a tap, links show their
+  address first; alerts say only "New message" or "New mail"; separate badges for Inbox, Chat and Mail.
+- **Server side owes the app:** rooms made by the server per site and team (P73); a read-only "Notices" room, and
+  every message marked "inform" or "needs a decision" by the notification service (P108); a yes/no "has a mailbox"
+  in the bootstrap answer (P109); client IDs, return paths and addresses for three token issuers (ERPNext, the
+  sign-in service for mail, Matrix's authentication service for chat); the design of mail alerts.
+- The developer posted the test build's signing fingerprint on #114 (issuecomment-7216179275), for P105.
+
+**Chat and mail in the app now (owner, 27 November 2026, evening; replaces "for now" below):** Matrix chat (P73) and
+the light mail client (P109) are built now, in parallel with Phase 1. **Sign-in design for Phase 1 part 4:** one
+passkey sign-in in the browser gives the app every token it needs: ERPNext's now, and later the sign-in service's
+tokens for mail and for Matrix (through the same browser session, so no second passkey). Build the safe and the
+connection layer to hold several tokens from the start.
+
+**No chat and no mail in the app for now (owner, 27 November 2026, afternoon; replaced above):** the key the app holds cannot be shared with
+Raven's or a mail app's own phone apps, and Raven is being removed (P108). Later the app gets Matrix chat (P73) and a
+light mail client (P109). This replaces "Chat, Mail and Drive stay separate apps" of 22 November for chat and mail.
+
+**Phase 1 plan and owner decisions (27 November 2026; the colleague's plan of five parts: the lock, the safe, the
+connection, sign-in, home):**
+- Parts 4 (sign-in: browser, passkey, tokens straight into the encrypted store) and 5 (home: name, roles, sign out):
+  agreed. Part 4 waits for P105's sign-in client on the test site.
+- **Fingerprint again after 3 minutes away** (another app opened or the screen off).
+- **Without a connection the app still opens for 12 hours** (one site shift, 07:00 to 19:00 or 19:00 to 07:00), then
+  it needs a connection. The owner first said 5 hours; the agent pointed out that a supervisor without signal could
+  not mark the afternoon's attendance, and the owner accepted 12 hours. A switched-off person is refused at the
+  next connection; the 3-minute fingerprint lock covers a lost phone meanwhile.
+- **Photos offline:** see P74 (cache decision of 27 November).
+
 ### P64 — Native app sign-in on production: latent auth-hook crash and a stale client list
 
 **App:** mobile · **Also touches:** signin, erp · **State:** in progress
@@ -160,6 +220,11 @@ when the app goes to production (P50), and whether Raven Mobile should be a nati
 - **Open:** the rest of the phone test with #64 and #66 (checklist on #66); backups and disk growth with P72 (about 1 MB per photo
   before compression; the app sends about 200 KB); privacy (photos show workers and the public: project access only,
   no public links); the daily token renewal needs the scheduler (test has none).
+- **Viewing photos without a connection (owner, 27 November 2026; amends "phone storage only for the encrypted offline
+  queue" of 24 November):** the app also keeps previews and the photos the person has opened, of their own sites
+  only, inside the app's encrypted store; at most **200 MB** and **7 days**; wiped at sign-out, when the key is lost,
+  and for a site the person no longer belongs to. The send queue stays as before (at most 1 day).
+- **Short videos for incidents:** P106.
 
 ### P86 — Personal business files in the app, with a quota per user
 
@@ -275,3 +340,59 @@ direct dependencies.
 
 **Owner (26 November 2026):** ranked in tier 1 (row 5a, next to P62). The second review by a different AI model stays
 for sensitive screens only (sign-in, security, payments, personal or biometric data); the guide says so.
+
+### P106 — Short video clips with site incidents
+
+**App:** mobile · **Also touches:** drive, erp · **State:** open
+
+**Why (owner, 27 November 2026):** people reporting an incident in the app attach photos; a short video often shows
+what happened better.
+
+**What:**
+- Clips of **at most 60 seconds**, with Incident photos (P74); the same tags, site check and Drive folder.
+- **Compressed on the phone** before upload; the server does not re-encode. **Owner, 27 November 2026: HEVC (H.265)
+  when the phone can record it, otherwise H.264**, at 720p with mono AAC sound. HEVC is about 40% smaller (about 9
+  MB a minute against about 15 MB for H.264 at 2 Mbit/s). Consequence: a browser that cannot play HEVC (older
+  computers, some Firefox set-ups) offers the clip as a download instead of playing it in Drive. The app checks
+  the phone's hardware encoder before recording. Android's Media3 Transformer does the conversion (licence and
+  advisory check before adoption).
+- **New upload path:** today's photo upload takes files under 3 MB in one request; clips need an upload that resumes
+  after a dropped connection, and a size limit on the server.
+- Offline: a clip waits in the encrypted send queue like a photo (at most 1 day); the queue's size limit needs a
+  decision.
+
+**Acceptance (test site):** a 60-second clip recorded on a mid-range phone is under 16 MB, uploads over a poor
+connection after an interruption, plays in Drive in a browser (H.264 everywhere; HEVC where the browser supports
+it, otherwise offered as a download), and is refused for a site the person does not belong to.
+
+**Related:** P74, P50 (Phase 2 or later, not Phase 1), P72 (disk growth and backups).
+
+### P109 — A light mail client in the phone app (JMAP)
+
+**App:** mobile · **Also touches:** mail, signin · **State:** open · **Category:** now
+
+**Owner, 27 November 2026, evening: all at once and now.** Production is not in real use yet, so there are no live
+chats to move. Raven's removal with the notification service (P108), Matrix chat (P73) and the light mail client
+(P109) start now, in parallel. The agent had recommended deciding all together but building the app parts after
+attendance and approvals, because the same app developer builds Phase 1 to 3; the owner chose parallel work and
+accepts that risk.
+
+**Why (owner, 27 November 2026):** mail on the phone without sharing the app's key with another mail app.
+
+**What (agent's proposal for the owner to confirm when it starts):**
+- **Read and reply first:** inbox, open a mail, reply, see attachments; everything else in webmail in the phone's
+  browser. More features only when people ask for them.
+- **Through JMAP,** the mail server's modern interface that our webmail already uses, signed in with the same sign-in
+  service (to prove on the test site first).
+- **Mail from strangers is shown safely:** a locked-down view, remote images blocked until the person allows them.
+- **Reuse:** **Ltt.rs** (Android JMAP client, Apache-2.0) is the best candidate: borrow its mail-server code (its
+  JMAP library), not its screens (older Android style; ours are Compose). It calls itself a proof of concept and its
+  last release was March 2026, so check its code and upkeep before copying; copied files keep their notices and go
+  into the open-source list as `borrowed`. Thunderbird for Android plans JMAP only for 2027.
+- **Sign-in:** the mail server already accepts the sign-in service's tokens (that is how webmail works); add the app
+  as an accepted client.
+- **With it, decide P18:** whether other mail apps (the external mail provider, Outlook) are refused once mail works in our app (agent
+  recommends refusing them).
+
+**Related:** P108, P73, P18, P50, P82.
+

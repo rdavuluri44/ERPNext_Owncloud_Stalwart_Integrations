@@ -64,8 +64,8 @@ private companion.
 | C4 | Attendance approval (single and bulk, offline-marked entries) | project manager | daily | in use | [attendance approval](attendance-approval.md) | no |
 | C5 | Self check-in and check-out (selfie today; biometric when P82 is built) | employee | every shift | in use; change designed | — | no |
 | C6 | Corrections, returns, void and cancel (P24) | supervisor, project manager, HR | errors | **gap**: rules not agreed | — | no |
-| C7 | Face enrolment of field workers with one good phone (P95) | HR or project manager | onboarding, model change | designed | [face enrolment](field-face-enrolment-and-consent.md) | yes |
-| C8 | Face consent, withdrawal, and attendance without a face (P95); [agreement draft](face-attendance-agreement.md) | HR, worker | onboarding, any time | designed | [face enrolment](field-face-enrolment-and-consent.md) | yes |
+| C7 | Face enrolment of field workers with one good phone (P95) | HR, project manager, or the worker's supervisor or engineer | onboarding, model change | designed | [face enrolment](field-face-enrolment-and-consent.md) | yes |
+| C8 | Face consent, withdrawal, and attendance without a face (P95); [agreement draft](face-attendance-agreement.md) | HR, project manager, supervisor or engineer, worker | onboarding, any time | designed | [face enrolment](field-face-enrolment-and-consent.md) | yes |
 | C9 | Uncertain matches and the offline queue (P95) | supervisor, project manager | after capture or sync | designed | — | no |
 | C10 | Legal opinion on face attendance (P95) | owner | see P95 | designed | — | yes |
 

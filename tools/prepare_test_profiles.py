@@ -21,7 +21,7 @@ def native_site_settings(clients):
     native=[c for c in clients if c.get('native')]
     if any(not c.get('client_id') for c in native):raise ValueError('A native test OAuth client needs a fixed client_id')
     if not native:return {}
-    return {'cloud_raven_mobile_enabled':True,'cloud_native_mobile_clients':[str(c['client_id']) for c in native]}
+    return {'cloud_native_mobile_enabled':True,'cloud_native_mobile_clients':[str(c['client_id']) for c in native]}
 
 
 def prepare(source,runtime,receipts,profile,output):

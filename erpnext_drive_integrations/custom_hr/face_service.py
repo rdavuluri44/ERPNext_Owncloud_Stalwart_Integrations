@@ -1,7 +1,8 @@
 """Face enrolment, identification and deletion for field team attendance (P95).
 
-* Enrolment: HR, a Field Attendance Manager or an approver of the worker's site enrols a field worker from several
-  angles after checking their identity document and recording their consent. Only encrypted templates are kept (site
+* Enrolment: HR, a Field Attendance Manager, an approver of the worker's site, or the worker's own supervisor or
+  assigned engineer enrols a field worker from several angles after checking their identity document and recording
+  their consent. Only encrypted templates are kept (site
   encryption key); the photographs are not stored. Re-enrolment replaces the templates.
 * Identification: a supervisor (or assigned engineer) sends one photograph for a site and shift; it is compared only
   with the workers that person may record on that shift. The result is a match, a short list of candidates, or none.
@@ -66,13 +67,29 @@ def worker_site(employee):
     return frappe.db.get_value('Field Worker Assignment', {'employee': employee}, 'site')
 
 
+def worker_supervisor(employee):
+    return frappe.db.get_value('Field Worker Assignment', {'employee': employee}, 'supervisor')
+
+
+def may_enrol(user, site, supervisor):
+    """The project manager (approver) of the worker's site, or the worker's own team (owner, 27 November 2026): their
+    responsible supervisor, or the engineer assigned to that supervisor at that site. Not other teams' supervisors."""
+    if not site:
+        return False
+    if site_access(site, 'Approver', user):
+        return True
+    if supervisor and supervisor == user and site_access(site, 'Supervisor', user):
+        return True
+    return bool(supervisor) and supervisor in supervised_users(site, user)
+
+
 def require_enroller(employee, user):
-    """HR, a Field Attendance Manager, or an approver of the site the worker is assigned to."""
+    """HR, a Field Attendance Manager, or someone `may_enrol` allows for the worker's site and team."""
     if is_manager(user) or HR_ROLES & set(frappe.get_roles(user)):
         return
-    site = worker_site(employee)
-    if not site or not site_access(site, 'Approver', user):
-        frappe.throw('Only HR or the project manager of the worker’s site can enrol or remove a face.', frappe.PermissionError)
+    if not may_enrol(user, worker_site(employee), worker_supervisor(employee)):
+        frappe.throw('Only HR, the project manager of the worker’s site, or the worker’s own supervisor or engineer '
+                     'can enrol or remove a face.', frappe.PermissionError)
 
 
 def embed(model, photo):

@@ -24,7 +24,11 @@ Confirm compatibility with the running Frappe/ERP versions, install and configur
 
 **Status:** official source staged; WhatsApp app/connector not installed. No Meta WhatsApp Business account or business number is ready.
 
-Set up the provider/business number, deploy/configure the connector, prepare approved message templates and webhooks, and implement authenticated reply-to-record mapping. Verify sending onboarding links and recording vendor yes/no responses against the intended response request or PO with an audit trail. No live sending is currently established.
+Set up the provider/business number, deploy/configure the connector, prepare approved message templates and webhooks, and implement authenticated reply-to-record mapping.
+
+**Also (owner, 27 November 2026):** a WhatsApp verification flow for onboarding (P82): a 6-digit code to the mobile number the person gave, valid 10 minutes, 5 tries, a new code after 60 seconds; an authentication message template approved by Meta. No SMS and no Firebase for phone checks; mail codes stay on our own mail server.
+
+**Official API only (owner, 27 November 2026, evening):** the owner asked whether a Matrix-WhatsApp bridge could replace Meta's API now that Matrix is the chat. No: the usual bridge (mautrix-whatsapp) acts as an unofficial WhatsApp Web client on an ordinary number, which WhatsApp's terms forbid for automated messages, and such numbers get banned, sometimes for good (agent's reading of public sources, not of Meta's current terms text). P04 stays on Meta's WhatsApp Business API; mail is the fallback until the Meta number exists. A bridge between Matrix rooms and WhatsApp for staff-to-vendor chats could come later, and then on the official API. Verify sending onboarding links and recording vendor yes/no responses against the intended response request or PO with an audit trail. No live sending is currently established.
 
 ### P05 — Live GSTIN lookup and form prefill
 
@@ -70,7 +74,10 @@ Agree pilot project reports, approvals and attendance summaries; evaluate instal
   workflows with AI steps; n8n was set aside because its Sustainable Use License is not open source and restricts
   offering it to other organisations (future tenants). Single sign-on is paid in both, so the Activepieces admin screen
   sits behind the authentik gateway instead.
-- **Channels (owner decision): Raven inside the company, WhatsApp for outside vendors.** Activepieces can post to
+- **Changed by the owner, 27 November 2026:** Raven is removed (P108); messages inside the company go through our
+  own notification service (in the app, mail, WhatsApp, SMS) instead of Raven, and later Matrix chat (P73). The
+  vendor part below stays.
+- **Channels (owner decision, 22 November; superseded inside the company):** Raven inside the company, WhatsApp for outside vendors. Activepieces can post to
   Raven through Raven's incoming webhook / REST API (generic HTTP step) and to WhatsApp through the WhatsApp Business
   Cloud API; WhatsApp needs the Meta business number (P04's blocker), approved templates for messages vendors did not
   start, and has per-conversation charges. One sender per event, so vendors never get duplicates (Activepieces or the
@@ -392,4 +399,61 @@ public PR #101 (`p95/pm-queue`).
   owner's P93 browser check on the test ERP. **Switching P95 on in production waits for the legal opinion and the
   owner's decision.**
 
+**Owner decisions, 27 November 2026 (Part D of the native app's request on public PR #114):**
+- **Who may enrol:** also the supervisor and the engineer, besides HR and the project manager. Built as: the worker's
+  responsible supervisor, or the engineer assigned to that supervisor at that site; another team's supervisor or
+  engineer is refused; withdrawal follows the same rule.
+- **Consent text:** English by default; the worker may choose to read a translation in the language of their choice;
+  the language read is recorded (agreement draft 2). **If a translation and the English differ, the English version
+  governs** (owner, 27 November 2026; in #131 at `777a5fd`, documentation only). **Ticking "I agree" also confirms
+  that the person enrolling the worker explained the terms in a language they understand** (owner, 27 November; the
+  owner chose "whoever enrols" over "HR only", so the Part D decision stands; `0cf7865`, documentation only). For
+  the lawyer: whether this acknowledgement, with the record of who enrolled and the language, is enough when the
+  worker cannot read the text.
+- **Public PR #131** (`p95/enrol-by-team`, tested at `5ae5cd0`, head `0cf7865` adds only the English-governs and
+  explained-in-your-language text in `docs/`, CI passed, ready for the owner). On the test ERP since
+  09:27 UTC (receipt `p95-test-erp-enrol-by-team-5ae5cd0`): 71 suites in the image; face queue live 36/36 (7 new);
+  field attendance 79/79. Not covered: a phone (the enrolment and agreement screens are not built).
+- **Merged, not deployed:** #131 merged at `de1feaf` (10:28 UTC, 27 November; head `0cf7865`, tested image
+  `5ae5cd0`, later commits `docs/` only). Joins the next ERP release from main (P95 stays off in production).
+
 **Status:** in progress.
+
+### P103 — Request ID on every app action, and "what happened to my request"
+
+**App:** erp · **Also touches:** mobile · **State:** open
+
+**Why (owner, 27 November 2026: "go" on Part B of the native app's request on public PR #114):** the native app's
+data-flow tracker (P50, Phase 0) can follow a save only as far as the gateway. Nothing on the server returns or stores a
+request or correlation ID (checked 27 November: no such header; `request_id` exists only as the attendance retry key on
+Field Attendance Entry). A failed save cannot be pinned to one point without someone reading server logs.
+
+**What:**
+1. The app sends one request ID with every save; the server returns it in the answer and writes it on the record
+   created (reuse the existing unique client ID fields: `request_id`/`capture_id` on Field Attendance Entry,
+   `client_id` on Drive Photo, `capture_id` on Field Face Capture).
+2. The same ID on the calls that have none today and are repeat-safe only by the record's state: `self_check_out`,
+   `submit`, `review_many`, `verify`, `apply_workflow` (B4 of the request).
+3. A read-only function "what happened to my request ID": for the signed-in person's own IDs only, it answers the
+   record, its state and which notices were made; never other people's values.
+
+**Acceptance (test site):** every app save carries an ID that is returned and found on the record; the lookup answers
+for one's own IDs and refuses others'; repeating a call with the same ID returns the first result.
+
+**Related:** P50 (native app), P104 (version handshake), P105 (five-phone test round).
+
+### P104 — Version handshake between the server and the mobile apps
+
+**App:** erp · **Also touches:** mobile · **State:** open
+
+**Why (owner, 27 November 2026: "go" on Part B of the request on public PR #114):** an app that is older than the
+server's functions should say "update needed" instead of showing strange errors.
+
+**What:** `custom_hr.api.bootstrap` already returns `version` (`0.2.0`); add a short fingerprint of the fields and
+functions the mobile apps depend on (generated from the code, checked by a test so it cannot drift), and the oldest app
+version the server accepts. The apps compare at sign-in and on resume.
+
+**Acceptance:** a test fails when a mobile-facing function or field changes without the fingerprint changing; an app
+below the minimum shows "update needed" on the test site.
+
+**Related:** P50, P103, P105.

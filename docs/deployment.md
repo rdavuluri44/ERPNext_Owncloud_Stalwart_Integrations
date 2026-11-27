@@ -27,7 +27,7 @@ locked separately. Public dependency downloads require network access during
 the build. An AMD64 build of the core and addon completed on 15 November 2026.
 That build result is distinct from the complete service acceptance checks below.
 
-Install Frappe/ERPNext v16 with Python 3.14 and their supported MariaDB/Redis/Node dependencies using the official Frappe Docker build process. Install HRMS, India Compliance, Raven, Insights, Payment Integration Utils, RazorpayX Integration and India Payroll from their upstream repositories. Pin the revisions in the upstream lock rather than following moving branches on production. Their source, licenses and migrations remain upstream responsibilities.
+Install Frappe/ERPNext v16 with Python 3.14 and their supported MariaDB/Redis/Node dependencies using the official Frappe Docker build process. Install HRMS, India Compliance, Insights, Payment Integration Utils, RazorpayX Integration and India Payroll from their upstream repositories. Pin the revisions in the upstream lock rather than following moving branches on production. Their source, licenses and migrations remain upstream responsibilities.
 
 Persist the Frappe sites, uploaded files, logs and custom session registry. Use one identical app image for backend, websocket, short/long workers and scheduler. The frontend must serve assets from that same release. Never let a sites/assets symlink point to an older image's manifest. Rebuild all required upstream assets and verify every manifest entry is present.
 
@@ -59,7 +59,7 @@ Create a single ordinary-users sign-in group. Administrator rights remain separa
 
 Enrollment/recovery source and the administrator companion are under `integrations/authentik/invite-recovery`. Read its deployment notes before executing installers: inventory native flows/provider metadata and supply an existing approved administrator and baseline enrollment flow. Retain native invitation backend APIs. Source tests are not proof of completed physical-device registration.
 
-## Raven, notification and private ingress
+## Phone apps, notification and private ingress
 
 `portal/mobile.py` binds selected native OAuth clients to an approved browser session and requires PKCE S256. Enable it only for the exact configured native client IDs. At ingress, strip caller-supplied identity headers, retain the validating forward-auth check and restrict preflight to exact native origins/methods. A Bearer header alone never grants access. Preserve Frappe's native token validation and document permissions.
 

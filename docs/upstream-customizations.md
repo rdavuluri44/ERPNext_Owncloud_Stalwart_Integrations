@@ -57,7 +57,7 @@ them before an upgrade of Frappe, authentik, Drive, Coolify or the host.
 - [ERPNext](#erpnext)
 - [HRMS (Frappe HR)](#hrms-frappe-hr)
 - [India Compliance](#india-compliance)
-- [Raven](#raven)
+- [Chat (Synapse and the Matrix Authentication Service)](#chat-synapse-and-the-matrix-authentication-service)
 - [Insights](#insights)
 - [Payment apps and India Payroll](#payment-apps-and-india-payroll)
 - [authentik](#authentik)
@@ -248,7 +248,7 @@ Made against: v16.60.2 (`2df0425`).
 ### FRAPPE-2 Request rewriting: portal redirects, logout, injected session script
 
 - **What:** `before_request` sends `/desk`, `/login?logged_out`, `/signed-out` and
-  deep Desk, Raven and Insights page loads into the portal, and logs out revoked
+  deep Desk and Insights page loads into the portal, and logs out revoked
   sessions; `after_request` injects `session.js` into every HTML page (replacing
   `</head>`) and sets `Clear-Site-Data` and `Cache-Control: no-store`.
 - **How:** `erpnext_drive_integrations/portal/sso.py`, `portal/hooks.py`.
@@ -359,8 +359,8 @@ Made against: v16.60.2 (`2df0425`).
 
 - **What:** `after_insert` on `OAuth Authorization Code` and `OAuth Bearer Token`
   reads their fields and `frappe.form_dict` during the token request; an
-  `auth_hooks` validator and a minutely cleanup revoke tokens. Also used by the
-  Raven mobile app.
+  `auth_hooks` validator and a minutely cleanup revoke tokens. Used by our phone
+  apps (Raven's phone app, the first client, went with Raven in P108).
 - **How:** `erpnext_drive_integrations/portal/mobile.py`, `portal/hooks.py`.
 - **Upgrade:** **re-check** a native-app sign-in on test. Loud (sign-in refused) or
   **silent** (binding skipped) if Frappe's OAuth provider changes how it saves these.
@@ -389,7 +389,8 @@ Made against: v16.60.2 (`2df0425`).
   `/api/method/frappe.integrations.oauth2.get_token`,
   `/api/method/frappe.push_notification.auth_webhook`, Bearer `/api/`,
   `/private/files/` and `/socket.io`.
-- **How:** `deployment/config/proxy/cloud-raven-native.yaml`, `cloud-push-registration.yaml`.
+- **How:** `deployment/config/proxy/cloud-native-clients.yaml` (was `cloud-raven-native.yaml` until P108),
+  `cloud-push-registration.yaml`.
 - **Upgrade:** **re-check:** **silent** if an endpoint is renamed (it falls behind the
   sign-in gate, which breaks mobile sign-in and push registration).
 - **Tests:** `tests/test_rebuild_templates.py::test_test_ingress_has_production_native_app_routes`
@@ -480,8 +481,9 @@ Made against: v16.60.2 (`2df0425`).
 
 ### FRAPPE-24 Test-data scrambler names upstream doctypes
 
-- **What:** lists of Frappe, ERPNext, HRMS, Raven and India Payroll doctypes and
-  fields to wipe or rename on test copies.
+- **What:** lists of Frappe, ERPNext, HRMS and India Payroll doctypes and
+  fields to wipe or rename on test copies. The Raven names stay in the lists (harmless
+  when the tables are absent) until no production snapshot holds Raven tables (P108).
 - **How:** `tools/cripple_snapshot.py`.
 - **Upgrade:** **re-check** the schema changes of every upgrade. **Silent:** new personal
   data fields would not be scrubbed on test.
@@ -624,25 +626,51 @@ Made against: v16.11.1 (`6898239`).
 - **How:** `onboarding/kyc.py`, `onboarding/setup.py`.
 - **Upgrade:** **re-check.**
 
-## Raven
+## Chat (Synapse and the Matrix Authentication Service)
 
-Made against: v3.2.0 (`5a5e4c4`). See also FRAPPE-11, FRAPPE-24.
+Made against: Synapse v1.166.0, Matrix Authentication Service v1.30.0. Both run unmodified; everything here is
+configuration we write (`integrations/chat/configure.py`).
 
-### RAVEN-1 Raven mobile discovery route bypasses the sign-in gate
+### CHAT-1 Sign-in delegated to the authentication service, which uses only the sign-in service
 
-- **What:** `/api/method/raven.api.raven_mobile.get_client_id`.
-- **How:** `deployment/config/proxy/cloud-raven-mobile.yaml`.
-- **Upgrade:** **re-check:** **silent** if Raven renames it (mobile sign-in fails).
+- **What and why:** Synapse's `matrix_authentication_service` block; passwords and registration off on both sides;
+  one upstream OAuth2 provider; people cannot change name or mail address or deactivate their account. One passkey
+  sign-in for everything (P73).
+- **How:** `integrations/chat/configure.py` (`homeserver`, `mas`), `deployment/stacks/chat.compose.json`.
+- **Upgrade:** **re-check:** **loud** if a key is renamed (the service refuses to start); **silent** if a new
+  sign-in or registration path is added upstream with a default of "on". Read both release notes for new
+  account, registration and login options.
+- **Tests:** `tests/test_chat_stack.py`.
 
-### RAVEN-2 Raven opens inside the portal; service-worker workaround
+### CHAT-2 No federation; rooms not encrypted by default
 
-- **What and why:** top-level `/raven*` loads are sent into the portal and get
-  `session.js`. Raven's service worker fetches navigations without
-  `Sec-Fetch-Dest`, so the browser also checks `window.top` (`docs/decisions.md`
-  "Portal deep links").
-- **How:** `portal/sso.py`, `public/session.js`.
-- **Upgrade:** **re-check** opening a Raven link directly. Workaround.
-- **Tests:** `tests/test_portal_deep_link.py`.
+- **What and why:** `federation_domain_whitelist: []`, no trusted key servers, no federation listener;
+  `encryption_enabled_by_default_for_room_type: off`, so the company can keep and search rooms.
+- **How:** `integrations/chat/configure.py` (`homeserver`).
+- **Upgrade:** **re-check:** **silent** if a default changes. People can still switch encryption on in a room
+  they manage until the room rules made by the server side forbid it (P73, not built).
+- **Tests:** `tests/test_chat_stack.py`.
+
+### CHAT-4 The business system's bot; invitations accepted automatically
+
+- **What and why:** an application service registration (`bridge.yaml`) for one user, `@erp`, with the aliases
+  `#site-…` and `#team-…`, and no call-back address; `auto_accept_invites` for invitations from this server. The
+  bot puts people into rooms by inviting them, so nothing holds an admin token. (A client of the authentication
+  service cannot get Synapse's admin scope; tried on the test site, 27 November 2026.)
+- **How:** `integrations/chat/configure.py` (`bridge`, `homeserver`).
+- **Upgrade:** **re-check:** **silent** if `auto_accept_invites` changes its meaning or default (people would
+  stop appearing in their rooms); **loud** if the registration format changes (Synapse refuses to start). The room
+  rules the bot sets depend on the default room version (12 on the test site: the creator is not listed in the
+  power levels).
+- **Tests:** `tests/test_chat_stack.py`; live: create, invite, post, remove on the test site.
+
+### CHAT-3 Proxy paths that name Matrix endpoints
+
+- **What:** `/_matrix`, `/_synapse/client` and `/_synapse/mas` go to Synapse; `/_matrix/client/*/login`, `logout`
+  and `refresh` go to the authentication service; `/_synapse/admin` is not routed.
+- **How:** `tools/prepare_ingress.py` (test site). Production route file: not written yet.
+- **Upgrade:** **re-check:** **silent** if upstream adds a delegated path (sign-in from an app then fails).
+- **Tests:** `tests/test_chat_stack.py`.
 
 ## Insights
 
@@ -667,7 +695,9 @@ Made against: v3.50.3 (`d733108`).
 
 ### INSIGHTS-2 Insights opens inside the portal
 
-- **What:** as RAVEN-2, for `/insights*`.
+- **What:** top-level `/insights*` loads are sent into the portal and get `session.js`; the
+  browser also checks `window.top`, because a single-page app's service worker can fetch
+  navigations without `Sec-Fetch-Dest` (`docs/decisions.md` "Portal deep links").
 - **Upgrade:** **re-check.**
 
 ### INSIGHTS-3 `sqlglot` pinned to Insights' version
@@ -1209,8 +1239,8 @@ Made against: 3.4.2.
 
 ### PROXY-2 Routes that bypass the sign-in gate
 
-- **What:** push, Raven native, onboarding response and invitation routes at higher
-  priority, each stripping identity headers (AUTHENTIK-12, FRAPPE-14, RAVEN-1).
+- **What:** push, native phone-app, onboarding response and invitation routes at higher
+  priority, each stripping identity headers (AUTHENTIK-12, FRAPPE-14).
 - **Upgrade:** **re-check.**
 
 ### PROXY-3 HTTP/3 off and `Alt-Svc: clear` for the relayed test host (temporary)

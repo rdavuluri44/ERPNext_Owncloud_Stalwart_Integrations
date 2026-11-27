@@ -61,6 +61,9 @@ def run():
         a = user('a', ['Field Supervisor', 'Field Attendance Approver'])
         b = user('b', ['Field Supervisor'])
         boss = user('boss', ['Field Attendance Approver'])
+        c = user('c', ['Field Supervisor'])
+        eng = user('eng', ['Field Attendance Verifier'])
+        other_eng = user('other-eng', ['Field Attendance Verifier'])
         day = frappe.get_doc(dict(doctype='Shift Type', name=token + ' Day', start_time='08:00:00', end_time='20:00:00',
                                   enable_auto_attendance=0)).insert(ignore_permissions=True)
         night = frappe.get_doc(dict(doctype='Shift Type', name=token + ' Night', start_time='20:00:00',
@@ -71,7 +74,8 @@ def run():
             doctype='Field Site', site_name=token, company=company, project=project.name, day_shift=day.name,
             night_shift=night.name, enabled=1, maximum_accuracy_m=200,
             members=[{'user': u, 'team_role': r, 'enabled': 1} for u, r in
-                     [(a, 'Supervisor'), (b, 'Supervisor'), (boss, 'Approver'), (a, 'Approver')]])).insert(
+                     [(a, 'Supervisor'), (b, 'Supervisor'), (boss, 'Approver'), (a, 'Approver'), (c, 'Supervisor'),
+                      (eng, 'Verifier'), (other_eng, 'Verifier')]])).insert(
             ignore_permissions=True)
 
         def worker(label, supervisor, machine=0):
@@ -193,6 +197,29 @@ def run():
         face_queue.purge_rejected()
         check('an old rejected capture keeps its record and loses its photograph',
               not item(own.name).photo and item(own.name).remarks == 'Photograph of a photograph')
+
+        # 6. Who may enrol or remove a face (owner, 27 November 2026): HR, the manager and the site's project manager
+        #    as before, and now the worker's own supervisor or the engineer assigned to that supervisor; no one else.
+        frappe.set_user('Administrator')
+        frappe.db.set_value('Field Site Member', {'parent': site.name, 'user': b, 'team_role': 'Supervisor'},
+                            'verifier', eng)
+        three = [photo, photo, photo]
+        frappe.set_user(c)
+        denied("another team's supervisor cannot enrol a worker", lambda: face_service.enrol(plain.name, three, consent))
+        frappe.set_user(other_eng)
+        denied("an engineer not assigned to the worker's supervisor cannot enrol",
+               lambda: face_service.enrol(plain.name, three, consent))
+        frappe.set_user(b)
+        check("the worker's own supervisor enrols them", face_service.enrol(plain.name, three, consent)['angles'] >= 1)
+        frappe.set_user(eng)
+        check('the engineer assigned to that supervisor enrols them', face_service.enrol(plain.name, three, consent)['angles'] >= 1)
+        check('the consent names who recorded it', frappe.db.get_value(
+            'Biometric Consent', {'employee': plain.name, 'status': 'Active'}, 'recorded_by') == eng)
+        frappe.set_user(c)
+        denied("another team's supervisor cannot remove the face", lambda: face_service.withdraw(plain.name, 'not mine'))
+        frappe.set_user(b)
+        check("the worker's own supervisor records a withdrawal",
+              face_service.withdraw(plain.name, 'Synthetic check')['templates_deleted'] is True)
         print('FACE_QUEUE_INTEGRATION_PASS', len(checks), checks)
     finally:
         frappe.db.rollback()

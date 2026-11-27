@@ -202,6 +202,10 @@ def prepare(source, output, profile):
                            'company_logo':profile.get('company_logo'),'company_favicon_dir':profile.get('company_favicon_dir'),'landing_url':profile.get('landing_url'),
                            'asset_version':profile.get('commit')})
     projects = profile.get('projects',['erp','drive','editor','mail','dms','processing'])
+    # The chat stack (P73) is opt-in and has two names of its own; without them the renderer would fall back to
+    # the bare domain, which on a test site is not a test name.
+    if 'chat' in projects and not {'chat','chat-auth'} <= hosts.keys():
+        raise ValueError('The chat stack needs the host names chat and chat-auth')
     mounts = json.loads((source/'deployment/stacks/mounts.json').read_text())
     # Which mount is made from which repository file: tools/runtime_mounts.py (shared with the drift check).
     persistent_targets = {'/var/lib/cloud-integration','/var/lib/ocis','/state',

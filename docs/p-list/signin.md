@@ -524,6 +524,20 @@ piece or find another free tool). Agent research, primary sources; decided below
   dependable on Mac); Pomerium Core (device approval is Enterprise); Teleport device trust and NetBird peer approval
   (paid); our own browser extension (rebuilds the preview Agent).
 
+**Onboarding details (owner, 27 November 2026):**
+- **Full name** at onboarding, as on the identity document the project manager checks: first name (required) and
+  surname (optional; many people use an initial and one name).
+- **The user name is the full mail address**, in the sign-in service and in ERPNext (ERPNext's user ID is the mail
+  address anyway). The agent's alternatives (firstname.initial with a number on collision; the part before @) were
+  set aside. Consequences to keep in mind: a person's mail address is their identity, so a changed address needs an
+  admin rename; colleagues see each other's addresses in lists.
+- **Chat name** (owner, 27 November 2026, night): the sign-up service also makes each person's chat name,
+  `firstname.initial` with a number on a clash, and stores it as the attribute `chat_name` (P73).
+- **Mail address verified** with a **6-digit code** sent by **our own mail server** (not Firebase, which only sends
+  sign-in links). The code expires after 10 minutes, allows 5 tries, and a new one can be asked after 60 seconds.
+- **Mobile number verified** with a 6-digit code **over WhatsApp** (P04), same limits; no SMS and no Firebase.
+  So onboarding with a verified number waits for P04.
+
 **Status:** in progress; research done, decisions amended 26 November; trial code by the colleague (not yet in
 this repository). Open before real sign-ins: the Codex security review of the QR route (planned for the week of 30
 November 2026). A local branch

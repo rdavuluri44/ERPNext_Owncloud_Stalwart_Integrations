@@ -24,7 +24,7 @@ after_migrate = "erpnext_drive_integrations.portal.combined.configure"
 before_migrate = "erpnext_drive_integrations.portal.combined.prepare"
 fixtures = [{"dt": "Role", "filters": [["name", "=", "Mailbox Administrator"]]}]
 
-# Native Raven OAuth session binding
+# Native phone-app OAuth session binding
 auth_hooks = ["erpnext_drive_integrations.portal.mobile.validate"]
 doc_events.update({"OAuth Authorization Code": {"after_insert": "erpnext_drive_integrations.portal.mobile.code_created"}, "OAuth Bearer Token": {"after_insert": "erpnext_drive_integrations.portal.mobile.token_created"}})
 scheduler_events = {"cron": {"* * * * *": ["erpnext_drive_integrations.portal.mobile.cleanup", "erpnext_drive_integrations.portal.push.cleanup"]}}

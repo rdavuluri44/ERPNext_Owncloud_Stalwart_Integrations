@@ -3,6 +3,8 @@
   "images": {
     "ghcr.io/goauthentik/server@sha256:1675a017c46ba7f4f15333aeafeeb64538c581673bcbcd36af872cdf7de4e7f7": "2026.8.7",
     "ghcr.io/paperless-ngx/paperless-ngx@sha256:d704e84f88300eb6ab001ab15720a2330ff99169cf9f94d6b8fcc44b63a84c84": "3.4.2",
+    "ghcr.io/element-hq/synapse@sha256:2cdc84f1de4687af89e4b7b1fe7b5f93e0ee7913243b63f79b05319cb6a8f525": "1.166.0",
+    "ghcr.io/element-hq/matrix-authentication-service@sha256:9252ed4ae66a172864c73550eedb1e805ad52586cf1949d8172b9e6f0db44918": "1.30.0",
     "onlyoffice/documentserver@sha256:ca17889f10b11141cc6441836aebdd2835cf3e1b49681b2fd6e155c94b7850b3": "10.0.0",
     "owncloud/ocis@sha256:8b2249fedba81e8e8ea69ba4baeb880c85978a13a0d73c9bc98ddb3d48dbd4e6": "8.2.3",
     "stalwartlabs/stalwart@sha256:5ebdf474b237161742fe4309396af4ae8797c938e8e6eb7e2d4837332c4f9851": "1.1.1",
@@ -102,6 +104,16 @@
       "github": "paperless-ngx/paperless-ngx",
       "exposure": "public",
       "workaround": "docs/upstream-customizations.md DMS-1 to -5 (cloud_session Django app, schema used by the test scrambler, CSP replaced at the proxy)"
+    },
+    "ghcr.io/element-hq/synapse": {
+      "name": "Synapse",
+      "github": "element-hq/synapse",
+      "exposure": "public"
+    },
+    "ghcr.io/element-hq/matrix-authentication-service": {
+      "name": "Matrix Authentication Service",
+      "github": "element-hq/matrix-authentication-service",
+      "exposure": "public"
     },
     "gotenberg/gotenberg": {
       "name": "Gotenberg",
@@ -214,9 +226,6 @@
       "name": "Python",
       "endoflife": "python",
       "exposure": "internal"
-    },
-    "raven": {
-      "exposure": "public"
     },
     "razorpayx_integration": {
       "exposure": "public"

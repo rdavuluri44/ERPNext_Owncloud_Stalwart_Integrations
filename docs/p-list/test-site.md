@@ -247,3 +247,34 @@ administrator account through `test-sso`, and the portal's Drive and Paperless p
 sign-in server; the production test entries are retired.
 
 **Related:** P76 and P77 (test sign-in server), P63, P70, P25, P69 (test webmail reader), P98 (where it was found).
+
+### P105 — Test site ready for the native app's five-phone test round
+
+**App:** test-site · **Also touches:** erp, signin, mobile · **State:** blocked
+
+**Why (owner, 27 November 2026: "go for rest of all" on the native app developer's request, public PR #114,
+issuecomment-7214300268):** the first test round of the native Android app (P50, Phase 1) runs on five phones in the
+office, one role per phone, against the test site only.
+
+**What (from the request, Part A):**
+1. Five test people, one per role, invited in the test sign-in service and in the group that allows ERPNext, each
+   with an ERPNext user with exactly the roles a real person in that job has (site supervisor `Field Supervisor`,
+   engineer `Field Attendance Verifier`, project manager `Field Attendance Approver`, HR `HR User`, admin
+   `Field Attendance Manager`), a linked Employee, user permissions limited to their project or site, and reporting
+   lines (supervisor and engineer report to the project manager).
+2. A sixth account, invited but with no ERPNext role, that can be disabled on request.
+3. Made-up test data: one project with one site fenced at the office, a second project none of the five belongs to,
+   about ten workers under the supervisor, two attendance entries waiting for the project manager, one returned to
+   the supervisor, one request in a workflow. Start from `tools/seed_mobile_attendance_qa.py`.
+4. An ERPNext OAuth client for the native app (public, PKCE S256, no secret, scopes `all openid`), redirect an https
+   App Link on the test domain (agent's recommendation over a private scheme), the client ID in
+   `cloud_native_mobile_clients`, and `assetlinks.json` with the test build's SHA-256 fingerprint.
+
+**Blocked on:** the testers' mail addresses (to the owner privately, never in the public PR); the colleague collects
+them (owner, 27 November). The signing fingerprint arrived on #114 on 27 November (issuecomment-7216179275).
+
+**Acceptance:** each of the five signs in on their own phone with their own passkey and sees only their role's
+screens; every "must be refused" call in the request is refused by ERPNext itself; the sixth account gets the clear
+"signed in but not allowed" message.
+
+**Related:** P50, P82, P95, P103, P104.

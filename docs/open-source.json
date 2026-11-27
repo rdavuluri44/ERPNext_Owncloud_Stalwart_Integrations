@@ -85,10 +85,8 @@
       "used_in": [
         "erp image"
       ],
-      "status": "adopted",
-      "watch": [
-        "raven"
-      ]
+      "status": "retired",
+      "note": "removed from the ERP image in P108 (owner, 27 November 2026); Matrix replaces it as the internal chat (P73)"
     },
     {
       "name": "Payment Integration Utils",
@@ -810,6 +808,61 @@
       ],
       "status": "evaluating",
       "note": "Let's Encrypt's ACME test server, for a local rehearsal of the certificate switch (P11) only; not shipped. v2.10.3 (11 Nov 2026), release checksums verified."
+    },
+    {
+      "name": "Synapse",
+      "repo": "https://github.com/element-hq/synapse",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "chat"
+      ],
+      "status": "adopted",
+      "watch": [
+        "ghcr.io/element-hq/synapse"
+      ]
+    },
+    {
+      "name": "Matrix Authentication Service",
+      "repo": "https://github.com/element-hq/matrix-authentication-service",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "chat"
+      ],
+      "status": "adopted",
+      "watch": [
+        "ghcr.io/element-hq/matrix-authentication-service"
+      ]
+    },
+    {
+      "name": "matrix-rust-sdk",
+      "repo": "https://github.com/matrix-org/matrix-rust-sdk",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "P73",
+        "P50"
+      ],
+      "status": "evaluating",
+      "note": "Matrix client library for the phone app, through its Kotlin bindings; adoption check passed 27 November 2026 (use 0.20.0 or later)"
+    },
+    {
+      "name": "Ltt.rs",
+      "repo": "https://codeberg.org/iNPUTmice/lttrs-android",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "P109"
+      ],
+      "status": "evaluating",
+      "note": "Android JMAP client; its JMAP library code may be borrowed for the light mail client. Little upkeep (library last changed April 2025), so we maintain our copy"
+    },
+    {
+      "name": "Sygnal",
+      "repo": "https://github.com/element-hq/sygnal",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "P73"
+      ],
+      "status": "evaluating",
+      "note": "Matrix push gateway for chat alerts on phones; adoption check passed 27 November 2026 (v0.17.0; the matrix-org repository is archived)"
     }
   ]
 }

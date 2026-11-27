@@ -109,6 +109,7 @@ if __name__ == '__main__':
     if profile.get('tier') != 'test': raise ValueError('Only test hosts pin proxy hostnames')
     mapping = profile.get('proxy_hosts') or {}
     aliases = [profile['hosts'][k] for k in ['erp', 'drive', 'office', 'mail', 'dms', 'respond']]
+    aliases += [profile['hosts'][k] for k in ['chat', 'chat-auth'] if k in profile['hosts']]
     args_apply = (mapping, profile['network'], aliases, profile.get('proxy_protocol_trusted_ips'),
                   False if profile.get('relay_target') else None)
     text = apply(COMPOSE.read_text(), *args_apply)

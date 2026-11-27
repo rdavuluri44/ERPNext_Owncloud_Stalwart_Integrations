@@ -139,7 +139,8 @@ not ranked or scheduled; the owner decides if and when one starts)
 | **P22** AI assistant | read-only first; provider and data policy undecided |
 | **P29**, **P30**, **P48** Headscale, Technitium DNS, branch router | one chain, P48 depends on P29 and P30; nothing is broken today |
 | **P46** TrueNAS NVR | one-camera trial started 26 Nov; hardware for more cameras after the trial |
-| **P53** Desk widgets and universal search | **parked by the owner**: do not start |
+| **P53** Desk widgets and universal search | **taken up 27 Nov:** the admin alerts widget (with P72), and help, notifications, search and sign-out moved from the apps to the Desk; the day-planning widgets stay **parked** |
+| **P107** user support: "Report a problem" in the apps, and an admin support desk (Frappe Helpdesk proposed) | **parked by the owner** 27 Nov: take up later; no RustDesk, no paid tool; P103 first |
 
 **Done, closed, redundant or irrelevant items** are not in the lists any more: see [the closed log](p-closed.md) (one line each; numbers are never reused).
 
@@ -154,17 +155,17 @@ its app's list (copy the `**App:**` line from a neighbour), then run `python3 to
 
 | App | List | Items | Not done |
 |---|---|---|---|
-| General | [pending/general.md](p-list/general.md) | 28 | 28 |
+| General | [pending/general.md](p-list/general.md) | 30 | 30 |
 | DMS | [pending/dms.md](p-list/dms.md) | 1 | 1 |
 | Drive | [pending/drive.md](p-list/drive.md) | 1 | 1 |
 | Editor | [pending/editor.md](p-list/editor.md) | 3 | 3 |
-| ERP | [pending/erp.md](p-list/erp.md) | 13 | 13 |
+| ERP | [pending/erp.md](p-list/erp.md) | 15 | 15 |
 | Mail | [pending/mail.md](p-list/mail.md) | 6 | 6 |
-| Mobile | [pending/mobile.md](p-list/mobile.md) | 7 | 7 |
+| Mobile | [pending/mobile.md](p-list/mobile.md) | 9 | 9 |
 | Portal (eZone) | [pending/portal.md](p-list/portal.md) | 4 | 4 |
 | Raven and Insights | [pending/raven.md](p-list/raven.md) | 1 | 1 |
 | Sign-in | [pending/signin.md](p-list/signin.md) | 8 | 8 |
-| Test site | [pending/test-site.md](p-list/test-site.md) | 5 | 5 |
+| Test site | [pending/test-site.md](p-list/test-site.md) | 6 | 6 |
 
 ## All P items (index)
 
@@ -247,4 +248,11 @@ its app's list (copy the `**App:**` line from a neighbour), then run `python3 to
 | P100 | Mobile app checks in CI, and the app's dependencies in the daily watch | [Mobile](p-list/mobile.md) | general · **State:** open | open |
 | P101 | Test Drive, test Paperless, test mail and the test editor sign in through the test sign-in server | [Test site](p-list/test-site.md) | signin, drive, dms, mail, editor · **State:** open | open |
 | P102 | Admin tools: single sign-on by default, the tailnet as the backup door | [General](p-list/general.md) | signin, test-site · **State:** open | open |
+| P103 | Request ID on every app action, and "what happened to my request" | [ERP](p-list/erp.md) | mobile · **State:** open | open |
+| P104 | Version handshake between the server and the mobile apps | [ERP](p-list/erp.md) | mobile · **State:** open | open |
+| P105 | Test site ready for the native app's five-phone test round | [Test site](p-list/test-site.md) | erp, signin, mobile · **State:** blocked | blocked |
+| P106 | Short video clips with site incidents | [Mobile](p-list/mobile.md) | drive, erp · **State:** open | open |
+| P107 | User support: "Report a problem" in the apps, and an admin support desk | [General](p-list/general.md) | erp, mobile, portal, signin · **State:** parked | parked |
+| P108 | Remove Raven from ERPNext; all messages through our own channels | [General](p-list/general.md) | raven, mail, mobile, portal, signin, general · **State:** open | open |
+| P109 | A light mail client in the phone app (JMAP) | [Mobile](p-list/mobile.md) | mail, signin · **State:** open · **Category:** now | open |
 <!-- APP-INDEX-END -->

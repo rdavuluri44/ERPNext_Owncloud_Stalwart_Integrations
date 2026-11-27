@@ -113,10 +113,13 @@ workers that supervisor may record on that site and shift. Decided by the owner 
   anything is read or stored. Naming an engine does not switch it on. **Withdrawal, the deletion of a leaver's or
   deleted employee's face data and the daily removal of rejected photographs always work.** Production stays off
   until the legal opinion and the owner's decision (P95); the test site has it on.
-- **Enrolment** (`api.face_enrol(employee, photos, consent)`, POST): HR, a Field Attendance Manager or an approver of
-  the worker's site enrols the worker from several angles (at least 3) after checking their identity document. The
-  consent (`accepted`, `agreement_version`, `language`, `identity_checked`) is stored as a **Biometric Consent**
-  record. Only encrypted templates are kept, in **Field Face Enrolment** (site encryption key; the templates field
+- **Enrolment** (`api.face_enrol(employee, photos, consent)`, POST): HR, a Field Attendance Manager, an approver of
+  the worker's site, or the worker's own team (owner, 27 November 2026: the responsible supervisor on the worker's
+  Field Worker Assignment, or the engineer assigned to that supervisor on the site's member list) enrols the worker
+  from several angles (at least 3) after checking their identity document. Another team's supervisor or engineer is
+  refused; withdrawal (`api.face_withdraw`) follows the same rule. The consent (`accepted`, `agreement_version`,
+  `language` the worker read: English by default, or the translation they chose; `identity_checked`) is stored as a
+  **Biometric Consent** record, with who recorded it. Only encrypted templates are kept, in **Field Face Enrolment** (site encryption key; the templates field
   is readable by no role and keeps no version history). The photographs are not stored.
 - **Identification** (`api.face_identify(site, shift, photo)`, POST): for a supervisor or assigned engineer of the
   site. Returns `decision` (`match`, `uncertain` or `none`), the `employee` for a match, up to three `candidates`
@@ -162,6 +165,7 @@ workers that supervisor may record on that site and shift. Decided by the owner 
 - `tests/test_custom_hr_face.py` (offline: face matching rules, consent, engine slot, stored records)
 - `tests/test_custom_hr_face_queue.py` (offline: who the queue acts for, who decides, photographs, the web screen)
 - `tests/test_custom_hr_face_switch.py` (offline: the off switch, where it applies and where it never does)
+- `tests/test_custom_hr_face_enrolers.py` (offline: who may enrol or remove a face)
 - `erpnext_drive_integrations/custom_hr/face_queue_integration_tests.py` (needs a live test site; rollback only)
 - `tests/test_custom_hr_face_engine.py` (model pins and fetch; the live engine part runs in the ERP image)
 - `erpnext_drive_integrations/custom_hr/test_checkout.py`
