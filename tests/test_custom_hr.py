@@ -222,7 +222,7 @@ class SelfAttendanceSurface(unittest.TestCase):
         body = service.split('def self_capture(')[1].split('\ndef ')[0]
         for rule in ("Take a selfie to check in.", "Your supervisor records your attendance.", "domain.validate_location",
                      "moment(data,with_gps=True)", "state='Submitted'", "entry_type='Self'", "notify_approvers(",
-                     "approve_without_review(doc)"):
+                     "approve_without_review(doc,own_site_approver)", "has_membership(site.name,user,'Approver',APPROVER)"):
             self.assertIn(rule, body)
         self.assertNotIn("Attendance',", body, 'HR attendance is created only on approval')
 
@@ -312,13 +312,41 @@ class SiteApproval(unittest.TestCase):
 
     def test_only_online_entries_skip_approval(self):
         rule = self.body('approve_without_review')
-        for part in ('doc.captured_offline', "'approval_required'", 'existing_attendance(doc)', 'hr_attendance(doc)'):
+        for part in ('doc.captured_offline', "'approval_required'", 'existing_attendance(doc)', 'domain.skips_approval(', 'hr_attendance(doc)'):
             self.assertIn(part, rule)
         self.assertLess(rule.index('doc.captured_offline'), rule.index('hr_attendance(doc)'))
         for caller in ('self_capture', 'submit_entry'):
-            self.assertRegex(self.body(caller), r'if not approve_without_review\(doc\):\s*notify_approvers\(', caller)
+            self.assertRegex(self.body(caller), r'if not approve_without_review\(doc(,own_site_approver)?\):\s*notify_approvers\(', caller)
+        self.assertNotIn('own_site_approver', self.body('submit_entry'), 'only a self check-in skips approval for the approver')
         self.assertIn('hr_attendance(doc)', self.body('review_entry'))
         self.assertEqual(self.SERVICE.count("doctype='Attendance'"), 1, 'one place creates HR attendance')
+
+
+class OwnApproverCheckIn(unittest.TestCase):
+    """Owner, 25 November 2026: a project manager (the site's approver) needs no approval for their own check-in;
+    offline check-ins and clashes with HR attendance still go to another approver or HR."""
+
+    def test_rule(self):
+        ok = domain.skips_approval
+        self.assertTrue(ok(False, True, False, own_site_approver=True))
+        self.assertFalse(ok(False, True, False, own_site_approver=False), 'others still need approval')
+        self.assertFalse(ok(True, True, False, own_site_approver=True), 'offline is reviewed')
+        self.assertFalse(ok(False, True, True, own_site_approver=True), 'a clash is reviewed')
+        self.assertTrue(ok(False, False, False), 'site that needs no approval')
+        self.assertFalse(ok(True, False, False), 'offline at such a site is reviewed')
+
+
+class EntryPhoto(unittest.TestCase):
+    """The photo is served after our own access check: /private/files applies ERPNext's Employee user permissions,
+    so a project manager could not see another employee's selfie."""
+    API = (HR / 'api.py').read_text(encoding='utf-8')
+
+    def test_read_only_checked_and_limited_to_the_entrys_own_file(self):
+        self.assertRegex(self.API, r"@frappe\.whitelist\(methods=\['GET'\]\)\s*def entry_photo\(name\):")
+        body = self.API.split('def entry_photo(')[1].split('\ndef ')[0]
+        self.assertLess(body.index('entry_access(doc)'), body.index('get_content()'))
+        for part in ("'attached_to_doctype':'Field Attendance Entry'", "'attached_to_name':doc.name", "'is_private':1"):
+            self.assertIn(part, body)
 
 
 if __name__ == '__main__':

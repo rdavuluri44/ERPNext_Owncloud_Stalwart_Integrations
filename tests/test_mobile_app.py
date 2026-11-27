@@ -89,6 +89,24 @@ class BuildGuideTests(unittest.TestCase):
         self.assertIn('send_message_with_attachments', self.GUIDE)
         self.assertIn('frappe.integrations.oauth2', (MOBILE / 'src/auth/session.tsx').read_text(encoding='utf-8'))
 
+    def test_passkey_trial_is_neutral_and_keeps_its_lock_rules(self):
+        # P82 trial app: a key that signs only after a strong fingerprint/face match, is destroyed when one is
+        # added, has no PIN fallback, and is refused when the phone gives less than asked.
+        trial = MOBILE / 'trials/passkey-android'
+        source = trial / 'src/main/java/com/example/passkeytrial'
+        self.assertIn('applicationId = "com.example.passkeytrial"', (trial / 'build.gradle.kts').read_text())
+        keys = (source / 'Keys.kt').read_text()
+        for rule in ('setUserAuthenticationRequired(true)', 'setInvalidatedByBiometricEnrollment(true)',
+                     'AUTH_BIOMETRIC_STRONG', 'throw Refused('):
+            self.assertIn(rule, keys)
+        everything = ''.join(p.read_text() for p in source.glob('*.kt'))
+        self.assertNotIn('DEVICE_CREDENTIAL', everything, 'no PIN fallback for the key')
+        self.assertIn('setAllowedAuthenticators(BIOMETRIC_STRONG)', (source / 'Biometric.kt').read_text())
+        self.assertIn('android:allowBackup="false"', (trial / 'src/main/AndroidManifest.xml').read_text())
+        for path in source.glob('*.kt'):
+            for host in re.findall(r'https?://([A-Za-z0-9.-]+)', path.read_text()):
+                self.assertEqual(host, 'www.gstatic.com', f'{path.name} names {host}')
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

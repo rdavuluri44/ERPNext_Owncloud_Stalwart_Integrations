@@ -1,6 +1,6 @@
 # Closed P items
 
-> **Generated file: do not edit by hand.** Published from the maintainers' private list on 25 November 2026
+> **Generated file: do not edit by hand.** Published from the maintainers' private list on 27 November 2026
 > with every line kept; only identifying names, addresses, paths and links to private records are
 > replaced by placeholders (see the [P list index](p-list.md) for the rules).
 
@@ -52,3 +52,10 @@ Only the current retained requests are included here; superseded historical prop
 | P65 | Relayed test sign-in loses the requested page (X-Forwarded-Uri dropped) | test-site | completed | 2026-11-21 | Forwarded headers trusted on the SSO host's private entry point from the test VM only; live 21 Nov (942d84d); test gateway returns to the requested page |
 | P60 | Portal address `/ezone` instead of `/place_holder` | portal | redundant | 2026-11-21 | Owner chose the portal at / once signed in (P63): the address is clean without renaming the page |
 | P75 | Stalwart 1.1.0 to 1.1.1 (security fixes) before P69 | mail | completed | 2026-11-24 | Released to production 24 Nov (bb546d7) |
+| P83 | authentik 2026.8.7 security fixes | signin | completed | 2026-11-26 | authentik 2026.8.7 on test and production 26 Nov; owner browser check passed |
+| P23 | PWA offline and poor-connectivity behavior | mobile | superseded | 2026-11-26 | Owner 26 Nov 2026: no PWA offline work; offline capture is built in the native app (P50, with P14, P64, P74, P82) |
+| P84 | Client identity out of the public repository, and a check that keeps it out | general | completed | 2026-11-26 | Fingerprint check in CI (PR #84, merge 3fbdd9f); client name removed from the public code; test worker profile reads the client's mail domain privately |
+| P59 | Promotion plan and drift check: no stack left behind | general | completed | 2026-11-26 | Promotion plan, drift check, served-content checks, container log archiving and no forced image cleanup live on production (PR #35, #62, #92); stack releases continue in P94 |
+| P97 | Uploaded files that can run script are always downloaded (GHSA-94mh-qq29-qwrf) | erp | completed | 2026-11-26 | Upstream's forced-download rule (any case, 14 file types) in our ERP web server template, GHSA-94mh-qq29-qwrf (PR #103, merge bf8d5c8); on test and production since 26 Nov 2026 (one mounted file; receipts and release log); owner's browser check passed. The drift check cannot see mounted files and still lists the template: P99. Rest of upstream's template changes: P98. |
+| P99 | Drift check sees mounted runtime files, not only image tags and notes | general | completed | 2026-11-26 | The drift check compares every read-only mounted runtime file with main (equal, behind, changed by hand, not compared), records are written at deployment and by a record command; the nightly run uses main's code (PR #111, merge c4872e3); on production since 26 Nov 2026; P97's file recorded; five stacks re-linked after a render comparison. |
+| P98 | ERP web server template: take up upstream's trusted-HTTPS forwarding changes | erp | completed | 2026-11-27 | Part A: the ERP web server clears X-Forwarded-SSL and X-Forwarded-Protocol as upstream (PR #115, merge cbe976c), on test and production since 26 Nov 2026; part B (upstream's trusted-forwarding switch, set to on) is a re-apply step at the next frappe_docker bump in register BUILD-2, guarded by a test (owner: close now). |

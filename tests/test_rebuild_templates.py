@@ -1,6 +1,7 @@
 """Check portable graph, database isolation and native runtime generation."""
 import importlib.util
 import json
+import re
 import yaml
 from pathlib import Path
 import sys
@@ -202,6 +203,32 @@ class Reconstruction(unittest.TestCase):
         self.assertEqual(allowed_sso_addresses(profile,lambda h:{'192.0.2.5'}),{'192.0.2.5','100.64.0.10'})
         self.assertEqual(allowed_sso_addresses({'hosts':{'sso':'sso.example.net'}},lambda h:{'192.0.2.5'}),{'192.0.2.5'})
         with self.assertRaises(ValueError):allowed_sso_addresses(dict(profile,proxy_hosts={'sso.example.net':'::1'}),lambda h:set())
+    def test_every_certificate_name_answers_its_http_challenge(self):
+        # P11: a name whose route asks for a certificate must have a port-80 challenge route that outranks
+        # every other port-80 route for that name; otherwise a host-wide redirect takes the challenge.
+        files=[*sorted((ROOT/'deployment/config/proxy').glob('*.y*ml')),*sorted((ROOT/'deployment/production').glob('*.traefik.yaml'))]
+        routers=[]
+        for f in files:
+            routers+=list(((yaml.safe_load(f.read_text()) or {}).get('http') or {}).get('routers',{}).values())
+        hosts=lambda r:set(re.findall(r'Host\([`"]([^`"]+)[`"]\)',r['rule']))
+        challenge=lambda r:'PathPrefix(`/.well-known/acme-challenge/`)' in r['rule']
+        priority=lambda r:r.get('priority',len(r['rule']))
+        named=set().union(*(hosts(r) for r in routers if (r.get('tls') or {}).get('certResolver')))
+        self.assertTrue({'erp.example.com','sso.example.com','drive.example.com','respond.example.com','www.example.com'}<=named)
+        for host in sorted(named):
+            port80=[r for r in routers if 'http' in r.get('entryPoints',[]) and host in hosts(r)]
+            answers=[priority(r) for r in port80 if challenge(r)]
+            others=[priority(r) for r in port80 if not challenge(r)]
+            self.assertTrue(answers,host+': no port-80 challenge route')
+            self.assertGreater(max(answers),max(others,default=0),host+': another port-80 route outranks the challenge')
+    def test_mail_host_challenge_goes_to_the_repository_mail_service(self):
+        # Stalwart renews its own SMTP/IMAP certificate for the mail host; the challenge route must name the
+        # service the repository's mail routes define (the pre-repository Docker-label service is gone, P45).
+        acme=yaml.safe_load((ROOT/'deployment/config/proxy/office-acme.yml').read_text())['http']['routers']
+        mail=yaml.safe_load((ROOT/'deployment/production/mail.traefik.yaml').read_text())['http']
+        service=acme['office-smtp-acme-validation']['service']
+        self.assertTrue(service.endswith('@file'),service)
+        self.assertIn(service.split('@')[0],mail['services'])
     def test_test_relay_terminates_and_forwards_only_test_hosts(self):
         sys.path.insert(0,str(ROOT/'tools'))
         from prepare_test_relay import prepare as relay
@@ -213,12 +240,31 @@ class Reconstruction(unittest.TestCase):
         for host in hosts.values():
             key='cloud-test-relay-'+host.split('.')[0]
             self.assertEqual(http['routers'][key]['rule'],'Host(`'+host+'`)')
-            self.assertEqual(http['routers'][key]['tls'],{})
+            self.assertEqual(http['routers'][key]['tls'],{'certResolver':'letsencrypt-tls'},
+                             'own certificate per name, proved on port 443 (P11)')
             self.assertEqual(http['serversTransports'][key],{'serverName':host},'verify the test host certificate per name')
             self.assertEqual(http['services'][key]['loadBalancer']['servers'],[{'url':'https://100.64.0.20'}])
+        port80=[r for r in http['routers'].values() if 'http' in r['entryPoints']]
+        self.assertEqual([r['service'] for r in port80],['cloud-test-relay-http'],
+                         'port 80, challenges included, goes to the test host, which renews through the relay')
         self.assertNotIn('sso.example.net',yaml.safe_dump(out))
         with self.assertRaises(ValueError):relay({'tier':'production','hosts':hosts,'relay_target':'100.64.0.20'})
         with self.assertRaises(ValueError):relay({'tier':'test','hosts':dict(hosts,erp='erp.example.net'),'relay_target':'100.64.0.20'})
+    def test_tls_resolver_flags_are_added_once_and_keep_the_rest(self):
+        sys.path.insert(0,str(ROOT/'tools'))
+        from coolify_proxy_hosts import apply
+        from coolify_proxy_tls_resolver import running_has
+        text="services:\n  traefik:\n    command:\n    - --ping=true\n    - --certificatesresolvers.letsencrypt.acme.httpchallenge=true\n"
+        once=apply(text,{},tls_resolver='letsencrypt-tls')
+        command=yaml.safe_load(apply(once,{},tls_resolver='letsencrypt-tls'))['services']['traefik']['command']
+        self.assertEqual(command,['--ping=true','--certificatesresolvers.letsencrypt.acme.httpchallenge=true',
+                                  '--certificatesresolvers.letsencrypt-tls.acme.tlschallenge=true',
+                                  '--certificatesresolvers.letsencrypt-tls.acme.storage=/traefik/acme.json'])
+        with self.assertRaises(ValueError):apply(text,{},tls_resolver='bad name')
+        import types
+        run=lambda argv,**kw:types.SimpleNamespace(stdout=json.dumps(command))
+        self.assertTrue(running_has(run=run))
+        self.assertFalse(running_has(run=lambda argv,**kw:types.SimpleNamespace(stdout=json.dumps(command[:2]))))
     def test_relayed_ingress_clears_remembered_http3(self):
         import inspect
         source=inspect.getsource(ingress)
@@ -293,20 +339,28 @@ class Reconstruction(unittest.TestCase):
         self.assertEqual(http['middlewares']['isolated-onboarding-response-help']['redirectRegex']['regex'],
                          r'^https://test\-respond\.example\.net/?$')
         self.assertIn('isolated-private-admin',http['routers']['isolated-office-admin']['middlewares'])
+        # P92: ONLYOFFICE's own private paths, not the retired Collabora admin paths.
+        office_admin=http['routers']['isolated-office-admin']['rule']
+        self.assertNotIn('/cool/',office_admin); self.assertNotIn('/browser/dist/admin',office_admin)
+        pattern=re.compile(re.search(r'PathRegexp\(`(.+)`\)',office_admin).group(1))
+        for path in ['/info/','/info/info.json','/internal/cluster/inactive','/10.0.0-169/info/']:
+            self.assertTrue(pattern.match(path),path)
+        for path in ['/','/healthcheck','/web-apps/apps/api/documents/api.js','/hosting/discovery','/informed']:
+            self.assertFalse(pattern.match(path),path)
     def test_test_ingress_has_production_native_app_routes(self):
         hosts={name:('test.example.net' if name=='erp' else 'test-'+name+'.example.net')
                for name in ['erp','sso','drive','office','mail','dms','respond']}
         http=ingress(ROOT,{'hosts':hosts,'ingress_prefix':'isolated'})['http']
-        production=yaml.safe_load((ROOT/'deployment/config/proxy/cloud-raven-native.yaml').read_text())['http']
+        production=yaml.safe_load((ROOT/'deployment/config/proxy/cloud-native-clients.yaml').read_text())['http']
         for name,prod in production['routers'].items():
             test=http['routers']['isolated-'+name]
             self.assertEqual(test['rule'],prod['rule'].replace('erp.example.com','test.example.net'))
             self.assertEqual(test['service'],'isolated-erp')
             # Above the outpost-protected ERP route, as on production.
             self.assertGreater(test['priority'],http['routers']['isolated-erp']['priority'])
-        bearer=http['routers']['isolated-cloud-raven-native']
-        self.assertEqual(bearer['middlewares'],['isolated-cloud-native-clean-headers','isolated-cloud-raven-native-auth'])
-        auth=http['middlewares']['isolated-cloud-raven-native-auth']['forwardAuth']
+        bearer=http['routers']['isolated-cloud-native-bearer']
+        self.assertEqual(bearer['middlewares'],['isolated-cloud-native-clean-headers','isolated-cloud-native-auth'])
+        auth=http['middlewares']['isolated-cloud-native-auth']['forwardAuth']
         self.assertTrue(auth['address'].endswith('/api/method/erpnext_drive_integrations.portal.mobile.check_access'))
         self.assertFalse(auth['trustForwardHeader'])
         self.assertEqual(set(http['middlewares']['isolated-cloud-native-clean-headers']['headers']['customRequestHeaders'].values()),{''})

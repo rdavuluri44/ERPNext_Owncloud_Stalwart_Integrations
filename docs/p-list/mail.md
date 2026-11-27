@@ -1,6 +1,6 @@
 # Mail: P items
 
-> **Generated file: do not edit by hand.** Published from the maintainers' private list on 25 November 2026
+> **Generated file: do not edit by hand.** Published from the maintainers' private list on 27 November 2026
 > with every line kept; only identifying names, addresses, paths and links to private records are
 > replaced by placeholders (see the [P list index](../p-list.md) for the rules).
 
@@ -231,9 +231,35 @@ status). The webmail policy locks the delete action to Trash, and 16 English web
   `<server path>` on the VPS. The passkey cannot come through an invitation: the
   enrollment flow requires the staff group, and the reader's mailbox does not receive mail yet. Instead, the owner
   impersonates `archive-reader` (reason required, logged) and adds a passkey under its MFA devices.
+**26 November 2026:**
+- **Passkey:** the owner impersonated `archive-reader` and enrolled a Bitwarden passkey (second attempt, 03:09 UTC;
+  the first attempt never reached authentik and left a useless Bitwarden entry). Impersonation ended cleanly.
+- **Sign-in refused:** the production passkey sign-in gate (`<namespace>-passkey-approved-account`) admits superusers and
+  "<staff group>" only, so `archive-reader` was denied (the recovery deny message). Test webmail uses the same
+  production sign-in. Options put to the owner: an app password in a desktop mail client, a change to the gate, or
+  the staff group. **Owner chose (2): a gate change limited to mail.** PR #78 (`p69/archive-reader-signin`, merged `81d73dd`):
+  group Mail Archive Readers passes the gate; only the mail applications admit it (mode "any" over plain group
+  bindings); the reader leaves Testers. Tested on throwaway authentik 2026.8.5 and 2026.8.7: 23/23. **Applied to
+  production authentik after P83; owner signed in to test webmail as archive-reader, read the shared archive, and
+  delete and move were refused** (receipt `p69-production-authentik-archive-reader-signin-81d73dd`).
+- **Correction (backfill count):** the 24 November receipt says "Backfill copied 18 earlier messages". Checked message
+  by message on 26 November: the mailboxes hold 18 copies of 11 distinct messages (4 are in more than one mailbox);
+  all 11 are archived, and the 12th archived message is the probe whose account was removed. The tool counted
+  copies it skipped as "already archived" as copied. Fix: report copied and already-archived separately (in #69).
+- Open question for production: the reader's own mailbox offers Compose; whether `archive-reader` may send mail was not
+  checked (decide with the P69 production go).
+- **Before #78:** its advisory check found the authentik security release; P83 upgraded test and production first.
+- A one-time recovery link for `archive-reader` (to test without the owner) was refused by the Claude Code safety
+  check before it ran; nothing was created.
+- Webmail texts: all 12 distinct new texts are in the running test webmail (no visual check yet).
+- Phone test: throwaway Stalwart 1.1.1 `p69-phone` on the test VM, IMAPS on the tailnet address only, retention
+  applied, 6 test messages (7 copies, all journaled to its archive). Sign-in details in a 0600 file on the owner's
+  laptop Desktop. Waiting for the owner; delete the server and the file afterwards.
+- Found: production authentik logs `property_mapping_exception` for anonymous requests about once or twice a day
+  since at least 23 November (mapping name not recorded). Not investigated; no owner decision yet.
 - **Open:**
   - Phone mail app on a tailnet-only throwaway server, with the owner.
-  - Real-user webmail look.
+  - Real-user webmail look (the archive reader's sign-in itself passed 26 November).
   - Production-only checks after promotion: outside delivery journaled, nightly backup contains the archive (restore
     the mail volume into a throwaway server), counting purge reviewed before the timer. The migrated Google mailboxes
     may hold mail older than seven years.

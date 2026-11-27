@@ -9,11 +9,11 @@
   if (location.hostname === 'erp.example.com' && location.pathname.replace(/\/$/, '') === '/desk' && window.self === window.top) {
     location.replace('https://erp.example.com/'); return;
   }
-  // A portal app page opened on its own (new tab, pasted link, or a Raven
+  // A portal app page opened on its own (new tab, pasted link, or a
   // service-worker navigation the server cannot classify) reopens inside the
   // portal, which provides the left-edge app menu. Never inside a frame or an
   // installed app window.
-  const portalApp = path => path.startsWith('/desk/') && path !== '/desk/cloud-apps' || /^\/(raven|insights)(\/|$)/.test(path);
+  const portalApp = path => path.startsWith('/desk/') && path !== '/desk/cloud-apps' || /^\/insights(\/|$)/.test(path);
   if (location.hostname === 'erp.example.com' && window.self === window.top && portalApp(location.pathname)
       && !(window.matchMedia && matchMedia('(display-mode: standalone)').matches)) {
     location.replace('/?' + new URLSearchParams({ open: location.pathname + location.search })); return;

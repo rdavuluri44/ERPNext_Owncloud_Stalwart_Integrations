@@ -1,0 +1,107 @@
+{
+  "doctype": "DocType",
+  "name": "Biometric Consent",
+  "module": "Custom HR",
+  "engine": "InnoDB",
+  "autoname": "hash",
+  "track_changes": 1,
+  "description": "Evidence of a field worker's consent to face attendance (P95). Written only by the face service; the face templates themselves are in Field Face Enrolment.",
+  "field_order": [
+    "employee",
+    "employee_name",
+    "status",
+    "agreement_version",
+    "language",
+    "accepted_at",
+    "recorded_by",
+    "identity_checked_by",
+    "ended_at",
+    "end_reason"
+  ],
+  "fields": [
+    {
+      "fieldname": "employee",
+      "label": "Employee",
+      "fieldtype": "Link",
+      "options": "Employee",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "employee_name",
+      "label": "Employee name",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "status",
+      "label": "Status",
+      "fieldtype": "Select",
+      "options": "Active\nWithdrawn\nEnded\nReplaced",
+      "reqd": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "agreement_version",
+      "label": "Agreement version",
+      "fieldtype": "Data",
+      "reqd": 1
+    },
+    {
+      "fieldname": "language",
+      "label": "Language shown",
+      "fieldtype": "Data",
+      "reqd": 1
+    },
+    {
+      "fieldname": "accepted_at",
+      "label": "Accepted at",
+      "fieldtype": "Datetime",
+      "reqd": 1
+    },
+    {
+      "fieldname": "recorded_by",
+      "label": "Recorded by",
+      "fieldtype": "Link",
+      "options": "User",
+      "reqd": 1
+    },
+    {
+      "fieldname": "identity_checked_by",
+      "label": "Identity document checked by",
+      "fieldtype": "Link",
+      "options": "User",
+      "reqd": 1
+    },
+    {
+      "fieldname": "ended_at",
+      "label": "Ended at",
+      "fieldtype": "Datetime"
+    },
+    {
+      "fieldname": "end_reason",
+      "label": "Reason it ended",
+      "fieldtype": "Small Text"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "HR Manager",
+      "read": 1,
+      "report": 1
+    },
+    {
+      "role": "Field Attendance Manager",
+      "read": 1,
+      "report": 1
+    },
+    {
+      "role": "System Manager",
+      "read": 1,
+      "report": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC"
+}

@@ -19,11 +19,6 @@
     "ref": "v16.11.1",
     "commit": "68982391ab0e487ba418c1f58359b193680136ec"
   },
-  "raven": {
-    "url": "https://github.com/frappe/raven.git",
-    "ref": "v3.2.0",
-    "commit": "5a5e4c48e477831d82943ba241e20cc9fb6ce578"
-  },
   "insights": {
     "url": "https://github.com/frappe/insights.git",
     "ref": "v3.50.3",

@@ -1,6 +1,6 @@
 # Test site: P items
 
-> **Generated file: do not edit by hand.** Published from the maintainers' private list on 25 November 2026
+> **Generated file: do not edit by hand.** Published from the maintainers' private list on 27 November 2026
 > with every line kept; only identifying names, addresses, paths and links to private records are
 > replaced by placeholders (see the [P list index](../p-list.md) for the rules).
 
@@ -211,3 +211,70 @@ flushes; the business scheduler is deliberately off on the test copy, so every e
 the queue by hand. **Fix:** flush the deferred inserts on test on a short timer (only that job, not the business
 scheduler), or a small read tool; plus an alarm on new error records (with P61's alarms). Check whether production
 flushes them (its scheduler runs).
+
+### P101 — Test Drive, test Paperless, test mail and the test editor sign in through the test sign-in server
+
+**App:** test-site · **Also touches:** signin, drive, dms, mail, editor · **State:** open
+
+**Why (found 27 November 2026, during the P98 browser check; owner chose this fix):** on 23 November only the test
+ERP moved to the separate test sign-in server (`test-sso.example.com`). Test Drive (production client `test-office`)
+and test mail (`test-office-mail`), and with Drive the test editor, still sign in through the production sign-in
+server. Their production entries admit only `Testers`; the owner's account left that group on 24 November (owner:
+use the native test administrator on the test server), so production now refuses the owner for test Drive
+("Permission denied", policy binding result False). Inside the ERP portal the Drive panel then stays empty, because
+the sign-in page refuses to be shown in a frame. **Test Paperless too** (owner, 27 November 2026: "paperless and
+owncloud doesn't work from test.example.com"): checked read-only, its only sign-in is OpenID through
+`sso.example.com` (regular login switched off, redirect to the sign-in server on), so the same refusal applies. It also means testing still depends on production sign-in, against
+the owner's decision that testing uses no production data.
+
+**What (proposal, owner to confirm before work):**
+1. Read-only inventory: every test app's issuer and client (Drive web, desktop and mobile clients; Paperless; webmail; the
+   editor through Drive; anything else on test still pointing at production), and what each production test entry is bound
+   to.
+2. Create the matching clients on the test sign-in server from the repository (blueprints or tools, not by hand),
+   with the same rules as the ERP: who may sign in, passkey flow.
+3. Point test Drive, test Paperless, test webmail and the test editor at the test server through the test profiles;
+   deploy on test; check sign-in, the portal's Drive and Paperless panels, opening an office document, webmail.
+4. Then retire the production entries for those test apps (`test-office`, `test-office-mail` and any others found)
+   with the existing fail-closed retirement procedure (23 November, `0c8544d`), on the owner's go.
+
+**Not decided:** whether test Drive's existing users and shares (linked to production identities) must be mapped
+to the test server's users, or the test Drive data is reset with the next test refresh; whether the Drive desktop and
+phone clients are covered now or later; order with P63 (demo mode) and P70 (domain split).
+
+**Acceptance:** the owner signs in to test Drive, test Paperless, test webmail and a test office document with the test
+administrator account through `test-sso`, and the portal's Drive and Paperless panels load; no test app trusts the production
+sign-in server; the production test entries are retired.
+
+**Related:** P76 and P77 (test sign-in server), P63, P70, P25, P69 (test webmail reader), P98 (where it was found).
+
+### P105 — Test site ready for the native app's five-phone test round
+
+**App:** test-site · **Also touches:** erp, signin, mobile · **State:** blocked
+
+**Why (owner, 27 November 2026: "go for rest of all" on the native app developer's request, public PR #114,
+issuecomment-7214300268):** the first test round of the native Android app (P50, Phase 1) runs on five phones in the
+office, one role per phone, against the test site only.
+
+**What (from the request, Part A):**
+1. Five test people, one per role, invited in the test sign-in service and in the group that allows ERPNext, each
+   with an ERPNext user with exactly the roles a real person in that job has (site supervisor `Field Supervisor`,
+   engineer `Field Attendance Verifier`, project manager `Field Attendance Approver`, HR `HR User`, admin
+   `Field Attendance Manager`), a linked Employee, user permissions limited to their project or site, and reporting
+   lines (supervisor and engineer report to the project manager).
+2. A sixth account, invited but with no ERPNext role, that can be disabled on request.
+3. Made-up test data: one project with one site fenced at the office, a second project none of the five belongs to,
+   about ten workers under the supervisor, two attendance entries waiting for the project manager, one returned to
+   the supervisor, one request in a workflow. Start from `tools/seed_mobile_attendance_qa.py`.
+4. An ERPNext OAuth client for the native app (public, PKCE S256, no secret, scopes `all openid`), redirect an https
+   App Link on the test domain (agent's recommendation over a private scheme), the client ID in
+   `cloud_native_mobile_clients`, and `assetlinks.json` with the test build's SHA-256 fingerprint.
+
+**Blocked on:** the testers' mail addresses (to the owner privately, never in the public PR); the colleague collects
+them (owner, 27 November). The signing fingerprint arrived on #114 on 27 November (issuecomment-7216179275).
+
+**Acceptance:** each of the five signs in on their own phone with their own passkey and sees only their role's
+screens; every "must be refused" call in the request is refused by ERPNext itself; the sixth account gets the clear
+"signed in but not allowed" message.
+
+**Related:** P50, P82, P95, P103, P104.

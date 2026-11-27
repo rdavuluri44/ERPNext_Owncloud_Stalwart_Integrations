@@ -16,6 +16,8 @@ import shutil
 from urllib.parse import urlsplit
 
 from render_runtime import render, FAVICON_FILES, public_mappings
+import runtime_mounts
+from runtime_mounts import copy_files, identity_proxy_files, copy_dirs
 
 
 def write_private(path, value):
@@ -200,22 +202,12 @@ def prepare(source, output, profile):
                            'company_logo':profile.get('company_logo'),'company_favicon_dir':profile.get('company_favicon_dir'),'landing_url':profile.get('landing_url'),
                            'asset_version':profile.get('commit')})
     projects = profile.get('projects',['erp','drive','editor','mail','dms','processing'])
+    # The chat stack (P73) is opt-in and has two names of its own; without them the renderer would fall back to
+    # the bare domain, which on a test site is not a test name.
+    if 'chat' in projects and not {'chat','chat-auth'} <= hosts.keys():
+        raise ValueError('The chat stack needs the host names chat and chat-auth')
     mounts = json.loads((source/'deployment/stacks/mounts.json').read_text())
-    copy_files = {
-        '/opt/cloud/backend_start.py': 'deployment/erp/backend_start.py',
-        '/opt/cloud/netbird_realtime.cjs': 'deployment/erp/netbird_realtime.cjs',
-        '/templates/nginx/frappe.conf.template': 'deployment/erp/frappe.conf.template',
-        '/app/document-worker.py': 'integrations/document-worker/document-worker.py',
-        '/etc/nginx/conf.d/default.conf': 'integrations/website/nginx-default.conf',
-    }
-    identity_proxy_files = {
-        'identity_support_gateway_0': 'integrations/authentik/identity-support/nginx.conf',
-        'identity_support_invitations_1': 'integrations/authentik/invite-recovery/nginx.conf',
-    }
-    copy_dirs = {'/opt/cloud-extension':'integrations/dms',
-                 '/templates':'integrations/authentik/invite-recovery/templates',
-                 '/srv/public':'integrations/authentik/invite-recovery/public',
-                 '/srv/site':'integrations/website/site'}
+    # Which mount is made from which repository file: tools/runtime_mounts.py (shared with the drift check).
     persistent_targets = {'/var/lib/cloud-integration','/var/lib/ocis','/state',
         '/usr/src/paperless/data','/usr/src/paperless/media','/usr/src/paperless/consume','/usr/src/paperless/export'}
     # Office editor: ONLYOFFICE only. Collabora was retired after the P42
@@ -325,8 +317,7 @@ def prepare(source, output, profile):
                 write_private(path,json.dumps(worker,indent=2)+'\n')
                 if os.geteuid()==0:os.chown(path,10001,10001)
         elif item['stack'] == 'editor':
-            origin = {'/etc/onlyoffice/documentserver/local-production-linux.json': source/'deployment/config/onlyoffice-local-production-linux.json',
-                      '/var/www/onlyoffice/documentserver/web-apps/apps/api/wopi/editor-wopi.ejs': source/'integrations/onlyoffice/editor-wopi.ejs'}[target]
+            origin = source/runtime_mounts.editor_files[target]
             shutil.copy2(origin, path)
             path.chmod(0o644)
         # Optional private DNS and identity certificates are configured by
@@ -450,6 +441,17 @@ def prepare(source, output, profile):
                 for network in compose['services'][leader].get('networks',{}):
                     have.setdefault(network,{})
         write_private(output/'compose'/(project+'.json'),json.dumps(compose,indent=2)+'\n')
+    # P99: record what each mount was made from, so the drift check can tell a mount that equals main, one that
+    # is behind and one changed by hand. Persistent data, secrets and reused data folders are not recorded.
+    recorded = {}
+    for item in mounts:
+        relative = runtime_mounts.source_of(item)
+        path = mount_path(item['path'])
+        if (relative and item['stack'] in projects and item['path'] not in existing_mounts and path.exists()
+                and (item['stack'] != 'editor' or item['service'] == editor_product)):
+            recorded[item['path']] = {'source': relative, 'commit': profile.get('commit'),
+                                      'sha256': runtime_mounts.digest(path)}
+    runtime_mounts.record_entries(output, recorded, write_private)
     write_private(values_file,json.dumps(values,indent=2)+'\n')
     write_private(output/'ready.json',json.dumps({'instance':identity['instance'],
         'tier':identity['tier'],'projects':projects},indent=2)+'\n')

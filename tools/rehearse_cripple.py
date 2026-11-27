@@ -64,7 +64,23 @@ def drive_names(root, kinds=None):
     return names
 
 
-def column_audit(container, database, found):
+PUBLIC_MAIL_PROVIDERS = ('gmail', 'yahoo', 'outlook', 'hotmail')
+
+
+def audit_domains(config):
+    """Mail domain names whose addresses must not survive scrambling: the public providers, the deployment's own
+    domains and those listed in the private worker profile (`audit_mail_domains`, for example a client's). Client
+    names never live in this repository (P84). Each domain counts by its name part (`name.tld` -> `name`)."""
+    labels = list(PUBLIC_MAIL_PROVIDERS)
+    for value in [config.get('domain'), config.get('mail_domain')] + list(config.get('audit_mail_domains') or []):
+        parts = [p for p in str(value or '').lower().strip('.').split('.') if p]
+        label = parts[-2] if len(parts) >= 2 else (parts[0] if parts else '')
+        if re.fullmatch(r'[a-z0-9-]+', label) and label not in labels and label != 'example':
+            labels.append(label)
+    return labels
+
+
+def column_audit(container, database, found, domains=PUBLIC_MAIL_PROVIDERS):
     """Count rows still holding a real-looking e-mail address, per table.column (no values)."""
     from cripple_snapshot import mysql_rows, sql_literal, quote, TEXTUAL
     rows = mysql_rows(container, database, 'SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS '
@@ -73,7 +89,7 @@ def column_audit(container, database, found):
         if data_type not in TEXTUAL or table_name.startswith('_cripple'):
             continue
         count = mysql_rows(container, database, f'SELECT COUNT(*) FROM {quote(table_name)} WHERE {quote(column)} REGEXP '
-                           "'[A-Za-z0-9._%+-]+@(gmail|yahoo|outlook|hotmail|unformat|sriramki)[.]'")[0][0]
+                           "'[A-Za-z0-9._%+-]+@(" + '|'.join(domains) + ")[.]'")[0][0]
         if count != '0':
             found[table_name + '.' + column] = int(count)
 
@@ -151,12 +167,14 @@ def rehearse(config, keep_accounts, days):
                         'SELECT IFNULL(full_name,\'\') FROM `tabUser` '
                         f'WHERE LOWER(name) NOT IN ({keep_sql})') for n in row if len(n.strip()) >= 6 and ' ' in n.strip()})
 
+        domains = audit_domains(config)
+
         def audits(container, name):
-            column_audit(container, name, columns_found)
+            column_audit(container, name, columns_found, domains)
             names_audit(container, name, names, names_found, keep_sql)
         result = cripple(data, settings, containers, database, business_counts, audit=audits)
         keep = {account.casefold().encode() for account in keep_accounts}
-        report = {'names_checked': len(names), 'columns_still_holding_real_names': names_found,
+        report = {'names_checked': len(names), 'mail_domains_checked': len(domains), 'columns_still_holding_real_names': names_found,
                   'columns_still_holding_real_email_domains': columns_found, 'business_counts_before': counts_before, 'business_counts_after': result.pop('counts'),
                   'cripple': result, 'drive_blob_layout_confirmed': blob_layout}
         for name, path in [('erp', data / 'erp.sql'), ('dms', data / 'dms.sql')]:

@@ -31,4 +31,4 @@ before_request = ["erpnext_drive_integrations.onboarding.respond.gate"]
 # Audit HOV-01: a "verified" date counts only for the email / mobile it was verified on.
 doc_events = {"Contact": {"validate": "erpnext_drive_integrations.onboarding.amendment.unverify_changed_contact"}}
 # "Request response" button; read from disk with the form (no asset build).
-doctype_js = {"Purchase Order": "onboarding/client/request_response.js", "Job Offer": "client/request_response.js"}
+doctype_js = {"Purchase Order": "onboarding/client/request_response.js", "Job Offer": "onboarding/client/request_response.js"}

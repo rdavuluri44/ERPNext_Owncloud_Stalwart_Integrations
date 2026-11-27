@@ -80,6 +80,9 @@ def render(result, title):
     lines = ['## Promotion plan: ' + title, '']
     if not result['stacks'] and not result['live']:
         lines.append('No running stack is reached.')
+    if result['stacks']:
+        lines += ['### Before promotion', '- On the host, before any stack is recreated: run '
+                  '`tools/archive_container_logs.py` (saves the logs of every container; a recreate deletes them).', '']
     for stack, entry in sorted(result['stacks'].items()):
         lines += ['### ' + stack, '- Files: ' + ', '.join('`' + f + '`' for f in entry['files'][:15]) +
                   (' and %d more' % (len(entry['files']) - 15) if len(entry['files']) > 15 else '')]

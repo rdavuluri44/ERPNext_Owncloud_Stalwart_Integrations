@@ -127,3 +127,10 @@ def checkin_allowed(blocked, allowed_roles, user_roles, user=None):
         return True
     allowed = {r.strip() for r in str(allowed_roles or '').replace(',', '\n').splitlines() if r.strip()}
     return bool(allowed & set(user_roles or ()))
+
+
+def skips_approval(offline, site_needs_approval, clash, own_site_approver=False):
+    """HR attendance at once, without a second person: online only, never over HR attendance made elsewhere, and only
+    at a site that needs no approval or for the site's own approver (project manager) checking in themselves
+    (owner, 25 November 2026). Offline entries and clashes always go to another approver or HR."""
+    return not offline and not clash and (not site_needs_approval or own_site_approver)

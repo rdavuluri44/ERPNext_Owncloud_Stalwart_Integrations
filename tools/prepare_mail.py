@@ -5,11 +5,31 @@ Use a rendered release as --source for production URLs. Build context is new and
 outside the repository; no deployment environment or secret files are copied.
 """
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import shutil
 import subprocess
 import zipfile
+
+
+def check_overlay_base(lock, overlay, upstream):
+    """Stop unless the overlay was made from exactly these upstream files (P91, register WEBMAIL-1).
+
+    The overlay replaces whole files, so copying it over changed upstream files would
+    silently undo upstream's changes to them."""
+    base = lock["overlay_base"]
+    if base["commit"] != lock["commit"]:
+        raise ValueError("Webmail commit changed: run tools/refresh_webmail_overlay_base.py and merge the overlay")
+    ours = sorted(p.relative_to(overlay).as_posix() for p in Path(overlay).rglob("*") if p.is_file())
+    if ours != sorted([*base["replaced"], *base["added"]]):
+        raise ValueError("Overlay files and overlay_base in integrations/mail/upstream.json differ")
+    changed = [name for name, digest in base["replaced"].items()
+               if not (Path(upstream) / name).is_file()
+               or hashlib.sha256((Path(upstream) / name).read_bytes()).hexdigest() != digest]
+    changed += [name for name in base["added"] if (Path(upstream) / name).exists()]
+    if changed:
+        raise ValueError("Upstream webmail files differ from the overlay's base: " + ", ".join(changed))
 
 
 def prepare(source, output):
@@ -21,6 +41,7 @@ def prepare(source, output):
         raise ValueError("Unexpected upstream repository")
     subprocess.run(["git", "clone", "--no-checkout", lock["repository"], str(output)], check=True)
     subprocess.run(["git", "-C", str(output), "checkout", "--detach", lock["commit"]], check=True)
+    check_overlay_base(lock, source / "integrations/mail/overlay", output)
     shutil.copytree(source / "integrations/mail/overlay", output, dirs_exist_ok=True)
     archive = output / "public/cloud-customization-source.zip"
     archive.parent.mkdir(exist_ok=True)

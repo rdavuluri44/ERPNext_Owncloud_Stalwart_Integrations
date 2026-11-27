@@ -5,6 +5,11 @@ COPY --chown=frappe:frappe erpnext_drive_integrations /home/frappe/frappe-bench/
 COPY --chown=frappe:frappe pyproject.toml MANIFEST.in /home/frappe/frappe-bench/apps/erpnext_drive_integrations/
 COPY --chown=frappe:frappe integrations/insights/patch_session.py /opt/cloud-build/patch_insights_session.py
 RUN /home/frappe/frappe-bench/env/bin/pip install --no-deps -e /home/frappe/frappe-bench/apps/erpnext_drive_integrations
+# Face models for P95 at a pinned commit; the build stops if any checksum differs (register BUILD-11).
+COPY tools/fetch_face_models.py deployment/face-models.json /opt/cloud-build/face/
+RUN /home/frappe/frappe-bench/env/bin/python /opt/cloud-build/face/fetch_face_models.py \
+      --pins /opt/cloud-build/face/face-models.json --output /opt/face-models \
+    && chmod -R a+rX /opt/face-models
 RUN ln -s ../apps/erpnext_drive_integrations/erpnext_drive_integrations/public /home/frappe/frappe-bench/assets/erpnext_drive_integrations
 USER frappe
 # Same explicit Node heap as the core build: the default depends on the build

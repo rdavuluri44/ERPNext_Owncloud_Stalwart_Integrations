@@ -1,0 +1,5 @@
+{
+  "_comment": "Image of Coolify's proxy (Traefik) on every host, pinned by tag and digest (P90). Applied with tools/coolify_proxy_image.py; keep the upstream watch profile's traefik version equal to 'version'.",
+  "image": "traefik:v3.7.20@sha256:8301d6f60957a422f98918aacf2b01482abde3e74ead3719aabdb7c64045fe28",
+  "version": "3.7.20"
+}

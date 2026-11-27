@@ -614,5 +614,81 @@
   "CI_EDITOR_ONLYOFFICE_JWT_SECRET": {
     "kind": "secret",
     "generate": true
+  },
+  "CI_CHAT_CONFIGURE_CHAT_SERVER_NAME": {
+    "kind": "setting",
+    "default": "chat.example.com"
+  },
+  "CI_CHAT_CONFIGURE_CHAT_PUBLIC_URL": {
+    "kind": "setting",
+    "default": "https://chat.example.com/"
+  },
+  "CI_CHAT_CONFIGURE_CHAT_AUTH_URL": {
+    "kind": "setting",
+    "default": "https://chat-auth.example.com/"
+  },
+  "CI_CHAT_CONFIGURE_SYNAPSE_DB_PASSWORD": {
+    "kind": "secret",
+    "generate": true
+  },
+  "CI_CHAT_CONFIGURE_MAS_DB_PASSWORD": {
+    "kind": "secret",
+    "generate": true
+  },
+  "CI_CHAT_CONFIGURE_SHARED_SECRET": {
+    "kind": "secret",
+    "generate": true
+  },
+  "CI_CHAT_CONFIGURE_MACAROON_SECRET": {
+    "kind": "secret",
+    "generate": true
+  },
+  "CI_CHAT_CONFIGURE_FORM_SECRET": {
+    "kind": "secret",
+    "generate": true
+  },
+  "CI_CHAT_CONFIGURE_MAS_ENCRYPTION_SECRET": {
+    "kind": "secret",
+    "generate": true
+  },
+  "CI_CHAT_CONFIGURE_UPSTREAM_ID": {
+    "kind": "setting",
+    "default": "01KBCHATSS0PR0V1DERAAAAAAA"
+  },
+  "CI_CHAT_CONFIGURE_UPSTREAM_ISSUER": {
+    "kind": "setting",
+    "default": "https://sso.example.com/application/o/chat/"
+  },
+  "CI_CHAT_CONFIGURE_UPSTREAM_CLIENT_ID": {
+    "kind": "setting",
+    "default": "chat"
+  },
+  "CI_CHAT_CONFIGURE_UPSTREAM_CLIENT_SECRET": {
+    "kind": "secret",
+    "generate": false
+  },
+  "CI_CHAT_CONFIGURE_UPSTREAM_NAME": {
+    "kind": "setting",
+    "default": "Company sign-in"
+  },
+  "CI_CHAT_CONFIGURE_LOCALPART_TEMPLATE": {
+    "kind": "setting",
+    "default": "{{ user.chat_name }}"
+  },
+  "CI_CHAT_SYNAPSE_HOST_PORT": {
+    "kind": "setting",
+    "default": "8040"
+  },
+  "CI_CHAT_MAS_HOST_PORT": {
+    "kind": "setting",
+    "default": "8050"
+  },
+  "CI_CHAT_CONFIGURE_BRIDGE_AS_TOKEN": {
+    "kind": "secret",
+    "generate": true
+  },
+  "CI_CHAT_CONFIGURE_BRIDGE_HS_TOKEN": {
+    "kind": "secret",
+    "generate": true
   }
 }

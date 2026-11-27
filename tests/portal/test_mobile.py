@@ -61,7 +61,7 @@ APP = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(APP))
 from erpnext_drive_integrations.portal import mobile, sso  # noqa: E402
 
-RAVEN, HOV, OTHER = 'raven-client', 'onboarding-client', 'other-client'
+SECOND, HOV, OTHER = 'second-client', 'onboarding-client', 'other-client'
 
 
 class TestIdentityOrigin(unittest.TestCase):
@@ -101,8 +101,7 @@ class MobileBindingTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         sso.STATE_PATH = self.tmp.name + '/state.sqlite3'
-        frappe.conf = Bag(cloud_raven_mobile_enabled=1, cloud_raven_mobile_client=RAVEN,
-                          cloud_native_mobile_clients=[HOV])
+        frappe.conf = Bag(cloud_native_mobile_enabled=1, cloud_native_mobile_clients=[HOV, SECOND])
         frappe.local = Bag(site='erp.internal', headers={})
         frappe.session = Bag(user='Guest', sid='Guest')
         frappe.form_dict = Bag()
@@ -152,10 +151,20 @@ class MobileBindingTests(unittest.TestCase):
             fn(*args)
 
     # ---- approved apps work --------------------------------------------------------------------
-    def test_raven_unchanged_with_old_config_only(self):
-        frappe.conf.pop('cloud_native_mobile_clients')
-        self.sign_in(RAVEN)
+    def test_old_switch_name_still_works_until_the_site_config_is_renamed(self):
+        frappe.conf.pop('cloud_native_mobile_enabled')
+        frappe.conf.cloud_raven_mobile_enabled = 1
+        self.sign_in(HOV)
         self.assertEqual(self.call_api(), {'authorized': True})
+
+    def test_new_switch_wins_over_the_old_name(self):
+        frappe.conf.cloud_raven_mobile_enabled = 1
+        frappe.conf.cloud_native_mobile_enabled = 0
+        self.assertEqual(mobile.clients(), frozenset())
+
+    def test_the_removed_raven_client_setting_approves_nothing(self):
+        frappe.conf.cloud_raven_mobile_client = 'raven-client'
+        self.assertEqual(mobile.clients(), frozenset({HOV, SECOND}))
 
     def test_onboarding_app_signs_in(self):
         self.sign_in(HOV)
@@ -184,7 +193,7 @@ class MobileBindingTests(unittest.TestCase):
 
     def test_master_switch_off_refuses_every_app(self):
         self.sign_in(HOV)
-        frappe.conf.cloud_raven_mobile_enabled = 0
+        frappe.conf.cloud_native_mobile_enabled = 0
         self.assertRefused(self.call_api)
 
     # ---- sign-in rules -------------------------------------------------------------------------
@@ -198,7 +207,7 @@ class MobileBindingTests(unittest.TestCase):
 
     def test_code_for_one_app_cannot_mint_tokens_for_another(self):
         self.authorize(HOV)
-        self.assertRefused(self.exchange, RAVEN)
+        self.assertRefused(self.exchange, SECOND)
 
     def test_expired_code_refused(self):
         self.authorize(HOV)
@@ -210,7 +219,7 @@ class MobileBindingTests(unittest.TestCase):
         self.sign_in(HOV)
         frappe.form_dict = Bag(grant_type='refresh_token', refresh_token='rt-1')
         self.assertRefused(mobile.token_created,
-                           Bag(client=RAVEN, user='user-a', access_token='at-2', refresh_token='rt-2'))
+                           Bag(client=SECOND, user='user-a', access_token='at-2', refresh_token='rt-2'))
         mobile.token_created(Bag(client=HOV, user='user-a', access_token='at-3', refresh_token='rt-3'))
         self.store_token('at-3', HOV)
         self.assertEqual(self.call_api('at-3'), {'authorized': True})
@@ -218,7 +227,7 @@ class MobileBindingTests(unittest.TestCase):
     # ---- token checks at the gateway ------------------------------------------------------------
     def test_token_client_must_match_binding(self):
         self.sign_in(HOV)
-        frappe.db.tokens['at-1']['client'] = RAVEN  # both approved, but the binding says HOV
+        frappe.db.tokens['at-1']['client'] = SECOND  # both approved, but the binding says HOV
         self.assertRefused(self.call_api)
 
     def test_expired_or_revoked_token_refused(self):
@@ -248,13 +257,13 @@ class MobileBindingTests(unittest.TestCase):
     # ---- logout on the web ends app access (shared logout) ------------------------------------
     def test_web_logout_revokes_app_and_cleanup_revokes_token(self):
         self.sign_in(HOV)
-        self.store_token('at-raven', RAVEN)  # unbound token: cleanup must leave it alone
+        self.store_token('at-second', SECOND)  # unbound token: cleanup must leave it alone
         with sso.registry() as db:
             db.execute("UPDATE browsers SET revoked=1 WHERE id='browser-a'")
         self.assertRefused(self.call_api)
         mobile.cleanup()
         self.assertEqual(frappe.db.tokens['at-1']['status'], 'Revoked')
-        self.assertEqual(frappe.db.tokens['at-raven']['status'], 'Active')
+        self.assertEqual(frappe.db.tokens['at-second']['status'], 'Active')
 
     def test_authentik_logout_revokes_app(self):
         self.sign_in(HOV)

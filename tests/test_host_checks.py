@@ -36,6 +36,20 @@ class FakeEnv:
         self.restart_counts = restart_counts or {}
         self.ip_after, self.ip_calls = ip_after, 0
         self.log = []
+        self.boot = 'boot-2'
+        self.policies = {}
+        self.stopped = {}          # containers that exist but are not running: name -> starts on `docker start`
+        self.started = []
+        self.mails = []
+        self.mail_error = None
+
+    def boot_id(self):
+        return self.boot
+
+    def send_mail(self, alert, subject, body):
+        if self.mail_error:
+            raise self.mail_error
+        self.mails.append((alert['to'], subject, body))
 
     def now(self):
         return self.t
@@ -59,6 +73,15 @@ class FakeEnv:
             if not self.errors_forever:
                 self.errors_now = 0
             return 0, ''
+        if command[:2] == ['docker', 'start']:
+            name = command[2]
+            if self.stopped.pop(name, False):
+                self.containers.append(name)
+                self.started.append(name)
+                return 0, name + '\n'
+            return 1, 'Error response from daemon: No such container: ' + name
+        if command[:2] == ['docker', 'inspect'] and '{{.HostConfig.RestartPolicy.Name}}' in command[3]:
+            return 0, ''.join('/%s %s\n' % (name, self.policies.get(name, 'unless-stopped')) for name in command[4:])
         if command[:2] == ['docker', 'inspect']:
             name = command[-1]
             if '{{.State.StartedAt}}' in command[3]:
@@ -137,6 +160,127 @@ class BootCheckTests(unittest.TestCase):
         self.assertEqual(hc.boot(cfg, env), 0)
 
 
+def snapshot(cfg, containers, boot='boot-1', taken='2026-11-26T15:25:00+00:00'):
+    Path(cfg['state_dir']).mkdir(parents=True, exist_ok=True)
+    (Path(cfg['state_dir']) / 'running-containers.json').write_text(
+        json.dumps({'boot_id': boot, 'taken_at': taken, 'containers': containers}))
+
+
+ALERT = {'smtp_host': 'mail.example.com', 'smtp_port': 465, 'security': 'ssl', 'username': 'alerts@example.com',
+         'password_file': '/etc/cloud-host-check/alert-password', 'sender': 'alerts@example.com',
+         'to': ['admin@example.com']}
+
+
+class AfterRebootTests(unittest.TestCase):
+    """P57 follow-up 7 (owner, 26 November 2026): after a reboot every container that ran before must run again;
+    a missing one is started once, and the admin is mailed what was repaired or what stays wrong."""
+
+    def test_a_container_that_did_not_come_back_is_started_once_and_reported(self):
+        cfg = config(alert=ALERT)
+        env = FakeEnv(containers=[BRIDGE, 'ocis-abc', 'db-abc'])
+        env.stopped = {'observability-prometheus-1': True}
+        snapshot(cfg, {BRIDGE: 'unless-stopped', 'ocis-abc': 'unless-stopped', 'db-abc': 'unless-stopped',
+                       'observability-prometheus-1': 'unless-stopped'})
+        self.assertEqual(hc.boot(cfg, env), 0)
+        self.assertEqual(env.started, ['observability-prometheus-1'])
+        status = json.loads((Path(cfg['state_dir']) / 'status.json').read_text())
+        self.assertEqual(status['started_after_reboot'], ['observability-prometheus-1'])
+        self.assertEqual(status['expected_after_reboot'], 4)
+        self.assertEqual(len(env.mails), 1)
+        to, subject, body = env.mails[0]
+        self.assertEqual(to, ['admin@example.com'])
+        self.assertIn('repaired', subject)
+        self.assertIn('observability-prometheus-1', body)
+
+    def test_it_waits_before_starting_so_docker_can_start_everything_first(self):
+        cfg = config(alert=ALERT)
+        cfg['after_reboot']['start_after_seconds'] = 45
+        env = FakeEnv()
+        env.stopped = {'late-1': True}
+        snapshot(cfg, {'late-1': 'always'})
+        start = env.t
+        hc.boot(cfg, env)
+        self.assertEqual(env.started, ['late-1'])
+        self.assertGreaterEqual(env.t - start, 45)
+
+    def test_one_that_cannot_be_started_fails_the_check_and_is_mailed(self):
+        cfg = config(alert=ALERT, timeout_seconds=120)
+        env = FakeEnv()
+        snapshot(cfg, {BRIDGE: 'unless-stopped', 'gone-1': 'unless-stopped'})
+        self.assertEqual(hc.boot(cfg, env), 1)
+        status = json.loads((Path(cfg['state_dir']) / 'status.json').read_text())
+        self.assertIn('gone-1 ran before the reboot and is not running', status['problems'])
+        self.assertEqual(status['could_not_start'], ['gone-1'])
+        self.assertEqual(env.started, [])
+        self.assertIn('FAILED', env.mails[0][1])
+
+    def test_containers_that_should_not_restart_by_themselves_are_left_alone(self):
+        cfg = config(alert=ALERT)
+        cfg['watch']['ignore_prefixes'] = ['configurator-']
+        env = FakeEnv()
+        env.stopped = {'phone-test': True, 'configurator-x': True}
+        snapshot(cfg, {BRIDGE: 'unless-stopped', 'phone-test': 'no', 'configurator-x': 'unless-stopped'})
+        self.assertEqual(hc.boot(cfg, env), 0)
+        self.assertEqual(env.started, [])
+        self.assertEqual(env.mails, [], 'nothing was repaired, nothing failed: no mail')
+
+    def test_no_comparison_in_the_same_boot_or_without_a_list(self):
+        cfg = config(alert=ALERT)
+        env = FakeEnv()
+        env.stopped = {'stopped-by-an-operator': True}
+        snapshot(cfg, {'stopped-by-an-operator': 'unless-stopped'}, boot='boot-2')  # same boot: a deliberate stop
+        self.assertEqual(hc.boot(cfg, env), 0)
+        self.assertEqual(env.started, [])
+        cfg2 = config(alert=ALERT)
+        self.assertEqual(hc.boot(cfg2, FakeEnv()), 0)
+
+    def test_starting_can_be_switched_off(self):
+        cfg = config(alert=ALERT, timeout_seconds=60)
+        cfg['after_reboot']['start_missing'] = False
+        env = FakeEnv()
+        env.stopped = {'observability-prometheus-1': True}
+        snapshot(cfg, {'observability-prometheus-1': 'unless-stopped'})
+        self.assertEqual(hc.boot(cfg, env), 1)
+        self.assertEqual(env.started, [])
+
+    def test_the_check_saves_the_list_for_the_next_boot(self):
+        cfg = config()
+        env = FakeEnv(containers=[BRIDGE, 'ocis-abc', 'db-abc', 'configurator-x'])
+        cfg['watch']['ignore_prefixes'] = ['configurator-']
+        env.policies = {'db-abc': 'always'}
+        hc.watch(cfg, env)
+        saved = json.loads((Path(cfg['state_dir']) / 'running-containers.json').read_text())
+        self.assertEqual(saved['boot_id'], 'boot-2')
+        self.assertEqual(saved['containers'], {BRIDGE: 'unless-stopped', 'ocis-abc': 'unless-stopped', 'db-abc': 'always'})
+        hc.boot(cfg, env)
+        self.assertEqual(json.loads((Path(cfg['state_dir']) / 'running-containers.json').read_text())['boot_id'], 'boot-2')
+
+    def test_mail_failure_never_breaks_the_check_and_no_sender_means_no_mail(self):
+        cfg = config(alert=ALERT)
+        env = FakeEnv()
+        env.stopped = {'late-1': True}
+        env.mail_error = OSError('connection refused')
+        snapshot(cfg, {'late-1': 'unless-stopped'})
+        self.assertEqual(hc.boot(cfg, env), 0)
+        self.assertTrue(any(line.startswith('ALERT NOT SENT (OSError)') for line in LOG))
+        cfg2 = config()
+        env2 = FakeEnv()
+        env2.stopped = {'late-1': True}
+        snapshot(cfg2, {'late-1': 'unless-stopped'})
+        self.assertEqual(hc.boot(cfg2, env2), 0)
+        self.assertEqual(env2.mails, [])
+
+    def test_the_password_never_reaches_the_log_or_the_mail(self):
+        cfg = config(alert=ALERT)
+        env = FakeEnv()
+        env.stopped = {'late-1': True}
+        snapshot(cfg, {'late-1': 'unless-stopped'})
+        LOG.clear()
+        hc.boot(cfg, env)
+        everything = ' '.join(LOG) + ' '.join(m[2] for m in env.mails)
+        self.assertNotIn('alert-password', everything)
+
+
 class WatchTests(unittest.TestCase):
     def test_rising_restart_count_raises_an_alert_and_quiet_hosts_do_not(self):
         cfg = config(); state = Path(cfg['state_dir']) / 'restart-counts.json'
@@ -165,6 +309,77 @@ class TailnetWaitTests(unittest.TestCase):
 
     def test_does_nothing_without_a_tailnet_address(self):
         self.assertEqual(hc.wait_tailnet(config(), FakeEnv(), 60), 0)
+
+
+class AlertRenderTests(unittest.TestCase):
+    def test_alert_sender_is_rendered_and_checked(self):
+        profile = {'hosts': {'erp': 'erp.example.com'}, 'host_checks': {'alert': dict(ALERT)}}
+        self.assertEqual(rh.build_config(profile)['alert'], ALERT)
+        for change in ({'smtp_port': '465'}, {'security': 'plain'}, {'password_file': 'relative'},
+                       {'to': 'admin@example.com'}, {'to': []}, {'sender': 'not an address'}, {'smtp_host': 'bad host'}):
+            profile = {'hosts': {}, 'host_checks': {'alert': dict(ALERT, **change)}}
+            with self.assertRaises(ValueError, msg=change):
+                rh.build_config(profile)
+
+    def test_no_alert_section_renders_no_sender(self):
+        self.assertNotIn('alert', rh.build_config({'hosts': {}, 'host_checks': {}}))
+
+    def test_connect_address_is_rendered_only_when_set_and_must_be_an_ip(self):
+        """P57 follow-up 10: a server may not reach its own mail server under the certificate's name."""
+        profile = {'hosts': {}, 'host_checks': {'alert': dict(ALERT, address='100.64.0.10')}}
+        self.assertEqual(rh.build_config(profile)['alert'], dict(ALERT, address='100.64.0.10'))
+        self.assertNotIn('address', rh.build_config({'hosts': {}, 'host_checks': {'alert': dict(ALERT)}})['alert'])
+        for bad in ('mail.example.com', '100.64.0.300', ''):
+            with self.assertRaises(ValueError, msg=bad):
+                rh.build_config({'hosts': {}, 'host_checks': {'alert': dict(ALERT, address=bad)}})
+
+
+class FakeSocket:
+    def __init__(self):
+        self.sent = b''
+
+    def makefile(self, mode):
+        import io
+        return io.BytesIO(b'220 ready\r\n')
+
+    def sendall(self, data):
+        self.sent += data
+
+    def close(self):
+        pass
+
+
+class FakeContext:
+    def __init__(self):
+        self.wrapped = []
+
+    def wrap_socket(self, sock, server_hostname=None):
+        self.wrapped.append(server_hostname)
+        return sock
+
+
+class VerifiedSmtpTests(unittest.TestCase):
+    """The real smtplib classes, with only the network faked: connect to `address`, verify the name."""
+
+    def connect(self, alert):
+        calls, context = [], FakeContext()
+        original = hc.socket.create_connection
+        hc.socket.create_connection = lambda target, timeout, source=None: calls.append(target) or FakeSocket()
+        try:
+            hc.verified_smtp(alert, context)
+        finally:
+            hc.socket.create_connection = original
+        return calls, context.wrapped
+
+    def test_address_is_dialled_but_the_certificate_is_checked_for_the_host_name(self):
+        calls, names = self.connect(dict(ALERT, address='100.64.0.10'))
+        self.assertEqual(calls, [('100.64.0.10', 465)])
+        self.assertEqual(names, ['mail.example.com'])
+
+    def test_without_address_the_host_name_is_dialled(self):
+        calls, names = self.connect(dict(ALERT))
+        self.assertEqual(calls, [('mail.example.com', 465)])
+        self.assertEqual(names, ['mail.example.com'])
 
 
 class RenderTests(unittest.TestCase):

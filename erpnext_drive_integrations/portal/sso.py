@@ -343,9 +343,9 @@ def on_logout(login_manager):
     frappe.local.response["cloud_logout_url"] = FINISH
 
 
-# Same-origin apps shown in portal frames: Desk pages and the Raven and
-# Insights single-page apps.
-PORTAL_APP_ROOTS = ("/raven", "/insights")
+# Same-origin apps shown in portal frames: Desk pages and the Insights
+# single-page app.
+PORTAL_APP_ROOTS = ("/insights",)
 
 
 def portal_app_path(path):

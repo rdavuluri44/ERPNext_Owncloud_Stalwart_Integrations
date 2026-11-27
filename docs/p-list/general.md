@@ -1,6 +1,6 @@
 # General: P items
 
-> **Generated file: do not edit by hand.** Published from the maintainers' private list on 25 November 2026
+> **Generated file: do not edit by hand.** Published from the maintainers' private list on 27 November 2026
 > with every line kept; only identifying names, addresses, paths and links to private records are
 > replaced by placeholders (see the [P list index](../p-list.md) for the rules).
 
@@ -12,11 +12,23 @@ Part of the P list: back to the [index and priority order](../p-list.md). Items 
 
 ### P11 — Certificate issuance and renewal acceptance
 
-**App:** general · **Also touches:** none · **State:** open
+**App:** general · **Also touches:** none · **State:** in progress
 
-**Status:** current HTTPS validation passes; ERP/SSO automation is configured, but renewal/individual issuance has not been accepted.
+**Status (27 November 2026):** **issuance done on production.** Every public name has its own Let's Encrypt certificate
+from Traefik (to 25 February 2027). Production names use the HTTP challenge, with challenge routes above every port-80
+route. The relayed test names use the `letsencrypt-tls` resolver (TLS-ALPN), so the test host keeps renewing its own
+certificates through the port-80 relay. The copied wildcard is no longer loaded. Records: release log 27 November,
+receipts `p11-production-challenge-routes-662aaf9` and `p11-production-own-certificates-662aaf9`; public #126 and #128.
 
-ERP, SSO, Drive and Respond currently present certificates expiring **30 January 2027**. Confirm the active renewal mechanism covers all four names, issue/renew through the intended configuration, and verify the served certificate afterwards. Office, Mail and DMS currently have February 2027 expiries. Do this before the January expiry; no reminder has been scheduled.
+- **Left to accept:**
+  - the first automatic renewal, due about 26 January 2027 (check the dates in the HTTPS probe);
+  - Stalwart's own `mx` certificate renewing before 11 February;
+  - the test host's own certificates renewing (from 9 February).
+- **Clean-up:** remove the copied certificate files from the proxy folder after a week (the rollback set keeps a copy);
+  then delete register PROXY-P5.
+- **Notes:** the HTTPS probe's failures still reach nobody (P72, separate decision). `docs` has no DNS record (its
+  certificate will lapse; harmless if unused). mx on 443 serves Traefik's default certificate (no HTTPS route asks for
+  it).
 
 ### P13 — Remaining users, app permissions and worker enrollment
 
@@ -109,6 +121,27 @@ Shared 17 November 2026: findings and the workaround posted upstream
 including that the search field only appears for lists longer than 25
 entries, with an AI-assistance credit.
 
+**Upstream posts list and reply check (owner, 26 November 2026, go):** every post we make upstream is listed with
+why, the P item, the register entry and a log of every check and follow-up, and checked for replies until we stop
+using that project (also a working-agreements rule for all projects). Built on public branch `p35/upstream-posts`:
+`docs/upstream-posts.json` and `.md` (11 public posts), `tools/upstream_posts.py` (read-only check; finds replies,
+state changes and posts the list lacks; `check --gh --record` at every session start), the daily upstream watch
+reports new replies once (`YYYY-MM-DD-posts.md`), tests, `AGENTS.md` rule. The private report (frappe_docker
+advisory) is in `docs/upstream-posts-private.md` here. First check, 26 November: Collabora's maintainer had replied on
+24 November (confirmed our analysis, passed to the Calc developers); Coolify fixed our bug the same day (commit
+`8dbaecc`; remove the COOLIFY-1 workaround once a release we run carries it, then say so on the issue); the rest
+waiting. **Open (owner):** Collabora, which we no longer use (P42): a one-line thank-you and stop watching, or stop
+watching without a post.
+
+**Open-source list (owner, 26 November 2026, go):** every open-source project we use, borrow from or evaluate is in
+public `docs/open-source.json` (62: 47 in use, 14 being evaluated, 1 retired; licences read from GitHub the same day).
+The README acknowledgements are generated from it, and a test keeps it in step with the upstream watch and
+`modules.json` (public PR #97, branch `p35/open-source-list`; working-agreements rule on PR #3). Found: the README
+thanks had fallen behind (the monitoring stack, backup tools, CoreDNS, frappe_docker, the hosts' software were
+missing); `owncloud/web` was archived upstream on 23 November 2026 (ocis carries the web client; where development
+continues: to verify); `ocis-konnectd` archived since 2020. Gap kept visible: the mobile app's dependencies are
+credited but not in the daily watch.
+
 ### P40 — Backup hardening against ransomware
 
 **App:** general · **Also touches:** none · **State:** in progress
@@ -192,7 +225,7 @@ sign-in.
 
 ### P46 — TrueNAS as network video recorder (NVR)
 
-**App:** general · **Also touches:** none · **State:** open
+**App:** general · **Also touches:** none · **State:** in progress
 
 **Status:** planned, owner request 19 November 2026. Besides the test VM and
 the backup storage, the TrueNAS server records IP cameras that stream over
@@ -205,6 +238,23 @@ storage sizing, and the hardware: larger disks, more RAM, Coral. Keep it
 isolated from the backup storage and the test VM (separate dataset, quotas,
 no access from production), and include the recorder configuration in this
 repository as its own module.
+
+**Trial (owner, 26 November 2026):** a proof of concept with one camera on the
+local network; capacity and remote sites are not in scope yet. Frigate 0.18.3
+(MIT, re-verified) from the TrueNAS catalogue, detection with OpenVINO on the
+processor (the host has no graphics chip), recordings in their own dataset with a
+100 GiB quota, the web page with its login on the local and private networks only.
+Coral is dropped: Frigate no longer recommends it for new installations. Settings
+in the `integrations/frigate/` module; Frigate is in the daily upstream watch. The
+owner installs the camera (an Annke I51DS) later.
+
+**Long-term placement and hardware (owner, 26 November 2026):** backups and the Frigate NVR stay on a local server
+(the TrueNAS host), because video processing (detection on an accelerator) cannot run on the VPS; the test VM may
+move to the VPS if required. Long-term TrueNAS upgrade: (i) more RAM; (ii) four 8 TB hard disks; (iii) a detection
+accelerator, which the owner named as Coral. Note for the hardware choice: the trial above dropped Coral because
+Frigate no longer recommends it for new installations; choose the accelerator Frigate recommends at purchase time
+(for example an Intel graphics chip with OpenVINO, or a Hailo card) and record the choice. Disk layout, redundancy
+and the split between backup and recordings are decided with the purchase.
 
 ### P48 — Remote branch router and gateway firewall
 
@@ -220,6 +270,21 @@ logging, filtering, licence and cost. Activity logging must follow the
 applicable law (for example India's IT Act and the Digital Personal Data
 Protection Act: notice to users, purpose, retention, access control); define
 that policy with the owner before enabling it.
+
+**Hardware choice (owner discussion, 26 November 2026; prices from Indian listings that day, agent estimates):**
+- **Box:** a fanless mini PC with an Intel N150 (or N100) processor, 4 Intel i226-V network ports (not Realtek:
+  FreeBSD's drivers are less reliable), 8 GB RAM and a 256 GB NVMe SSD; about ₹18,000–22,000 per site; a seller
+  with an Indian warranty. Many units are sold without RAM and SSD.
+- **System:** OPNsense (needs an x86 processor) for DHCP, DNS, firewall and the mesh gateway; spare ports for a
+  separate camera network or a second internet line.
+- **Wipe on arrival:** install OPNsense fresh; never use a preinstalled system.
+- **Addresses:** every branch and the NVR site get their own LAN range; the mesh cannot route between sites that use
+  the same range.
+- **To check before buying:** the OPNsense Tailscale plugin (`os-tailscale`, community-supported) must sign in to our
+  own Headscale (P29), not only hosted Tailscale; it creates no firewall rules (interface and rules added by hand);
+  licence, maintenance and security review per the adoption rule.
+- **Owner decision:** trial the box on hosted Tailscale now and move it to Headscale later, or wait for P29.
+- The box also carries the project's cameras that can be wired back to it (P88).
 
 ### P57 — The platform survives restarts and reboots without an outage
 
@@ -284,51 +349,83 @@ editor-bridge check on production~~ done 22 Nov (PR #23, `85c3f01`);
 (2) ~~port 587~~ removed 22 Nov; (3) ~~worker settings drift~~ not drift (the file is written once and kept by design;
 release log 22 Nov); (4) repeat the reboot drill on the VPS after the test move; (5) ~~a planned production reboot~~ done 22 Nov 00:55 UTC: everything came back by itself (release log).
 
+**Reboot of 26 November 2026, 15:30 UTC: one container did not come back (owner: record it here).** After an
+operator's reboot of production (new kernel), `p72-observability-prometheus-1` stayed down: clean exit 0 at
+15:30:05 UTC, not out of memory, restart policy `unless-stopped`. Its five siblings in the monitoring stack (same
+policy) and the other 33 containers came back. Found 16 minutes later by chance (P97 session); started by hand at
+15:56:02 UTC on the owner's yes (receipt `production-prometheus-started-after-reboot-20261126`); metrics from 15:30
+to 15:56 UTC are missing and no metric alert could fire in that time. The monitoring stack (P72) was added on
+24 November, after the reboot drills, so it has never been through one.
+**Likely cause, not proven:** Prometheus stops within half a second of the stop signal, so Docker recorded it as
+exited before the Docker service itself stopped, and `unless-stopped` does not start a container recorded as
+stopped when Docker starts again.
+**Open follow-ups (nothing started; owner's go needed):**
+(6) lasting fix through the repository and the test site: restart policy `always` for the monitoring stack (or
+another start-at-boot guarantee), then reproduce with a reboot of the test VM to prove the cause and the fix;
+(7) the boot check counts the containers that were running before the reboot and reports any that did not come
+back, on test and production, with an alert that does not depend on Prometheus;
+(8) check the other stacks for services that stop as fast (same risk); (9) the reboot drill list names the
+monitoring stack.
 
-### P59 — Promotion plan and drift check: no stack left behind
+**Follow-ups 6 to 9 built and tested on the test VM (owner's go, 26 November 2026, night; public PR #112, receipt
+`p57-test-boot-counts-containers-f971f54`):**
+- **Cause:** not reproduced. A reboot of the test VM brought back throwaway copies of Prometheus with
+  `unless-stopped`, `always`, and `unless-stopped` with a slow stop. Production could not be read from this session.
+  So the fix does not depend on the cause.
+- **Fix:**
+  - The watch saves the running containers. After a reboot the boot check starts each one that ran before
+    (`always` or `unless-stopped`) and is still down after a minute, once, and fails on anything still down.
+  - It mails the admin through a dedicated sender when it repaired or failed something.
+  - The monitoring stack uses `restart: always`.
+  - Exporter-only hosts remove the central containers instead of keeping them stopped. On the test VM the four
+    pilot leftovers were removed; their volumes are kept.
+- **Second reboot with the fix:** the boot check started a deliberately lost container once (76 s after boot) and
+  passed.
+- **Follow-up 8 (other stacks):** on test every container with a restart policy came back. The boot check's start
+  now covers any stack that does not.
+- **Follow-up 9:** the reboot checklist names the monitoring stack.
+- **Open:**
+  - Production promotion (host check, monitoring policy) and the dedicated SMTP-only alert sender on production
+    mail with the admin as recipient. Both need production access and the owner's go.
+  - The restart watch reports the editor bridge's normal start-up retries after every boot (small follow-up).
+- **Merged** as `f5ac9ec` (PR #112, 26 November 2026, 18:30 UTC). **On production** since 26 November 19:07 UTC (owner's go, 27 November IST).
 
-**App:** general · **Also touches:** none · **State:** open
-
-**Status (24 November 2026):** PR #35 delivered the planner and checker. The VPS nightly
-check is enabled. PR #62 passed on the isolated VM, merged at `2e8b112` and is deployed
-on the VPS. Both the website and the ERP favicon match their live files. The drift report
-remains open. The independent baseline in `deployment/promotion/README.md` confirms the
-website render, Drive bridge networks, and DMS shutdown timeouts already match the relevant
-changes. ERP and editor have stack-specific changes to promote through their own releases.
-Mail's saved profile needs to preserve the live display name. Identity provenance belongs
-with the P49 cutover. The PR #32 Frappe security release is now deployed and its
-verified production ERP core is archived. Later ERP app changes remain in their own
-release scope. **Why:** on 21 November the production ERP swap for `3a93de8`
-missed the website stack (Employee Zone single-click fix): the test deploy script
-re-renders every stack, but production stacks are promoted by hand from separate
-profiles (ERP in `p37`, website, Drive, Mail, DMS and identity in `p45`), and nothing
-says which stacks or live settings a merged change reaches. It was caught only because
-the assistant checked afterwards, and an earlier statement that one ERP swap carried the
-fix was wrong. The same release also had manual pieces outside the image (bootstrap
-step, live authentik brand), and PR #12 adds an ONLYOFFICE restart.
-
-**To build (branch, test, merge, production):**
-1. `tools/promotion_plan.py <from> <to>`: from `modules.json` and the stack ownership,
-   list every stack, bootstrap step, live setting (authentik brand, flows) and restart
-   that the changed files reach, and what cannot be covered by test. The pull request
-   must carry this list before merge.
-2. Drift check on production (`tools/` plus a nightly timer, like the host checks in
-   P57): compare the commit each stack runs (ERP image tag, website/Drive/Mail/DMS/
-   identity profile commits and registered definitions) with `main` for the files it
-   owns; report any stack that is behind, and fail loudly. Run it after every promotion
-   and nightly. Include a check that served content matches (for example the landing
-   page script and the ERP favicon hash).
-3. `AGENTS.md`: a promotion is not finished until the drift check is clean, plus a
-   `docs/decisions.md` entry (what and why).
-4. Keep the nightly image cleanup from deleting `erp-core` (a rebuild costs about 20
-   minutes at every ERP release): tag-protect it or build the add-on from a pinned
-   copy.
-Related: P57 (reboot and post-boot checks), the release checklist in
-`docs/production-moves.md`.
+**Production (owner's go, 27 November 2026, IST; release log of that night):**
+- Boot check from `f5ac9ec` installed; monitoring stack on `restart: always` without a restart; boot check by hand passed.
+- Dedicated SMTP-only alert sender `smtp-host-alerts` created on production mail (send-as `noreply`, allowed only from
+  the VPS's tailnet address); recipient: the owner's mailbox (owner's choice). No mail sent yet.
+- **Follow-up 10 (found during the promotion; owner chose the repository fix):** the VPS cannot reach its own mail
+  server under the certificate's name. Public PR **#117** adds `host_checks.alert.address` (connect to the tailnet
+  address, certificate still verified for the name); on the test VM at `84c578e`, CI passed. **Done:** merged as
+  `e82f0f2`; on production from main `b4fdae5` (26 November 19:19 UTC): alert section and Prometheus (owner: yes) in
+  the boot check, one test alert mailed to the owner; **the owner confirmed it arrived** (27 November).
+- Not covered: a production reboot with the new check (proven on the test VM).
 
 ### P62 — Daily upstream watch: new releases, security flaws, patches, upgrade decisions
 
-**App:** general · **Also touches:** none · **State:** open
+**App:** general · **Also touches:** none · **State:** in progress
+
+**Installed on the test VM (26 November 2026, owner go):** read-only clone of public `main` in
+`<server path>` (`47da25e`), profile `<server path>` (coolify 4.7.5 and rustfs 1.0.4
+as recorded for production; docker 29.10.0, tailscale 1.104.7, ubuntu 24.04, linux 6.8.0 and traefik 3.7.19 read on the
+test VM; **truenas, restic and production's own traefik version not yet entered**: this PC has no production key and
+the TrueNAS host key did not match, so the connection was refused and not overridden), service and timer from the
+examples without the GitHub token lines, timer daily 06:30 IST. First run with a guessed traefik 3.7.0 reported 4
+urgent Traefik advisories; the test VM actually runs 3.7.19, which fixes them, so the profile was corrected and the
+output reset. The second run had no urgent finding but 53 source errors: GitHub's limit for requests without a token
+(60 an hour). **Remaining:** a read-only GitHub token on the test VM (owner creates it; the service lines are then
+restored); production's traefik, TrueNAS and restic versions in the profile; confirm production traefik is at or above
+3.7.15; digests into this repository (`docs/upstream-watch/`); one week of digests reviewed and the false-positive list;
+then close.
+**Token in place (26 November 2026):** the owner installed a fine-grained read-only token (root-only file on the test
+VM); the service uses it. Full run: 0 source errors, 56 open findings, none urgent; baseline saved as
+`docs/upstream-watch/2026-11-26-baseline.md`. **One "upgrade now":** Traefik 3.7.19 (Coolify proxy, public),
+GHSA-3rh5-223h-cpwr (unauthenticated memory exhaustion in the Brotli compression), fixed in 3.7.20; the 3.7 line reached
+end of life on 23 November. Raised to the owner; production's Traefik version still to be read. **Exposure:** part of
+the token's text appeared in a screenshot in the agent conversation; rotation recommended to the owner. **Closed (owner,
+26 November 2026):** the owner had already replaced the key; the exposure is closed. Check without reading the key:
+the last run (26 November, 14:04 IST) had 0 source errors; whether it already used the new key is not recorded. The
+next scheduled run (27 November, 06:40 IST) is the first known to use it.
 
 **Status:** open, owner request 21 November 2026; not started. **Why:** the whole stack is
 open source and pinned (ERP core and apps, authentik, Drive, ONLYOFFICE, Stalwart, Bulwark
@@ -372,7 +469,6 @@ advisory check (the watch was still a plan); the owner's rule "security before f
 that check for every promotion (working agreements, `AGENTS.md`, decision log). **Upgrade:** the colleague's agent was
 asked to prepare the Frappe upgrade on a branch (release notes and advisories reviewed, compatible app versions,
 tests); building the ERP image, the test site and production stay with the maintainers, each on the owner's go.
-
 
 ### P67 — Test deployments: one complete step, no hand-run pieces or drifting profiles
 
@@ -591,9 +687,107 @@ TrueNAS answers.
 no secrets in dashboards or alert texts; licences of Grafana, Loki (AGPL) and Prometheus (Apache) recorded; set up from
 this repository as a module (stack files, config, README), branch, test, owner go, like every other stack.
 
-### P73 — Matrix as federated messaging between tenants
+**Alert delivery (owner, 26 November 2026, late evening):** the **admin** receives the alerts (no longer only the
+owner; phone delivery as decided above), and the person with authentik admin rights also sees alerts and exceptions
+in a widget on their Desk (scope added to P53). Who watches daily: the admin (P96, SOP F5). Sign-ins from unusual
+places or networks (P82) reach the admin the same way: on the widget, by mail, or both.
 
-**App:** general · **Also touches:** none · **State:** open · **Category:** long-term plan
+**Taken up (owner's go, 27 November 2026), with the admin part of P53: one alert inbox for the admin.**
+- **Inbox:** one alert inbox in ERP. Each alert records its source, server, severity, title and detail (no secrets),
+  first and last seen, and a repeat count. A repeat updates the same alert. When the problem clears, the alert
+  resolves itself.
+- **Sources:** every check sends to it through one shared sender, with a separate key per server that can only
+  create alerts:
+  - boot check and restart watch;
+  - HTTPS and certificate probes;
+  - backup monitor and audit, and the restore drill;
+  - drift check;
+  - editor file safety;
+  - the upstream watch's "upgrade now";
+  - later, P82's unusual sign-ins.
+- **Who:** people with the admin role (from the sign-in admin group). Set in the deployment profile, not in code.
+- **Desk:** the alerts widget and the monitoring links panel are in P53.
+- **Mail (owner: "yes, mail as well as desk"):** at once for serious alerts (a site down, a failed backup, a
+  certificate under 14 days), and one daily summary for the rest. It uses P57's alert sender.
+- **Fallback:** when ERP is down, the servers mail the admin directly. Production and the test VM keep watching each
+  other.
+- **Order:** test site first, then production. Follows the working-agreements rule "What every project's system
+  has" (4).
+
+### P73 — Federated chat (Matrix or XMPP) in the mobile app, replacing Raven
+
+**App:** general · **Also touches:** mobile, raven, erp, signin · **State:** open · **Category:** long-term plan
+
+**Owner, 27 November 2026, evening: all at once and now.** Production is not in real use yet, so there are no live
+chats to move. Raven's removal with the notification service (P108), Matrix chat (P73) and the light mail client
+(P109) start now, in parallel. The agent had recommended deciding all together but building the app parts after
+attendance and approvals, because the same app developer builds Phase 1 to 3; the owner chose parallel work and
+accepts that risk.
+
+**Matrix now (owner, 27 November 2026, evening):**
+- **Server: Synapse** with the **Matrix Authentication Service** (MAS) signing in through authentik: the proven
+  route for an outside sign-in service (MAS works only with Synapse today). Lighter servers (Tuwunel, continuwuity)
+  stay on record as alternatives. Synapse needs about 1 to 2 GB of memory at minimum: check room on the test VM and
+  the production server first.
+- **App library:** Matrix's Rust SDK through its Kotlin bindings (Apache-2.0). Element X Android's screens may be
+  reused (AGPL-3.0-only, compatible with this repository's AGPL; reused files keep their notices).
+- **Company rooms unencrypted** so the company can keep, search and export them (record keeping); direct messages
+  the same unless the owner decides otherwise.
+- **ERPNext bot:** posts document events and approvals into the right rooms, rooms per project or site, people and
+  groups from ERPNext and authentik.
+- **Server name (owner, 27 November 2026, evening): `chat.<company domain>`**, so addresses are
+  `@name:chat.<company domain>`. Chosen over the bare domain (which would tie chat to the website serving two
+  well-known files for ever): the chat server stands on its own address, separate and replaceable. The name can
+  never be changed afterwards, so production starts on the company domain people keep (P70's split), not the demo
+  domain. The test server has its own throwaway name.
+- **Chat name (owner, 27 November 2026, night): `firstname.initial`**, with a number on a clash (`rajesh.d`, then
+  `rajesh.d2`); made once at onboarding, never changed and never reused; addresses are `@rajesh.d:chat.<domain>`.
+  The sign-in user name stays the full mail address (which Matrix does not accept as a name). The sign-in service
+  holds the chat name as a user attribute `chat_name` and gives it to the chat sign-in as a claim; without it a
+  person cannot sign in to chat. The sign-up service (P82) generates it; until P82 is built it is set by hand.
+- **Every new server part gets** monitoring, backups and a test copy from the first deployment (working agreements).
+- **Progress (27 November 2026, night):** the stack is public PR #139 (`p73/matrix-stack`, `9890da2`) and runs on the
+  test VM since 14:41 UTC (receipt `p73-test-chat-stack-9890da2`), with sign-in set up in the test sign-in service.
+  Not reachable from outside until #139 is on main and the production relay carries the two test names. Not built:
+  the push gateway, the ERPNext bot and rooms, monitoring, backups and the drift check for the stack, the production
+  route file.
+- **First step:** the adoption check (licence, maintenance, security history, how fixes are published) for Synapse,
+  MAS, the Rust SDK and the push gateway, recorded in the decision log; then Synapse and MAS on the test site.
+
+**Owner, 27 November 2026 (amends the plan below):** **Matrix**, not XMPP, as the internal chat, built into the
+native app (P50) later. Raven is removed from ERPNext **before** this chat exists (P108), so step 4 below becomes "use
+the Raven export from P108", and "run both for a period" no longer applies. The app is now native Kotlin, so the
+client library to check is Matrix's Rust SDK through its Kotlin bindings (as Element X Android uses it; licence and
+maturity to verify), not the React Native packages in the first findings.
+
+**Plan (owner, 26 November 2026; replaces the "idea" below as the goal):** replace Raven with a federated chat
+(Matrix or XMPP), built into ERP Mobile as its Chat tab (P50), and retire Raven once the new chat carries the work.
+It must keep what Raven gives today inside ERPNext: the same users and roles (authentik sign-in), sharing ERP
+documents, document-change and approval messages, and company record keeping.
+
+**What:**
+1. **Choose the protocol and server** on the test site: Matrix (servers Synapse, continuwuity or Tuwunel; sign-in with
+   authentik through the Matrix Authentication Service) or XMPP (servers Prosody or ejabberd; lighter to run). Compare:
+   a usable client library for the app (React Native) under a licence that allows commercial use, sign-in with
+   authentik, push to phones (P14), federation, encryption against company record keeping (encrypted rooms cannot be
+   archived or searched by the company), retention and export, running cost, security history.
+2. **ERPNext integration:** messages for document changes and approvals, sharing a document into a chat, the people
+   and groups from ERPNext.
+3. **Chat in the app:** the Chat tab, chats per project or site, files through Drive (not stored twice; see P16),
+   push.
+4. **Move from Raven:** decide whether old Raven messages are moved, archived or kept read-only; run both for a
+   period; then retire Raven and close the Raven items it makes redundant (owner decides each).
+
+**First findings (26 November 2026, public sources, not verified):** the community package `react-native-matrix-sdk`
+is unfinished and limited to non-commercial use, so it is not usable; the app would use Matrix's official libraries
+(JavaScript, or the Rust SDK through native bindings: maturity to check). For XMPP, React Native libraries exist but
+are small; check maintenance. **Agent recommendation:** compare both on the test site with the checks in step 1, with
+Matrix as the first candidate for its apps, bridges and federation, and XMPP if running cost and simplicity weigh more.
+
+**Owner decisions needed:** federation from the start or later; encryption policy for company rooms; what happens to the
+Raven history; priority (the item stays a long-term plan until the owner ranks it).
+
+**Earlier idea (22 November 2026):**
 
 **Status:** owner idea, 22 November 2026; recorded as a long-term plan, not scheduled. Nothing starts until the owner
 decides.
@@ -619,4 +813,515 @@ one ERP site) cannot do.
 
 **To decide when taken up:** the goal (between tenants only, or the default chat), the server software, encryption
 policy for company rooms, calls, bridges, where it runs, and the effect on mobile plans.
+
+### P85 — Unformat brand public as the default; client brands supplied privately
+
+**App:** general · **Also touches:** portal, mobile, erp, signin · **State:** in progress
+
+**Progress (26 November 2026):** trademark owner: example.com (owner). Public PR #87 (`p85/unformat-brand`, head
+`afd74c4`): `branding/unformat/` (logo, favicons with metadata stripped, `brand.json`), guide and trademark note, the
+build's default logo and favicons and the front page's default title and name are Unformat, copyright "Copyright ©
+2026 example.com". CI passed (55 suites, client identity clean). Not deployed to test: both sites supply their own
+branding (no visible change) and the test ERP runs #77 for the colleague's phone test. **Remaining:** owner merges
+#87; then the mobile step (app name, app ID `in.unformat.erp`, icons from `brand.json`), agreed with the colleague
+because it touches the mobile module and the test sign-in link scheme.
+
+**Why (owner, 26 November 2026):** about 95% of the work is public and only what licences, copyrights and clients
+require stays private. Our own brand, Unformat (name, "UN" logo, favicons, app icon, colours), is published as the
+default look; users can always replace it. Clients' brands stay private and are supplied when deploying or building.
+
+**What (owner go 26 November 2026):**
+- A `branding/unformat/` folder in the public repository with the logo, favicons, app icon and a brand file (name,
+  colours, app ID such as `in.unformat.erp`); builds use it unless a deployment supplies its own (deployment
+  profile for the portal logo and favicons, build settings for the app's name and ID, as `mobile/app.config.ts`
+  already allows).
+- A "Replace the branding" guide in the README.
+- A trademark note: the code is AGPL-3.0; anyone shipping it as their own product replaces the name and logo.
+- Copyright notice in `README.md` and `LICENSES.md`: "Copyright © 2026 example.com", nothing else (owner,
+  26 November 2026), instead of "Unformat and contributors". The public P list rules replace this domain with a
+  placeholder, so the public copy of this line shows the placeholder until the rules separate the brand domain from
+  host names. Note: outside contributors keep the copyright in their
+  own contributions unless they assign it; a contributor agreement would settle that (owner decision).
+- Production details that are not branding (host names, addresses, the live sign-in policy and group names) stay
+  replaced by placeholders in the public P list.
+
+**Owner input needed:** who owns the name "Unformat" (the owner personally or a company) for the trademark note.
+
+**Acceptance:** a build without private brand settings shows the Unformat brand; a build with a client's profile shows
+only the client's brand; the guide's steps work on the test site; the copyright and trademark notes are in place.
+
+**Related:** P84 (client identity), P50 (per-brand app builds), P63 (demo brand), P55 (tenant logo through the
+private profile).
+
+### P88 — Project camera sites connected to the NVR over the mesh
+
+**App:** general · **Also touches:** mobile · **State:** open
+
+**Why (owner, 26 November 2026):** every project has cameras (outdoor PTZ, at security and elsewhere) that must reach
+the remote NVR (P46) over the mesh, so they can be recorded and watched in the app (P87). The test starts with the
+Annke camera of the P46 trial.
+
+**Design:**
+- **Default:** cameras are wired back to the project's indoor switch; the P48 gateway box carries them to the NVR.
+- **Only where a camera cannot be wired back:** an outdoor kit at the camera, powered from the camera's own PoE line:
+  Raspberry Pi Zero 2 W with the Waveshare PoE Ethernet / USB HUB BOX (with case; 802.3af, 100 Mbit/s, enough for
+  camera streams), a high-endurance microSD card, an outdoor 1-in-2-out PoE extender (IP66, 802.3at on both outputs)
+  and an IP65/66 junction box in the shade (heat is the main risk). About ₹5,000–6,500 per camera (Indian listings,
+  26 November 2026: Robocraze, Rees52, ThinkRobotics, IndiaMART; agent estimate).
+- **PoE power budget:** PTZ cameras usually need 802.3at (about 25 W) or more with heaters or IR; the switch port must
+  supply the camera, about 2–3 W for the Pi and the extender's loss; otherwise an 802.3bt port or a separate feed.
+- The NVR site is on the mesh itself (P46).
+
+**Not known yet (owner, 26 November 2026):** the number of cameras per project and how many can be wired back; counted
+per project at each site survey, which then gives that project's parts list.
+
+**Order:** the Annke test with P46; then one outdoor kit with one camera and the NVR; then per-project rollout.
+
+**Acceptance:** a camera behind the gateway box and one behind an outdoor kit record on the NVR and play in the app;
+the kit survives a hot day in its box (temperature logged).
+
+**Related:** P46 (NVR), P48 (gateway box), P29 (Headscale), P87 (videos in the app), P72 (monitoring).
+
+### P90 — Traefik security upgrade: pin Coolify's proxy to 3.7.20
+
+**App:** general · **Also touches:** none · **State:** in progress
+
+**Why (upstream watch, P62; owner "sort out traefik", 26 November 2026):** GHSA-3rh5-223h-cpwr (high, unauthenticated
+memory exhaustion in the Compress middleware) plus two medium advisories affect Traefik 3.7.19, the public proxy in
+front of every site; 3.7.20 fixes them. Coolify's moving `traefik:v3.7` tag made the running version depend on the last
+pull.
+
+**Done:** public PR #91 (`p90/traefik-3.7.20`, head `6ee9201`): pin file, `tools/coolify_proxy_image.py`, tests; CI
+passed. Test VM pinned and restarted 26 November 14:09 IST: 3.7.20 running, networks kept, 7 hosts unchanged
+(receipt `p90-test-traefik-3-7-20-6ee9201`); upstream watch profile set to 3.7.20.
+
+**Production (26 November 14:22 IST, from the owner's Mac):** #91 merged (`45c2ec0`); production was on 3.7.19 (moving
+tag); `--restart` from main `45c2ec0`: 3.7.20 running, network kept, 18 hosts unchanged on the server and from outside,
+compose differs only in the image line (receipt `p90-production-traefik-3-7-20-45c2ec0`; rollback
+`<rollback folder>`; production releases, 26 November).
+
+**Remaining:** owner's browser check of the main sites; then move to the 3.8 line once it has a patch release (3.7
+reached end of life 23 November).
+
+### P89 — Register of our changes to upstream apps, and an upgrade checklist
+
+**App:** general · **Also touches:** erp, portal, signin, drive, editor, mail, dms, raven, mobile · **State:** in progress
+
+**Why (owner, 26 November 2026):** we customise many upstream apps (build-time patches, hook overrides, menu and
+style overlays on their screens, proxy rules, objects created in admin screens, workarounds for their bugs). The
+records are spread over the decision log, the retained record, handovers and the code, so nobody can see in one place
+what must be re-applied or re-checked when an app is upgraded. Changes easily get lost, especially settings made by
+hand that no code reproduces.
+
+**What (owner go 26 November 2026):**
+- Public `docs/upstream-customizations.md`: an upgrade checklist, then one entry per change grouped by upstream app:
+  what and why, how it is applied, files, the version it was made against, the upgrade action (**re-apply**,
+  **re-check** or **none**), how to test it, the upstream issue link and whether it is a workaround to retire.
+- Private companion `docs/upstream-customizations-private.md` here: the parts that need host names, server paths,
+  client identity or live object names (manual live settings, the client brand). It links to the public entries and
+  does not repeat them.
+- Rule in the public `AGENTS.md`: a pull request that changes or starts depending on upstream behaviour updates the
+  register in the same pull request; an upgrade (a version change in `deployment/upstream-lock.json` or an image pin
+  in `deployment/upstream-watch.json`) walks that app's entries and records the result in the pull request.
+- Same rule for every project in the working agreements.
+- First version built from the code, the decision log, the retained record and the private records; anything not
+  confirmed from them is marked "to verify", not guessed.
+- Not now (owner agreed with the recommendation): a CI check that warns when a pull request touches the patch or
+  override files without the register; take it up once the register has settled.
+
+**Acceptance:** every build-time patch, hook override, screen overlay and known manual live setting has an entry with
+an upgrade action; the next upgrade pull request uses the checklist; the rule is in both instruction files.
+
+**Related:** P62 (upstream watch: its `workaround` fields point to register entries), P59 (promotion plan and drift
+check), P84 (no client identity in the public register).
+
+**Upstream posts (26 November 2026, owner go; account rdavuluri44; now tracked in the public list, P35):**
+- owncloud/ocis#3832 comment: https://github.com/owncloud/ocis/issues/3832#issuecomment-7186892628
+- ONLYOFFICE/DocumentServer#3954: https://github.com/ONLYOFFICE/DocumentServer/issues/3954
+- coollabsio/coolify#12667: https://github.com/coollabsio/coolify/issues/12667
+- frappe/frappe#48437 comment (`?cmd=` on any path; not a Frappe vulnerability, hardening): https://github.com/frappe/frappe/pull/48437#issuecomment-7186893154
+- shridarpatil/frappe_whatsapp#257 comment (already public with an open fix): https://github.com/shridarpatil/frappe_whatsapp/pull/257#issuecomment-7186893657
+- goauthentik/authentik#16049 comment: https://github.com/goauthentik/authentik/issues/16049#issuecomment-7186894135
+- goauthentik/authentik#14304 comment: https://github.com/goauthentik/authentik/issues/14304#issuecomment-7186894885
+- goauthentik/authentik#28187 (authenticatorAttachment to policies): https://github.com/goauthentik/authentik/issues/28187
+- goauthentik/authentik#28188 (per-user session limit): https://github.com/goauthentik/authentik/issues/28188
+- **Private** frappe_docker advisory report GHSA-2qf7-29hw-ch4q (Origin overwrite disables Frappe's realtime Origin
+  check; severity low; state triage): https://github.com/frappe/frappe_docker/security/advisories/GHSA-2qf7-29hw-ch4q
+  (do not link from public files).
+
+**Progress (26 November 2026):** first version written, 102 public entries and the private companion; rule added to
+both instruction files. Public PR #86 (branch `p89/upstream-customizations`), private PR on the branch of the same name,
+working-agreements PR on `upstream-customization-register`. Open questions found are listed at the end of the public
+register and in the handover; none of them is changed by P89.
+
+### P91 — Upgrade checks that cannot miss a changed upstream file; upstream watch gaps
+
+**App:** general · **Also touches:** erp, editor, mail, signin, drive, dms · **State:** in progress
+
+**Why (found 26 November 2026, P89):** some of our patches are applied in a way that an upgrade can silently
+undo: six of the seven text replacements on frappe_docker's Containerfile and two replacements in the Insights
+patch do nothing when the upstream text changes; the ONLYOFFICE patched start page is checked only against our stored
+copy of the original, not against the file in a newly pinned image, so an image bump alone passes CI; the webmail
+overlay is not tied to its base commit. The upstream watch has `workaround` notes only for Insights, Bulwark and
+ONLYOFFICE, and does not watch the six monitoring images.
+
+**What (owner go 26 November 2026):**
+- Every Containerfile replacement and every Insights replacement must find its target or stop the build.
+- ONLYOFFICE: a record ties the stored original start page to the image digest; CI fails when the digest changes
+  without the record; a tool extracts the original from a new image during an upgrade.
+- Webmail: the upstream checksum of every file we replace is recorded against the pinned commit; CI fails when the
+  commit changes without the record; a tool refreshes it from a clone.
+- Upstream watch: `workaround` notes for authentik, oCIS, Stalwart, Paperless, Coolify, Traefik and Tailscale
+  pointing at register IDs; the monitoring images added.
+- Register entries updated in the same pull request.
+
+**Release (owner, 26 November 2026):** the generated build files are shown byte-identical before and after, instead
+of a test-site rebuild; nothing that runs changes.
+
+**Acceptance:** each check fails on a deliberately changed upstream text, digest or commit and passes on the pinned
+one; build output byte-identical; watch tests pass.
+
+**Related:** P89 (register: BUILD-1, INSIGHTS-1, OFFICE-1, WEBMAIL-1), P62 (upstream watch).
+
+**Progress (26 November 2026):** built in public PR #88 (`p91/upgrade-checks`, `78e0142`), CI passed. Byte-identical
+proof: generated Containerfile sha256 `8c97d70cdb34` before and after; patched Insights 3.50.3 sources identical; the
+ONLYOFFICE original equals the start page extracted from the pinned image on the test VM (stopped container, removed);
+the webmail base check passes on a clone of the pinned commit. The ONLYOFFICE version (P92's item) was corrected here.
+Waiting for the owner's merge (after #86).
+
+### P92 — Out-of-date Collabora material, ONLYOFFICE version, WhatsApp entry, hosting provider's name
+
+**App:** general · **Also touches:** editor, drive · **State:** in progress
+
+**Why (found 26 November 2026, P89):** Collabora was retired with P42, but the Drive and deployment READMEs still
+tell readers to deploy it and the office ingress still guards Collabora admin paths; the ONLYOFFICE version is
+written three ways; the decision log describes a WhatsApp wrapper that was never built; public `docs/retained.md`
+names the hosting provider, which the P list rules treat as private.
+
+**What (owner go 26 November 2026):** remove the Collabora instructions; guard ONLYOFFICE's own admin paths if
+version 10 has any, otherwise remove the old rule (ingress change: through the test site); one verified ONLYOFFICE
+version everywhere; a correction note in the decision log (the wrapper is planned under P04, not built); replace the
+provider's name in `docs/retained.md` and add it to the automatic identity check. Git history left as it is (owner).
+
+**Acceptance:** no Collabora deployment instructions remain; office admin paths refused on test; one version string;
+the identity check fails on the provider's name.
+
+**Related:** P89, P84 (identity check), P42 (editor change), P04 (WhatsApp).
+
+**Progress (26 November 2026):** public PR #90 (`p92/stale-material`), CI passed. On the test VM (read-only): ONLYOFFICE 10
+has no admin panel; `/info` and `/internal` return 403 through the test proxy (ONLYOFFICE's own localhost rule; no
+real-IP trust), `/welcome/` returns 200. The provider's name is in `tools/client-identity-terms.private.txt` and its
+fingerprint in the public `.client-identity-fingerprints`. Still to do: deploy the test ingress from the branch and run
+the checks in the PR (needs a test-site slot, owner).
+
+### P94 — Bring production stacks back in line with main
+
+**App:** general · **Also touches:** editor, signin, portal, test-site · **State:** open
+
+**Why (owner, 26 November 2026, splitting the stack releases off P59):** after today's drift check, four stacks are
+behind main: merged changes were never released for them. The same check found dms, processing and private-dns on
+revisions from the pre-publication repository; a read-only comparison showed them identical to main in substance, and
+their recorded revision was re-linked to `33499fd` (receipt `p94-production-relink-dms-processing-dns-33499fd`; the
+unrecorded dms render is incident `incident-dms-unrecorded-render-fdf4a43`).
+
+**Per stack (each a normal release: promotion plan, test, rollback point, quiet moment, drift check clean after):**
+- **editor:** behind main (5 files, e.g. `deployment/stacks/editor-onlyoffice.compose.json`); release together with
+  P61's editor fixes (PR #34, #42) and safety tool.
+- **identity:** behind main (8 files, e.g. `deployment/stacks/identity.compose.json`).
+- **identity-support:** behind main (18 files, e.g. `deployment/stacks/inputs.json`).
+- **website:** behind main (3 files); with the P85 brand defaults once #87 is merged (production supplies its own
+  branding, so no visible change).
+
+- **mail (found 26 November 2026, night):** behind main by 2 files plus the three rendering tools: P91's build-time
+  webmail check (`tools/prepare_mail.py`, `integrations/mail/upstream.json`). It changes no running file: same
+  webmail commit and customisations, and the check passes against the pinned commit. Main's
+  `deployment/stacks/mail.compose.json` equals the released `bb546d7` (Stalwart 1.1.1). A render from `bb546d7`
+  and from main with neutral sample values gave the same mail definition (only the per-render generated values and
+  the output path differ) and the same mail policy file. **Owner's go for a re-link:** script
+  `deployment/promotion/p94/relink-mail.sh <main sha>`. It reads the recorded commit, stops unless only those six
+  files changed, saves the note, updates it guarded by the old value and reruns the drift check. **Done** (27 November
+  2026, 01:07 IST, from the Mac session with production access, owner's go): note set from `bb546d7` to main `9f1116a`
+  (main had moved on from `915228c` by P57 merges that touch no mail file); exactly the six expected files; nothing
+  restarted. Drift check: **mail clean**. Receipt `p94-production-relink-mail-9f1116a`.
+
+**First step for each:** run the promotion plan from the stack's recorded revision to main and list what users would
+notice. **Order:** owner decides. **Acceptance:** the nightly drift check is clean for every stack.
+
+**Rule (working agreements, 26 November 2026):** a merge is not a release; merged changes stay listed as "merged, not
+deployed" until released.
+
+**Progress (26 November 2026, afternoon):** website re-linked after a render comparison showed it identical (receipt
+`p94-production-relink-website-33499fd`). Evaluation of the rest (file checksums against the running containers):
+**identity** already runs main's authentik 2026.8.7 pin (the P83 image change left the Coolify note at `288993c`);
+still pending from PR #72 are the email wording and the first-administrator tool. **identity-support:** the invitation
+page differs from main (PR #72). **editor:** the editor page differs from main (P61, PR #33, #34, #42). The identity
+stacks have no copy on the test site (it signs in through production's authentik), so their release is tested on a
+throwaway authentik first, then applied to production at a quiet moment (authentik restart, install scripts).
+Follow-up: release steps must update the Coolify "Source commit" note automatically (the P83 slip).
+**Related:** P59 (tools, closed), P61, P85, P90.
+
+### P96 — SOPs for every manual procedure, written alongside the build
+
+**App:** general · **Also touches:** signin, mobile, erp, portal, drive, editor, mail, dms, raven, test-site · **State:** in progress
+
+**Why (owner, 26 November 2026):** the systems we are designing rely on people doing checks that no code enforces
+(for example removing a family member's fingerprint from a phone, or bulk onboarding a field team with one good
+phone). These need written standard operating procedures, kept up to date as the design changes. The SOP work runs
+in parallel with the build, not after it. The rule is also in the working agreements (all projects).
+
+**What:**
+- **Study first:** go through the decision log, the P list, the handovers and the runbooks, and list every step
+  that needs a person to act or check.
+- **One SOP per procedure:** purpose, who does it (by role: project manager, admin, HR, supervisor, owner), when,
+  what they check, what they record and where, and what to do when it goes wrong.
+- **Where:** the public repository holds the SOPs in `docs/sop/`, written for roles, not named people; the private
+  repository holds the client-specific parts (names, contacts, sites).
+- **Kept current:** every change that adds or alters a manual step updates its SOP in the same pull request.
+
+**First SOPs already known:** project manager's identity check at onboarding; confirming the phone holds only the
+person's own fingerprints and face, and removing family members'; re-onboarding after a lockout or erase; new, lost
+or replacement phone; bulk onboarding of a field team with one good phone (P95); the consent agreement and its
+withdrawal; leavers (remove the key, delete face data); exception group membership (Apple); the project manager
+clearing offline queues and uncertain matches; attendance approval; the owner's emergency sign-in link; admin
+approvals in authentik.
+
+**Acceptance:** every manual step found in the study has an SOP or is listed as deliberately left out with a reason;
+the owner reviews the first set.
+
+**Related:** P82, P95, P24, P50.
+
+**Progress (26 November 2026):** study done (decision log, P list, READMEs, runbooks, private records): 69
+procedures in ten areas and 18 gaps, published as the inventory in public `docs/sop/README.md` (PR on branch
+`p96/sop-first-set`), with the template and the first two SOPs (ERP Mobile onboarding; face enrolment and consent),
+both drafts that apply when built. Next: the gaps that need owner decisions, then the in-use procedures.
+
+**Second set (26 November 2026, night; public PR on `p96/sop-second-set`):** three SOPs for procedures in use
+today (invite a user; approve field attendance; release a change to production) and two for the settled gaps (when
+someone leaves, as a draft manual checklist until the automatic part of P82 is built; alerts and daily checks for
+the admin). Seven inventory rows now link to an SOP. Open points for the owner are listed in the leaver SOP (personal
+files, the leaver's mailbox, where the checklist lives) and in the invitation SOP (the identity check before a
+recovery invitation). Still to write: the remaining in-use procedures (inventory rows without a link).
+
+**Owner decisions of 26 November 2026, night (in the SOPs and the decision log):** recovery of a lost passkey only
+after the project manager checked the phone in person and confirmed in their app (until built: confirmed to the
+admin); leavers' personal files stay, and mailboxes are shared so nothing is redirected; rejected face captures
+keep their photograph for 30 days. Still open: who may open a leaver's files and for how long; where the leaver
+checklist and the admin's daily line are recorded.
+
+**Owner decisions on the gaps (26 November 2026, late evening):**
+- **Leavers:** the exit procedure in Frappe HR triggers removal of keys and purges all the person's data in the app
+  (P82, P95); SOP A14 to write.
+- **Where the biometric confirmation is kept, and the consent text and languages:** the agent prepares a proposal.
+  Prepared 26 November: the confirmation is given in the app with the employee's fingerprint and the project
+  manager's tick, stored by the sign-up service with the access request, kept while employed plus 3 years
+  (onboarding SOP); the face attendance agreement draft 1 is in public `docs/sop/face-attendance-agreement.md`,
+  for the lawyer. **Languages:** a proposal is in the private handover of 26 November (it names the region);
+  translations by a qualified translator, each checked by translating back. Owner to confirm.
+- **Monitoring:** the admin receives the alerts; the person with authentik admin rights also sees alerts and
+  exceptions in a Desk widget (scope added to P53).
+
+**Status:** in progress.
+
+### P102 — Admin tools: single sign-on by default, the tailnet as the backup door
+
+**App:** general · **Also touches:** signin, test-site · **State:** open
+
+**Why (owner, 27 November 2026):** easy everyday access to the admin tools, and a way in when the sign-in service
+(authentik) is down. This follows the working-agreements rule "What every project's system has" (3).
+
+- **Two doors per tool:**
+  - single sign-on for the admin group;
+  - one local administrator account, reachable only over the tailnet, with its password in the owner's password
+    manager.
+- **Tools:**
+  - Grafana (built-in SSO);
+  - Coolify on production and on the test VM (its own sign-in options; otherwise an SSO gate in front);
+  - TrueNAS (if it has no SSO for its screens: an SSO gate on one address, the direct tailnet address with its local
+    admin as the backup);
+  - Frigate (an SSO gate in front; the direct tailnet address as the backup).
+  - The test VM's SSH keys stay as they are.
+  - Check each tool's current SSO support before building.
+- **Rules:**
+  - admin tools are never published on the internet, even with SSO;
+  - the tailnet's own login never depends on authentik (also when Headscale replaces hosted Tailscale, P29);
+  - the backup door is tried at every quarterly recovery check (P41), with an SOP.
+- **Order:** after the admin alerts (P72 with P53); one tool at a time, test first.
+
+
+### P107 — User support: "Report a problem" in the apps, and an admin support desk
+
+**App:** general · **Also touches:** erp, mobile, portal, signin · **State:** parked
+
+**Status:** parked by the owner, 27 November 2026 ("we'll take this up later"). Nothing is built or decided beyond the
+owner's decisions below. Do not start until the owner says.
+
+**Why (owner, 27 November 2026):** support users without a remote-control tool. The owner first asked whether
+RustDesk (a free server with single sign-on) would help, then chose help built into the apps. Admin work has grown
+beyond a few Desk widgets: the admin needs one place to receive user problems, organise and track cases, keep a
+record of finished ones, and reach server alerts and logs.
+
+**Owner decisions (27 November 2026):**
+- **No RustDesk.** No paid tool ("paying is not an option").
+- **Not every user can be on the tailnet.** Field phones and some users stay off it.
+- **Help built into the apps is the way forward**, on the phone app and on the web app (desktops).
+- **An admin app is needed** for user complaints as well as server logs and alerts, "instead of just a few widgets
+  over the Desk".
+
+**What was found (research of 27 November 2026; re-check before taking this up):**
+- **RustDesk** (rejected by the owner):
+  - the free server (`hbbs`/`hbbr`, AGPL-3.0, version 1.1.16) only connects and relays devices: no user accounts, no
+    web console, no single sign-on, no audit log, and no documented browser client;
+  - single sign-on (OIDC) needs Server Pro "Basic", USD 23.88 a month billed yearly (10 staff, 100 devices);
+  - the browser client needs a plan with (staff × 10) + devices of 400 or more ("Customized", about USD 48 a month,
+    our own sum);
+  - commercial use is allowed (AGPL-3.0; Pro is licensed for internal business use);
+  - Android can be controlled (screen-capture and input permissions, granted again at every start); iPhones can only
+    control;
+  - 2026 security record: a batch of client CVEs in March (CVE-2026-30797 rated 9.3, some later lowered or
+    withdrawn), CVE-2026-57850 (fixed in 1.4.9), CVE-2026-58056 (fix not confirmed), CVE-2026-131827 (Windows local
+    privilege escalation, November, fixed);
+  - its server ports (21115 to 21119) would have to be public for users off the tailnet.
+- **Alternatives looked at** (not chosen):
+  - MeshCentral: Apache-2.0, free, OIDC with authentik, browser-based for the helper. 1.3.1 (October 2026) was an
+    urgent security update, released while servers were being actively attacked. Its server would have to be public
+    for users off the tailnet. Android agent abilities not confirmed.
+  - Apache Guacamole: Apache-2.0, browser-based RDP, VNC and SSH, OIDC (implicit flow). Suited to reaching servers,
+    not to helping users; no phones; last release 1.6.0 on 22 June 2025.
+- **Phones:** no remote-control app on workers' phones. Remote input on a phone that holds the ERP Mobile passkeys
+  (P82) could approve things in the app, and the phones may be personal.
+
+**What (proposal, to settle when taken up):**
+1. **"Report a problem" in the native Android app (P50):**
+   - a screenshot of the app's own screen (no special permission; other apps are never captured); the user sees it
+     and can blur parts before sending;
+   - diagnostics, shown to the user before sending:
+     - app version, Android version, phone model, network type, offline or not;
+     - the current screen;
+     - the last request IDs and their results (P103);
+     - the data-flow tracker state (P50 Phase 0);
+     - saves waiting to upload;
+     - a short app log with personal values removed;
+   - never sent: passkeys, sign-in tokens, passwords, face images or location history;
+   - sent with the user's own sign-in; queued when offline; a crash report offered at the next start.
+2. **"Report a problem" in the ERP web app (desktops):**
+   - in the Desk help menu: page, record, browser, user, recent browser errors, request IDs;
+   - the server adds its own error log entries for that user and time;
+   - screenshot: the browser's own "share this tab" prompt (recommended; accurate, no new library), with paste or
+     attach as a fallback; a page-redrawing library is not recommended (inaccurate, a new dependency);
+   - apps we did not write (Drive, the editor, webmail, DMS): no button inside them; the same form in ERP with a
+     choice of app, and a support mail address that opens a case; their server logs come from Loki.
+3. **The admin support desk: Frappe Helpdesk** (recommended over building our own):
+   - free and open source (AGPL-3.0 on the repository page; licence file not yet read), no paid self-hosted edition,
+     same framework as the ERP; a version-16 branch, v16.2.2 released 25 November 2026;
+   - an agent screen, a portal where users follow and reply to their case, statuses, assignment rules, response and
+     resolution targets, saved replies, a knowledge base, analytics;
+   - advisories: GHSA-xf93-jjcj-44vm (moderate, fixed in 1.26.0, September 2026); a breaking change in 1.31.1 fixed
+     agent-only fields set through the REST API; the install page still names the old `main` branch, so install the
+     version-16 branch;
+   - alternative on record: ERPNext's built-in Issue (statuses and response targets, a weaker agent screen, no user
+     portal).
+4. **Case flow:**
+   - a report becomes a ticket, with the screenshot as a private attachment and the diagnostics stored with it;
+   - the server adds its error log entries for the request IDs and a Grafana or Loki link filtered to that user,
+     time and request;
+   - assignment by app or type, with repeats grouped;
+   - the admin replies inside the ticket, and the user is told in the app and by mail;
+   - a bug is linked to a P item or a public issue with personal details removed;
+   - resolved, then closed, and kept as the record; analytics show what keeps going wrong.
+5. **One admin home: an "Operations" workspace in the ERP Desk for the admin role:**
+   - user cases (Helpdesk);
+   - system alerts (P72, public #134); critical alerts can also open a case;
+   - links to Grafana, Loki, TrueNAS, Coolify and Frigate;
+   - logs and metrics stay in Grafana and Loki, tailnet-only (P102), and are not copied into the public ERP;
+   - later, an admin section in the native app for alerts and cases.
+
+**Decisions for the owner when taken up:**
+1. Case system: Frappe Helpdesk (recommended), ERPNext Issue, or our own.
+2. Whether critical system alerts also open a case (recommended: yes).
+3. The web screenshot method (recommended: "share this tab", with attach as a fallback).
+4. How long screenshots and diagnostics are kept after a case closes (suggested: 90 days for attachments, case text
+   kept).
+5. Who handles cases: admin only, or also first-line helpers (HR for HR questions, supervisors for field problems).
+
+**How it is tested (when built):**
+- on the test site, report from a phone and from a desktop browser;
+- check that the ticket holds the screenshot and diagnostics and that nothing listed as "never sent" appears;
+- check that the server's evidence and the filtered log link are added;
+- reply, resolve and close, and check what the user sees;
+- check that a non-admin cannot see other people's cases.
+
+**Depends on / with:**
+- P103 (request IDs) first; P50 (native app);
+- P72 and public #134 (alert inbox); P53's admin part (becomes the Operations workspace); P102 (admin tools
+  tailnet-only).
+
+**When taken up:**
+- the adoption check for Frappe Helpdesk (licence file, maintenance, security history) in the decision log and the
+  open-source list;
+- a row in the working-agreements stack table (support desk);
+- SOPs for handling a support case and for screenshot privacy (`docs/sop/`).
+
+### P108 — Remove Raven from ERPNext; all messages through our own channels
+
+**App:** erp · **Also touches:** raven, mail, mobile, portal, signin, general · **State:** open
+
+**Owner, 27 November 2026, evening: all at once and now.** Production is not in real use yet, so there are no live
+chats to move. Raven's removal with the notification service (P108), Matrix chat (P73) and the light mail client
+(P109) start now, in parallel. The agent had recommended deciding all together but building the app parts after
+attendance and approvals, because the same app developer builds Phase 1 to 3; the owner chose parallel work and
+accepts that risk.
+
+**Why (owner, 27 November 2026):** the phone app holds the person's key, and sharing it with Raven's and a mail app's
+own phone apps is not possible. The owner's plan: (1) no Raven and no mail in the phone app for now; (2) remove Raven
+from ERPNext and send every message through our own channels: mail, WhatsApp (P04) and an SMS gateway; (3) later,
+Matrix chat (P73) and a light mail client (P109) inside the app.
+
+**What:**
+1. **One notification service in our ERP add-on:** every message the system sends to a person (approvals, document
+   changes, attendance, incidents, alerts) goes through one function that picks the channel by the person's
+   preference and the message's urgency (in the app and phone alert, mail, WhatsApp, SMS), sends each event once,
+   records what was sent and delivered, and follows the test-site safeguards (allow list, test marker). P72's alert
+   inbox and P22's notifications use it rather than their own senders.
+2. **Replace what Raven does today:** Raven document notifications (P22 step 1) become ERPNext notifications through
+   the service; incident reports that were to go to Raven threads (decision of 22 November) go to Matrix rooms
+   (owner, 27 November; see below).
+3. **Remove Raven:** from the ERP image and app list, the portal's app frames, onboarding's app rules, the phone menu,
+   the Raven proxy route, tests and documents. **Keep the phone sign-in check** (`portal/mobile.py`): it was written for
+   Raven but now signs in every phone app, ours included; rename its settings (`cloud_raven_mobile_enabled`,
+   `cloud_raven_mobile_client`) on test and production in the same release.
+4. **Raven's data:** uninstalling Raven deletes every message, channel and attachment record for good. Count them on
+   production first (read-only, with the owner's OK), then export to Drive as a read-only archive or let them go
+   (owner decides). Keep the export until P73's retention rule is set.
+5. **Test site first** (uninstall, all checks, the phone app still signs in), then production at a quiet moment with a
+   backup.
+6. **SMS gateway:** sending SMS to Indian numbers needs DLT registration (the company, a sender name and every message
+   template) with a telecom operator, and costs per message. Choose a provider after the licence and adoption checks;
+   use SMS only where WhatsApp and mail do not reach.
+7. **For the phone app (owner, 27 November 2026, night; public #114):** every message carries its kind ("needs a
+   decision" or "informs"); a "what waits for me" call (per kind: count, longest wait, nearest deadline); a
+   content-free "remove this alert" signal when something is decided anywhere; a reminder for a waiting decision
+   every 4 hours between 07:00 and 21:00 only, counted by the server; approvals themselves alert round the clock; a
+   per-site summary.
+
+**Settled (owner, 27 November 2026, evening):** no gap to manage and no history to export, because production is not
+in real use (count Raven's messages on production before uninstalling all the same, read-only). **External messages:**
+mail, forms (the Respond app and ERPNext web forms) and WhatsApp (P04); SMS only where those do not reach.
+
+**Progress (27 November 2026):** part 1, the removal, is public PR #138, merged at `86d5cd9` (13:59 UTC; tested commit
+`5cc6d1a`, later commits documents only). On the test ERP since 13:52 UTC on a new core image without Raven (receipt
+`p108-test-erp-remove-raven-5cc6d1a`). **Merged, not deployed** to production: it needs a new core image there, the
+uninstall with the old image first, the config keys and the proxy files, at a quiet moment (decision log, 27 November).
+Not yet built: the notification service (part 2); the SMS gateway choice.
+
+**Incident reports go to Matrix (owner, 27 November 2026, evening):** the person picks one or more rooms, as the
+22 November design did with Raven threads; the photos (and later clips, P106) still go to the project's Drive
+through ERPNext (P74) and the room message links to them. Reason: the long-term plan is not to use ERPNext for
+everything; modules stay separate and replaceable. The agent had proposed ERPNext records; it noted that chat
+does not track whether an incident is open or closed, so a small separate incident tracker can be added later
+if that is needed.
+
+**Closes when done (owner decides each):** P16 (Raven attachments); the Raven parts of P14; the "Raven Mobile" client
+question in P64; P22's "Raven inside the company" channel.
+
+**Related:** P73 (Matrix), P04 (WhatsApp), P109 (mail in the app), P22, P72, P107, P50.
 

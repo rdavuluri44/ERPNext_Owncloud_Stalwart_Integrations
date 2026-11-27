@@ -18,7 +18,7 @@ import { useIsTablet, useTheme } from '@/theme';
 const GROUPS = ['business', 'office', 'system'] as const;
 const GROUP_TEXT: Record<(typeof GROUPS)[number], TextKey> = { business: 'menu.business', office: 'menu.office', system: 'menu.system' };
 const WORK_APPS = new Set(['erpnext', 'hrms', 'india_compliance', 'erpnext_drive_integrations', 'razorpayx_integration', 'insights']);
-const OFFICE_APPS = new Set(['raven']);
+const OFFICE_APPS = new Set<string>();
 const groupOf = (app?: string) => (app && WORK_APPS.has(app) ? 'business' : app && OFFICE_APPS.has(app) ? 'office' : 'system');
 
 type Work = { key: string; title: string; subtitle?: string; go: () => void };

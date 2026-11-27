@@ -19,15 +19,40 @@
       "title": "Workspace HTTPS monitoring",
       "summary": "Independent HTTPS availability checks for public workspace routes.",
       "readme": "integrations/monitoring/README.md",
-      "paths": ["integrations/monitoring/**", "tests/test_https_monitor.py"],
+      "paths": [
+        "integrations/monitoring/**",
+        "tests/test_https_monitor.py"
+      ],
       "depends_on": [],
-      "tests": ["tests/test_https_monitor.py"],
+      "tests": [
+        "tests/test_https_monitor.py"
+      ],
       "upstream": [
-        {"name": "Grafana", "license": "AGPL-3.0-only", "url": "https://github.com/grafana/grafana"},
-        {"name": "Loki", "license": "AGPL-3.0-only", "url": "https://github.com/grafana/loki"},
-        {"name": "Alloy", "license": "Apache-2.0", "url": "https://github.com/grafana/alloy"},
-        {"name": "Prometheus and node_exporter", "license": "Apache-2.0", "url": "https://prometheus.io/"},
-        {"name": "cAdvisor", "license": "Apache-2.0", "url": "https://github.com/google/cadvisor"}
+        {
+          "name": "Grafana",
+          "license": "AGPL-3.0-only",
+          "url": "https://github.com/grafana/grafana"
+        },
+        {
+          "name": "Loki",
+          "license": "AGPL-3.0-only",
+          "url": "https://github.com/grafana/loki"
+        },
+        {
+          "name": "Alloy",
+          "license": "Apache-2.0",
+          "url": "https://github.com/grafana/alloy"
+        },
+        {
+          "name": "Prometheus and node_exporter",
+          "license": "Apache-2.0",
+          "url": "https://prometheus.io/"
+        },
+        {
+          "name": "cAdvisor",
+          "license": "Apache-2.0",
+          "url": "https://github.com/google/cadvisor"
+        }
       ]
     },
     {
@@ -63,11 +88,15 @@
         "erpnext_drive_integrations/public/company-logo-*",
         "erpnext_drive_integrations/public/company-favicon*",
         "erpnext_drive_integrations/public/plain-background.svg",
-        "tests/test_hook_composition.py"
+        "tests/test_hook_composition.py",
+        "tests/test_hook_asset_paths.py",
+        "tests/test_js_call_methods.py"
       ],
       "depends_on": [],
       "tests": [
-        "tests/test_hook_composition.py"
+        "tests/test_hook_composition.py",
+        "tests/test_hook_asset_paths.py",
+        "tests/test_js_call_methods.py"
       ],
       "upstream": [
         {
@@ -144,20 +173,32 @@
     {
       "id": "custom-hr",
       "title": "Custom HR",
-      "summary": "Our HR additions to Frappe HR: field sites and members, supervisor-recorded team attendance with photo and location, PM approval, checkout, and the functions the mobile app uses.",
+      "summary": "Our HR additions to Frappe HR: field sites and members, supervisor-recorded team attendance with photo and location, PM approval, checkout, face attendance for field teams (P95), and the functions the mobile app uses.",
       "readme": "erpnext_drive_integrations/custom_hr/README.md",
       "paths": [
         "erpnext_drive_integrations/custom_hr/**",
         "erpnext_drive_integrations/public/custom_hr/**",
         "erpnext_drive_integrations/www/field_team.*",
-        "tests/test_custom_hr.py"
+        "tests/test_custom_hr.py",
+        "tests/test_custom_hr_face.py",
+        "tests/test_custom_hr_face_queue.py",
+        "tests/test_custom_hr_face_switch.py",
+        "tests/test_custom_hr_face_enrolers.py",
+        "deployment/face-models.json",
+        "tools/fetch_face_models.py",
+        "tests/test_custom_hr_face_engine.py"
       ],
       "depends_on": [
         "erp-addon-shell"
       ],
       "tests": [
         "erpnext_drive_integrations/custom_hr/test_checkout.py",
-        "tests/test_custom_hr.py"
+        "tests/test_custom_hr.py",
+        "tests/test_custom_hr_face.py",
+        "tests/test_custom_hr_face_queue.py",
+        "tests/test_custom_hr_face_switch.py",
+        "tests/test_custom_hr_face_enrolers.py",
+        "tests/test_custom_hr_face_engine.py"
       ],
       "upstream": [
         {
@@ -169,6 +210,16 @@
           "name": "Frappe HR",
           "license": "GPL-3.0",
           "url": "https://github.com/frappe/hrms"
+        },
+        {
+          "name": "OpenCV",
+          "license": "Apache-2.0",
+          "url": "https://github.com/opencv/opencv"
+        },
+        {
+          "name": "OpenCV Zoo (SFace, YuNet)",
+          "license": "Apache-2.0 (SFace), MIT (YuNet)",
+          "url": "https://github.com/opencv/opencv_zoo"
         }
       ]
     },
@@ -274,14 +325,17 @@
         "integrations/mail/**",
         "erpnext_drive_integrations/cloud_integrations/**",
         "deployment/stacks/mail.compose.json",
-        "tools/prepare_mail.py"
+        "tools/prepare_mail.py",
+        "tools/refresh_webmail_overlay_base.py",
+        "tests/test_webmail_overlay_base.py"
       ],
       "depends_on": [
         "authentik-identity",
         "drive"
       ],
       "tests": [
-        "tests/test_rebuild_templates.py"
+        "tests/test_rebuild_templates.py",
+        "tests/test_webmail_overlay_base.py"
       ],
       "upstream": [
         {
@@ -316,6 +370,35 @@
           "name": "Paperless-ngx",
           "license": "GPL-3.0",
           "url": "https://github.com/paperless-ngx/paperless-ngx"
+        }
+      ]
+    },
+    {
+      "id": "chat",
+      "title": "Chat (Matrix: Synapse and its authentication service)",
+      "summary": "The internal chat server: Synapse with the Matrix Authentication Service, signing in through the sign-in service; its stack and the script that writes both configurations.",
+      "readme": "integrations/chat/README.md",
+      "paths": [
+        "integrations/chat/**",
+        "deployment/stacks/chat.compose.json",
+        "tests/test_chat_stack.py"
+      ],
+      "depends_on": [
+        "authentik-identity"
+      ],
+      "tests": [
+        "tests/test_chat_stack.py"
+      ],
+      "upstream": [
+        {
+          "name": "Synapse",
+          "license": "AGPL-3.0",
+          "url": "https://github.com/element-hq/synapse"
+        },
+        {
+          "name": "Matrix Authentication Service",
+          "license": "AGPL-3.0",
+          "url": "https://github.com/element-hq/matrix-authentication-service"
         }
       ]
     },
@@ -399,13 +482,15 @@
       "summary": "Patches the pinned Insights frontend to take identity from the native authenticated API before it is compiled.",
       "readme": "integrations/insights/README.md",
       "paths": [
-        "integrations/insights/**"
+        "integrations/insights/**",
+        "tests/test_insights_patch.py"
       ],
       "depends_on": [
         "erp-addon-shell"
       ],
       "tests": [
-        "tests/test_rebuild_templates.py"
+        "tests/test_rebuild_templates.py",
+        "tests/test_insights_patch.py"
       ],
       "upstream": [
         {
@@ -424,28 +509,40 @@
         "deployment/**",
         "tools/build_erp_core.py",
         "tools/prepare_erp_image.py",
+        "tests/test_prepare_erp_image.py",
         "tools/prepare_runtime.py",
+        "tools/runtime_mounts.py",
         "tools/render_runtime.py",
         "tools/prepare_ingress.py",
         "tools/prepare_auth_bridge.py",
         "tools/coolify_proxy_hosts.py",
         "tools/prepare_test_relay.py",
         "tools/coolify_proxy_http3.py",
+        "tools/coolify_proxy_tls_resolver.py",
+        "tools/coolify_proxy_image.py",
+        "tests/test_coolify_proxy_image.py",
         "tools/test_host_aliases.py",
         "tools/coolify_native.py",
         "tools/promotion_plan.py",
+        "tools/archive_container_logs.py",
+        "tests/test_archive_container_logs.py",
         "tools/drift_check.py",
         "tests/test_promotion_plan.py",
+        "tests/test_drift_mounts.py",
         "tools/initialize_erp.py",
         "tools/migrate_asset_references.py",
         "tools/verify_erp_assets.py",
         "tools/check_repository.py",
+        "tools/check_client_identity.py",
+        "tests/test_client_identity.py",
+        ".client-identity-fingerprints",
         "tests/test_check_imports.py",
         "tools/run_unit_tests.py",
         "tools/README.md",
         "tests/test_brand_assets.py",
         "tests/test_rebuild_templates.py",
         "tests/test_realtime_origin.py",
+        "tests/test_files_forced_download.py",
         "tests/test_module_manifest.py",
         ".github/**",
         "tools/sso_proxy_trust.py",
@@ -455,12 +552,17 @@
         "tests/test_reboot_resilience.py",
         "tests/test_host_checks.py",
         "tools/upstream_watch.py",
-        "tests/test_upstream_watch.py"
+        "tests/test_upstream_watch.py",
+        "tools/open_source.py",
+        "tests/test_open_source.py",
+        "tools/upstream_posts.py",
+        "tests/test_upstream_posts.py"
       ],
       "exclude": [
         "deployment/config/onlyoffice-local-production-linux.json",
         "deployment/stacks/drive.compose.json",
         "deployment/stacks/mail.compose.json",
+        "deployment/stacks/chat.compose.json",
         "deployment/stacks/dms.compose.json",
         "deployment/stacks/processing.compose.json",
         "deployment/stacks/identity.compose.json",
@@ -471,19 +573,25 @@
         "deployment/native-clients-lock.json",
         "deployment/scope-mappings.example.json",
         "deployment/test-refresh-worker.*",
-        "deployment/test-runtime.example.json"
+        "deployment/test-runtime.example.json",
+        "deployment/face-models.json"
       ],
       "depends_on": [],
       "tests": [
         "tests/test_rebuild_templates.py",
+        "tests/test_prepare_erp_image.py",
         "tests/test_promotion_plan.py",
+        "tests/test_drift_mounts.py",
         "tests/test_realtime_origin.py",
+        "tests/test_files_forced_download.py",
         "tests/test_module_manifest.py",
         "tests/test_brand_assets.py",
         "tests/test_sso_proxy_trust.py",
         "tests/test_reboot_resilience.py",
         "tests/test_host_checks.py",
-        "tests/test_upstream_watch.py"
+        "tests/test_upstream_watch.py",
+        "tests/test_open_source.py",
+        "tests/test_upstream_posts.py"
       ],
       "upstream": [
         {
@@ -595,13 +703,16 @@
         "tests/test_onlyoffice_private_views.py",
         "tests/test_onlyoffice_sheetview_filter.py",
         "tools/editor_safety.py",
+        "tools/refresh_editor_original.py",
+        "tests/test_refresh_editor_original.py",
         "tests/test_editor_safety.py"
       ],
       "tests": [
         "tests/test_onlyoffice_editor.py",
         "tests/test_onlyoffice_private_views.py",
         "tests/test_onlyoffice_sheetview_filter.py",
-        "tests/test_editor_safety.py"
+        "tests/test_editor_safety.py",
+        "tests/test_refresh_editor_original.py"
       ],
       "depends_on": [
         "deployment"

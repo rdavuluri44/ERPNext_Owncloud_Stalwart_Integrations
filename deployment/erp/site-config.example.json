@@ -10,7 +10,7 @@
   "cloud_sso_auto_provision": false,
   "cloud_combined_site": true,
   "cloud_push_enabled": false,
-  "cloud_raven_mobile_enabled": false,
+  "cloud_native_mobile_enabled": false,
   "cloud_native_mobile_clients": [],
   "cloud_legacy_rpc_aliases": {},
   "hov_respond_host": "respond.example.com"

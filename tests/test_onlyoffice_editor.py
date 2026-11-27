@@ -1,13 +1,15 @@
 """P42: the ONLYOFFICE start-page patch matches the pinned version and keeps
 its layout, sharing and private-sheet-view changes."""
 import hashlib
+import json
 from pathlib import Path
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 ORIGINAL = ROOT / 'integrations/onlyoffice/editor-wopi.original.ejs'
 PATCHED = (ROOT / 'integrations/onlyoffice/editor-wopi.ejs').read_text()
-PINNED_ORIGINAL_SHA256 = '6edc0bc1bf26456dc80109d40d23bf6945d2e1f9a35f581837cf43302a7c5eec'
+RECORD = json.loads((ROOT / 'integrations/onlyoffice/upstream.json').read_text())
+PINNED_ORIGINAL_SHA256 = RECORD['original_sha256']
 
 
 class OnlyofficeStartPageTests(unittest.TestCase):
@@ -15,6 +17,17 @@ class OnlyofficeStartPageTests(unittest.TestCase):
         self.assertEqual(hashlib.sha256(ORIGINAL.read_bytes()).hexdigest(), PINNED_ORIGINAL_SHA256,
                          'ONLYOFFICE start page changed: review and re-apply the patch')
         self.assertIn('Ascensio System SIA', PATCHED, 'licence notice kept')
+
+    def test_the_stored_original_belongs_to_the_pinned_image(self):
+        # P91: an image bump alone must fail here, so the old patched page is never mounted
+        # over a new editor. Refresh with tools/refresh_editor_original.py (register OFFICE-1).
+        stack = json.loads((ROOT / 'deployment/stacks/editor-onlyoffice.compose.json').read_text())
+        image = stack['services']['onlyoffice']['image']
+        self.assertEqual(image, RECORD['image'],
+                         'ONLYOFFICE image changed: run tools/refresh_editor_original.py, then re-apply the patch')
+        watch = json.loads((ROOT / 'deployment/upstream-watch.json').read_text())['images']
+        self.assertIn(image, watch)
+        self.assertTrue(RECORD['version'].startswith(watch[image]), 'upstream watch and record name the same version')
 
     def test_space_saving_layout(self):
         self.assertIn('"compactHeader": true', PATCHED)

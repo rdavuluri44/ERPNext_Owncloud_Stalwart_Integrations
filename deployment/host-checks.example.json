@@ -1,12 +1,13 @@
 {
-  "_comment": "Optional 'host_checks' section of the deployment's private profile (P57). Keep the real file outside Git. check_bridge (true/false) overrides the default (checked when the profile's projects include drive); set it when the checks are rendered from a profile without Drive on a server that runs Drive.",
+  "_comment": "Optional 'host_checks' section of the deployment's private profile (P57). Keep the real file outside Git. check_bridge (true/false) overrides the default (checked when the profile's projects include drive); set it when the checks are rendered from a profile without Drive on a server that runs Drive. alert (optional): the dedicated alert sender that mails the admin when the boot check repaired or failed something (P57); the password stays in its root-only file on the server. alert.address (optional, an IP address): connect there instead of smtp_host, for a server that cannot reach its own mail server under the certificate's name (for example only on its tailnet address); the certificate is still verified for smtp_host (P57).",
   "host_checks": {
     "containers": [
       "ocis-",
       "collaboration-",
       "db-",
       "stalwart-",
-      "paperless-"
+      "paperless-",
+      "p72-observability-prometheus"
     ],
     "check_bridge": true,
     "tailnet_ip": "100.64.0.10",
@@ -24,6 +25,18 @@
     ],
     "ignore_prefixes": [
       "configurator-"
-    ]
+    ],
+    "alert": {
+      "smtp_host": "mail.example.com",
+      "address": "100.64.0.10",
+      "smtp_port": 465,
+      "security": "ssl",
+      "username": "host-alerts@example.com",
+      "password_file": "/etc/cloud-host-check/alert-password",
+      "sender": "host-alerts@example.com",
+      "to": [
+        "admin@example.com"
+      ]
+    }
   }
 }

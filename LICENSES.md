@@ -2,7 +2,7 @@
 
 This repository is licensed under the GNU Affero General Public License, version 3 or (at your option) any later version (`AGPL-3.0-or-later`, full text in `LICENSE`), copyright © 2026 Unformat and contributors. That grant covers the work in this repository only; it grants no rights to upstream products. Files derived from upstream projects keep the upstream notices stated below and in their source.
 
-Frappe, ERPNext, HRMS, India Compliance, Raven, Insights, payment integrations and India Payroll are installed separately from their upstream repositories. Preserve their licenses and notices in built images. This repository is an addon and deployment adaptation, not a redistribution of their Git histories.
+Frappe, ERPNext, HRMS, India Compliance, Insights, payment integrations and India Payroll are installed separately from their upstream repositories. Preserve their licenses and notices in built images. This repository is an addon and deployment adaptation, not a redistribution of their Git histories.
 
 The Mail overlay modifies Bulwark Webmail. Preserve its upstream license and provide the corresponding modified source with the deployed build as required by that license. Do not publish only the compiled image. ONLYOFFICE Docs and ownCloud remain separate upstream products, with their own edition and license conditions. ONLYOFFICE Docs Community Edition is AGPL v3 with additional terms: keep its logo and notices, state that the deployed interface is modified (the About panel does) and make the modified source available to its users; our changes are in `integrations/onlyoffice/` (the patched WOPI start page is Apache-2.0, Ascensio System SIA). Collabora Online was used until November 2026.
 

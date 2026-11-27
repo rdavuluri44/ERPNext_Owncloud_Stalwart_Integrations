@@ -23,6 +23,38 @@ def git_source(url, commit, directory):
         raise RuntimeError("Fetched source differs from locked commit")
 
 
+def replace_once(text, old, new):
+    """Replace one upstream anchor; stop the build if it is missing or ambiguous (P91).
+
+    A plain str.replace silently does nothing when upstream rewords the line, so the
+    pins would not apply (register entry BUILD-1)."""
+    count = text.count(old)
+    if count != 1:
+        raise RuntimeError(f"Pinned official build template changed: expected 1 x {old!r}, found {count}")
+    return text.replace(old, new, 1)
+
+
+def rewrite_containerfile(text, lock):
+    """frappe_docker's Containerfile with our pins and local sources (register BUILD-1)."""
+    for old, new in (
+        ("FROM python:${PYTHON_VERSION}-slim-${DEBIAN_BASE} AS base", "FROM " + lock["python_image"] + " AS base"),
+        ("ARG NODE_VERSION=24", "ARG NODE_VERSION=" + lock["node_version"]),
+        ("npm install -g yarn", "npm install -g yarn@" + lock["yarn_version"]),
+        ("pip3 install frappe-bench", "pip3 install frappe-bench==" + lock["bench_version"]),
+        ("USER frappe\n\nARG FRAPPE_BRANCH",
+         "COPY --chown=frappe:0 app-sources /opt/source\n"
+         "COPY python-constraints.txt /opt/build/python-constraints.txt\n"
+         "ENV PIP_CONSTRAINT=/opt/build/python-constraints.txt\n"
+         "ENV UV_CONSTRAINT=/opt/build/python-constraints.txt\n"
+         "ENV NODE_OPTIONS=--max-old-space-size=3072\n"
+         "USER frappe\n\nARG FRAPPE_BRANCH"),
+        ("ARG FRAPPE_BRANCH=version-16", "ARG FRAPPE_BRANCH=rebuild-pinned"),
+        ("ARG FRAPPE_PATH=https://github.com/frappe/frappe", "ARG FRAPPE_PATH=file:///opt/source/frappe"),
+    ):
+        text = replace_once(text, old, new)
+    return text
+
+
 def prepare(source, output):
     source, output = Path(source).resolve(), Path(output).resolve()
     if output.exists() or output == source or source in output.parents:
@@ -38,24 +70,7 @@ def prepare(source, output):
     shutil.copy2(upstream / "LICENSE", output / "LICENSE.frappe-docker")
     shutil.copy2(source / "deployment/python-constraints.txt", output / "python-constraints.txt")
     shutil.copy2(source / "deployment/erp/frappe.conf.template", output / "resources/core/nginx/nginx-template.conf")
-    text = (upstream / "images/custom/Containerfile").read_text()
-    text = text.replace("FROM python:${PYTHON_VERSION}-slim-${DEBIAN_BASE} AS base",
-                        "FROM " + lock["python_image"] + " AS base")
-    text = text.replace("ARG NODE_VERSION=24", "ARG NODE_VERSION=" + lock["node_version"])
-    text = text.replace("npm install -g yarn", "npm install -g yarn@" + lock["yarn_version"])
-    text = text.replace("pip3 install frappe-bench", "pip3 install frappe-bench==" + lock["bench_version"])
-    marker = "USER frappe\n\nARG FRAPPE_BRANCH"
-    if marker not in text:
-        raise RuntimeError("Pinned official build template changed")
-    text = text.replace(marker,
-                        "COPY --chown=frappe:0 app-sources /opt/source\n"
-                        "COPY python-constraints.txt /opt/build/python-constraints.txt\n"
-                        "ENV PIP_CONSTRAINT=/opt/build/python-constraints.txt\n"
-                        "ENV UV_CONSTRAINT=/opt/build/python-constraints.txt\n"
-                        "ENV NODE_OPTIONS=--max-old-space-size=3072\n"
-                        "USER frappe\n\nARG FRAPPE_BRANCH", 1)
-    text = text.replace("ARG FRAPPE_BRANCH=version-16", "ARG FRAPPE_BRANCH=rebuild-pinned")
-    text = text.replace("ARG FRAPPE_PATH=https://github.com/frappe/frappe", "ARG FRAPPE_PATH=file:///opt/source/frappe")
+    text = rewrite_containerfile((upstream / "images/custom/Containerfile").read_text(), lock)
     (output / "Dockerfile").write_text(text)
     (output / "apps.json").write_text(json.dumps([
         {"url": "file:///opt/source/" + name, "branch": "rebuild-pinned"}

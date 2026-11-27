@@ -38,7 +38,7 @@ class PromotionPlanTests(unittest.TestCase):
         self.assertLessEqual(STACKS, {s for r in RULES for s in r['stacks']}, 'every stack has a rule')
 
     def test_map_agrees_with_the_files_prepare_runtime_mounts(self):
-        tree = ast.parse((ROOT / 'tools/prepare_runtime.py').read_text())
+        tree = ast.parse((ROOT / 'tools/runtime_mounts.py').read_text())
         literals = {}
         for node in ast.walk(tree):
             if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name) and \
@@ -129,6 +129,8 @@ class DriftCheckTests(unittest.TestCase):
                 return 'drive-ocis-1\ndrive-collab-1\nother\n'
             if 'sha256sum' in args:
                 return 'a' * 64 + '  /srv/site/logo.svg\n'
+            if args[:2] == ['docker', 'inspect'] and '{{json .Mounts}}' in args:
+                return '[]'  # mounted files: tests/test_drift_mounts.py
             if args[:2] == ['docker', 'inspect']:
                 return 'cloud/drive:' + self.c[:12] + '-runtime <no value>\n'
             raise AssertionError(args)

@@ -182,9 +182,14 @@ def inventory(source, profile):
     add('node-build', name='Node.js (ERP build)', version=build['node_version'])
     native = read('deployment/native-clients-lock.json')
     add('ocis-konnectd', github=repo(native['repository']), commit=native['commit'])
+    if (source / 'deployment/face-models.json').is_file():  # P95 face models, pinned by commit and checksum
+        models = read('deployment/face-models.json')
+        add('opencv_zoo', github=repo(models['repository']), commit=models['commit'])
 
     files = sorted((source / 'deployment/stacks').glob('*.json')) + [source / 'deployment/build-lock.json']
     files += sorted(p for d in ('deployment', 'integrations') for p in (source / d).rglob('Dockerfile*'))
+    # Module compose files (monitoring, identity support): pinned images run there too (P91).
+    files += sorted(p for p in (source / 'integrations').rglob('*') if p.is_file() and re.fullmatch(r'compose[\w.-]*\.ya?ml', p.name))
     used = {}
     for path in files:
         for name, digest in IMAGE.findall(path.read_text()):
@@ -439,6 +444,19 @@ def run(source, output, profile, token=None, today=None, dry_run=False):
     urgent = [f for f in active if f.get('urgent')]
     week = '%d-W%02d' % today.isocalendar()[:2]
     files = {}
+    posts_new = []
+    ledger_file = source / 'docs' / 'upstream-posts.json'
+    if ledger_file.is_file():  # replies to what we posted upstream (P35); each reported once
+        import upstream_posts
+        auth = (lambda t: {'Authorization': 'Bearer ' + t} if t else None)
+        lines, post_errors = upstream_posts.check(json.loads(ledger_file.read_text(encoding='utf-8')), token,
+                                                  get=lambda url, t: fetch(url, headers=auth(t)), today=today)
+        watch.errors += ['upstream posts: ' + e for e in post_errors]
+        posts_new = [l for l in lines if l not in set(state.get('posts_seen', []))]
+        if posts_new:
+            files[str(today) + '-posts.md'] = ('# Upstream posts: new replies, ' + str(today) + '\n\n' +
+                                               '\n'.join(posts_new) + '\n\nRecord them in the session: '
+                                               '`python3 tools/upstream_posts.py check --record`.\n')
     if first:
         files[str(today) + '-baseline.md'] = render('baseline', today, active, ignored, notices, watch.errors)
     elif new:
@@ -447,7 +465,8 @@ def run(source, output, profile, token=None, today=None, dry_run=False):
         files[week + '.md'] = render('weekly roll-up', today, active, ignored, notices, watch.errors)
     summary = ('upstream-watch ' + str(today) + ': ' + str(len(new)) + ' new, ' + str(len(urgent)) + ' urgent, ' +
                str(len(active)) + ' open, ' + str(len(ignored)) + ' ignored, ' + str(len(watch.errors)) +
-               ' source errors' + ('; wrote ' + ', '.join(sorted(files)) if files else ''))
+               ' source errors' + (', ' + str(len(posts_new)) + ' upstream replies' if posts_new else '') +
+               ('; wrote ' + ', '.join(sorted(files)) if files else ''))
     if dry_run:
         for name, text in sorted(files.items()):
             print('=== ' + name + '\n' + text)
@@ -457,6 +476,7 @@ def run(source, output, profile, token=None, today=None, dry_run=False):
         for name, text in files.items():
             (output / name).write_text(text)
         state['seen'] = sorted(set(state['seen']) | {f['id'] for f in findings})
+        state['posts_seen'] = sorted(set(state.get('posts_seen', [])) | set(posts_new))
         if first or week + '.md' in files:
             state['rollup_week'] = week
         state_file.write_text(json.dumps(state, indent=1, sort_keys=True) + '\n')

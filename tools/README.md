@@ -11,6 +11,8 @@ refresh worker) do not change; this index groups them by module.
 
 ## Upstream watch (`deployment`)
 
+- `open_source.py` — One list of every open-source project we use, borrow from or evaluate; renders the README acknowledgements and `docs/open-source.md` and checks them against the upstream watch and `modules.json` (P35).
+- `upstream_posts.py` — The list of our posts on other projects and a read-only check for replies, state changes and unlisted posts; `check --gh --record` at every session start (P35).
 - `upstream_watch.py` — Daily digest of new releases, security advisories, end of life and licence changes for every pinned component, from public sources only; never upgrades anything (P62).
 
 ## Drive (ownCloud Infinite Scale) adapters (`drive`)
@@ -19,7 +21,8 @@ refresh worker) do not change; this index groups them by module.
 
 ## Mail (Stalwart and Bulwark Webmail) (`mail`)
 
-- `prepare_mail.py` — Prepare pinned upstream Mail plus the selected overlay and corresponding source.
+- `prepare_mail.py` — Prepare pinned upstream Mail plus the selected overlay and corresponding source; stops when the upstream files differ from the overlay's recorded base (P91).
+- `refresh_webmail_overlay_base.py` — Move the webmail overlay to a new upstream commit: lists the files to merge, then records the new base (P91).
 
 ## Drive to DMS document worker (`document-worker`)
 
@@ -33,6 +36,7 @@ refresh worker) do not change; this index groups them by module.
 ## ONLYOFFICE editor (`onlyoffice-editor`)
 
 - `editor_safety.py` — Editor file safety (P61): list and rescue parked edits, unstick a document, and a five-minute watch for failed saves, disk and cache; never deletes a document.
+- `refresh_editor_original.py` — On an image change, copy the new image's own start page to `editor-wopi.original.ejs` without starting it, and record image and checksum in `integrations/onlyoffice/upstream.json` (P91).
 
 ## Reproducible build and deployment (`deployment`)
 
@@ -45,12 +49,14 @@ refresh worker) do not change; this index groups them by module.
 - `sso_proxy_trust.py` — On the SSO host, trust forwarded headers on the private (tailnet) entry point used by the test sign-in bridge, from exact addresses only (normally the test VM; `prepare_auth_bridge.py --print-forwarded-trust`), so the sign-in gateway returns to the requested page (P65). Writes the proxy compose file and Coolify's saved proxy configuration; never touches public entry points; the proxy restart is a separate step.
 - `prepare_test_relay.py` — Render a pass-through relay (SNI, PROXY protocol, port 80) for the six test hostnames on another Traefik host, for a test host without a public address.
 - `coolify_proxy_http3.py` — Switch HTTP/3 off on a relay host's Coolify proxy (saved configuration and compose file).
+- `coolify_proxy_tls_resolver.py` — Add the TLS-ALPN Let's Encrypt resolver (`letsencrypt-tls`) to a relay host's Coolify proxy, for the relayed test names (P11); `--restart`, `--check`.
 - `coolify_proxy_hosts.py` — Persist the proxy's workspace network/aliases and optional private (tailnet) host pins in Coolify's saved proxy configuration and compose file.
-- `prepare_erp_image.py` — Prepare an ERP build entirely from pinned public sources, with no private image.
+- `prepare_erp_image.py` — Prepare an ERP build entirely from pinned public sources, with no private image; every change to frappe_docker's Containerfile must find its upstream line exactly once (P91).
 - `prepare_ingress.py` — Render complete workspace ingress for a controller's existing Traefik proxy.
 - `prepare_runtime.py` — Prepare portable native service mounts/configuration from a Git checkout.
 - `promotion_plan.py` — List the stacks, steps, live settings and restarts a change reaches, and what test cannot cover (P59).
-- `drift_check.py` — Read-only check on production that every stack runs what `main` says, and that served pages match (P59).
+- `drift_check.py` — Read-only check on production that every stack runs what `main` says, that the mounted runtime files equal main or their deployment record (P99), and that served pages match (P59).
+- `runtime_mounts.py` — Which runtime mount is made from which repository file; the record of what was mounted, and `record` for a one-file promotion (P99).
 - `render_runtime.py` — Render public deployment URLs into a build tree; never edit the Git checkout.
 - `run_unit_tests.py` — Run mock-based rules/security suites in separate processes, without a live site.
 - `test_host_aliases.py` — Resolve this test host's own HTTPS services locally, retaining TLS checks.

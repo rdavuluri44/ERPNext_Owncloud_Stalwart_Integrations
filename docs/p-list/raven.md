@@ -1,6 +1,6 @@
 # Raven and Insights: P items
 
-> **Generated file: do not edit by hand.** Published from the maintainers' private list on 25 November 2026
+> **Generated file: do not edit by hand.** Published from the maintainers' private list on 27 November 2026
 > with every line kept; only identifying names, addresses, paths and links to private records are
 > replaced by placeholders (see the [P list index](../p-list.md) for the rules).
 
@@ -13,6 +13,8 @@ Part of the P list: back to the [index and priority order](../p-list.md). Items 
 ### P16 — Raven attachments and Drive storage integration
 
 **App:** raven · **Also touches:** drive · **State:** open
+
+**Owner, 27 November 2026:** Raven is to be removed (P108); this item closes when P108 is done (owner confirms).
 
 **Status:** planned; current Mail picking and Drive-to-Paperless processing do not implement Raven attachment storage.
 

@@ -45,8 +45,12 @@ def render(source, destination, config):
     if version and not re.fullmatch(r'[a-f0-9]{7,64}',version):
         raise ValueError('asset_version must be a Git commit hash')
     destination.mkdir(parents=True, exist_ok=True)
-    for relative in ["erpnext_drive_integrations", "pyproject.toml", "MANIFEST.in", "integrations"]:
+    # Everything deployment/erp/Dockerfile.addon copies must be here: the rendered folder is its build context
+    # (a test compares the two). The face model list and its fetch tool were missing at first (P95 test build).
+    for relative in ["erpnext_drive_integrations", "pyproject.toml", "MANIFEST.in", "integrations",
+                     "tools/fetch_face_models.py", "deployment/face-models.json"]:
         src, dst = source / relative, destination / relative
+        dst.parent.mkdir(parents=True, exist_ok=True)
         if src.is_dir():
             shutil.copytree(src, dst, dirs_exist_ok=True,
                             ignore=shutil.ignore_patterns('__pycache__', '*.pyc', '*.pyo'))

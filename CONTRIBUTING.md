@@ -18,8 +18,12 @@ you agree that your contribution is licensed the same way.
 4. Run the checks locally:
    ```
    python tools/check_repository.py
+   python tools/check_client_identity.py
    python tools/run_unit_tests.py
    ```
+   Never put a client's name (in any form), logo, domains, mail addresses or people in this
+   repository: not in code, tests, comments, file names, commit messages or the pull request text.
+   They come from the private deployment profile. The client identity check fails if one appears.
    GitHub runs the same "Offline checks" on your pull request.
 5. Open a **pull request** to `main`. Describe what changed, why,
    and how you tested it. Use the template.

@@ -6,6 +6,10 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 # Root: it reads Coolify's service records (docker exec, SELECT only) and the deployment profiles.
+# P99: run the drift check's own code from main. A dirty checkout makes the checkout fail, so the run stops
+# instead of running unknown code. Everything on main is merged by the owner.
+ExecStartPre=/usr/bin/git -C /opt/cloud-drift-check/repository fetch --quiet origin
+ExecStartPre=/usr/bin/git -C /opt/cloud-drift-check/repository checkout --quiet --detach origin/main
 ExecStart=/usr/bin/python3 /opt/cloud-drift-check/repository/tools/drift_check.py --config /etc/cloud-drift-check/config.json
 UMask=0077
 TimeoutStartSec=600

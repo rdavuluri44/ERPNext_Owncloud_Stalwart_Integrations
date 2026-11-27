@@ -13,6 +13,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 from prepare_ingress import prepare as ingress  # noqa: E402
 from prepare_runtime import prepare  # noqa: E402
 from render_runtime import FAVICON_FILES  # noqa: E402
+from check_client_identity import hits as client_identity_hits, load as load_client_fingerprints  # noqa: E402
 
 HOSTS = {k: ("test.example.net" if k == "erp" else "test-" + k + ".example.net")
          for k in ["erp", "sso", "drive", "office", "mail", "dms", "respond"]}
@@ -38,7 +39,7 @@ class WebsiteModule(unittest.TestCase):
         page = (ROOT / "integrations/website/site/index.html").read_text()
         for token in ("__SITE_TITLE__", "__SITE_NAME__", "__EMPLOYEE_ZONE_URL__"):
             self.assertIn(token, page)
-        self.assertNotIn("sriramki", page.lower())
+        self.assertEqual(client_identity_hits(page, load_client_fingerprints()), [])  # P84
         self.assertNotIn("unsplash", page.lower())          # our own drawing, no photo credit
         self.assertIn("text-transform: uppercase", page)     # EMPLOYEE / ZONE in capitals
         self.assertIn('data-text="__SITE_TAGLINE__"', page)     # tagline from the profile (default "Launching soon...")
