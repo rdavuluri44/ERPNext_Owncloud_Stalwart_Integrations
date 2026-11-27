@@ -1,0 +1,69 @@
+{
+  "_comment": "P69: webmail texts that promise a permanent delete, which the mail server refuses under the retention policy. tools/prepare_mail.py replaces each 'from' text with 'to' and fails if upstream changed the 'from' text.",
+  "locales/en/common.json": {
+    "account_unread.empty_hint": {
+      "from": "You can empty the {folder} folder to permanently remove all messages.",
+      "to": "Company mail is kept: messages in {folder} are not deleted for good."
+    },
+    "email_list.empty_folder.trash_hint": {
+      "from": "You can empty the Trash folder to permanently remove all messages.",
+      "to": "Company mail is kept: messages in Trash are not deleted for good."
+    },
+    "email_list.empty_folder.junk_hint": {
+      "from": "You can empty the Junk folder to permanently remove all messages.",
+      "to": "Company mail is kept: messages in Junk are not deleted for good."
+    },
+    "email_list.empty_folder.confirm_message": {
+      "from": "All emails in this folder will be permanently deleted. This action cannot be undone.",
+      "to": "Company mail is kept under the company's retention policy, so nothing in this folder is deleted for good."
+    },
+    "email_list.permanent_delete_confirm_title": {
+      "from": "Delete this email permanently?",
+      "to": "Company mail can't be deleted for good"
+    },
+    "email_list.permanent_delete_confirm_batch_title": {
+      "from": "Delete these emails permanently?",
+      "to": "Company mail can't be deleted for good"
+    },
+    "email_list.permanent_delete_confirm_message": {
+      "from": "This email will be permanently deleted. This action cannot be undone.",
+      "to": "Company mail is kept under the company's retention policy. This email stays where it is."
+    },
+    "email_list.permanent_delete_confirm_batch_message": {
+      "from": "These {count, plural, one {1 email} other {# emails}} will be permanently deleted. This action cannot be undone.",
+      "to": "Company mail is kept under the company's retention policy. These emails stay where they are."
+    },
+    "mail_p3_actions.delete_forever_title": {
+      "from": "Delete this message forever?",
+      "to": "Company mail can't be deleted for good"
+    },
+    "mail_p3_actions.delete_forever_batch_title": {
+      "from": "{count, plural, one {Delete this message forever?} other {Delete these # messages forever?}}",
+      "to": "Company mail can't be deleted for good"
+    },
+    "mail_p3_actions.delete_forever_message": {
+      "from": "You can't get it back.",
+      "to": "Company mail is kept under the company's retention policy. This message stays in Trash."
+    },
+    "mail_p3_actions.delete_forever_batch_message": {
+      "from": "{count, plural, one {You can't get it back.} other {You can't get them back.}}",
+      "to": "Company mail is kept under the company's retention policy. These messages stay in Trash."
+    },
+    "mail_p2_folders.empty_trash_confirm": {
+      "from": "Delete {count, plural, one {the message} other {all # messages}} in Trash forever? You can't undo this.",
+      "to": "Company mail is kept under the company's retention policy, so the messages in Trash stay there."
+    },
+    "mail_p2_folders.empty_spam_confirm": {
+      "from": "Delete {count, plural, one {the message} other {all # messages}} in Spam forever? You can't undo this.",
+      "to": "Company mail is kept under the company's retention policy, so the messages in Spam stay there."
+    },
+    "mailbox_context_menu.empty_all_confirm_message": {
+      "from": "Delete {count, plural, one {the message} other {all # messages}} in the Trash of all your accounts forever? You can't undo this.",
+      "to": "Company mail is kept under the company's retention policy, so the messages in Trash stay there in all your accounts."
+    },
+    "mailbox_context_menu.delete_confirm_message": {
+      "from": "Permanently delete the folder \"{name}\"? This action cannot be undone.",
+      "to": "Company mail is kept, so the folder \"{name}\" can't be deleted."
+    }
+  }
+}

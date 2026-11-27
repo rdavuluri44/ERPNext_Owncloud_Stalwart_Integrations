@@ -20,6 +20,18 @@ import runtime_mounts
 from runtime_mounts import copy_files, identity_proxy_files, copy_dirs
 
 
+# Webmail organisation policy. P69: the mail server refuses permanent deletion, so
+# the delete action is locked to "move to Trash" and the Enterprise-only deleted-items
+# recovery page (which Community cannot serve) is hidden.
+MAIL_POLICY = {
+    'features': {'filesEnabled': False},
+    'restrictions': {
+        'deleteAction': {'locked': True, 'value': 'trash'},
+        'deletedItemsRecovery': {'hidden': True},
+    },
+}
+
+
 def write_private(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(value)
@@ -367,7 +379,7 @@ def prepare(source, output, profile):
         if project == 'mail':
             compose['services']['stalwart']['ports'].extend(mail_ports)
             policy_file = output/'mail-policy.json'
-            write_private(policy_file,json.dumps({'features':{'filesEnabled':False}},indent=2)+'\n')
+            write_private(policy_file,json.dumps(MAIL_POLICY,indent=2)+'\n')
             policy_file.chmod(0o644)
             webmail=compose['services']['webmail']
             webmail['volumes'].append(str(policy_file)+':/app/data/admin/policy.json:ro')

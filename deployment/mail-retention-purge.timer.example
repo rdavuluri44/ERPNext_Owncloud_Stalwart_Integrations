@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the mail retention purge once a day (P69)
+
+[Timer]
+OnCalendar=*-*-* 02:30
+RandomizedDelaySec=15m
+Persistent=true
+Unit=mail-retention-purge.service
+
+[Install]
+WantedBy=timers.target

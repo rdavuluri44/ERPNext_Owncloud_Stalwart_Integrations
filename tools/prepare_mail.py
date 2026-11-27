@@ -13,6 +13,58 @@ import subprocess
 import zipfile
 
 
+def lookup(tree, dotted):
+    node = tree
+    for part in dotted.split("."):
+        node = node[part]
+    return node
+
+
+def apply_locale_overrides(output, overrides):
+    """Replace selected upstream texts in place (P69), leaving the rest of each file byte for byte.
+
+    Each entry names the upstream text it replaces; a changed upstream text fails the
+    build so the wording is reviewed again instead of silently going stale.
+    """
+    for relative, entries in overrides.items():
+        if relative.startswith("_"):
+            continue
+        path = output / relative
+        raw = path.read_bytes().decode("utf-8")
+        original = json.loads(raw)
+        for dotted, change in entries.items():
+            current = lookup(original, dotted)
+            if current != change["from"]:
+                raise ValueError(f"Upstream changed {relative}:{dotted}; review the override")
+            leaf = dotted.rsplit(".", 1)[-1]
+            old = json.dumps(leaf) + ": " + json.dumps(change["from"], ensure_ascii=False)
+            new = json.dumps(leaf) + ": " + json.dumps(change["to"], ensure_ascii=False)
+            if raw.count(old) != 1:
+                raise ValueError(f"{relative}:{dotted} is not unique in the file; extend the override")
+            raw = raw.replace(old, new)
+        result = json.loads(raw)
+        for dotted, change in entries.items():
+            node, parent = result, original
+            *parents, leaf = dotted.split(".")
+            for part in parents:
+                node, parent = node[part], parent[part]
+            node[leaf] = parent[leaf] = None
+        if result != original:
+            raise ValueError(f"Overriding {relative} changed more than the listed texts")
+        path.write_bytes(raw.encode("utf-8"))
+
+
+def make_readable(output):
+    """The image runs as an unprivileged user. A private operator umask (077) would
+    otherwise copy unreadable files into the image and webmail fails to start
+    ("permission denied" on /app/package.json). The build context holds no secrets."""
+    for path in [output, *output.rglob("*")]:
+        if ".git" in path.relative_to(output).parts or path.is_symlink():
+            continue
+        mode = path.stat().st_mode
+        path.chmod(0o755 if path.is_dir() or mode & 0o100 else 0o644)
+
+
 def check_overlay_base(lock, overlay, upstream):
     """Stop unless the overlay was made from exactly these upstream files (P91, register WEBMAIL-1).
 
@@ -43,6 +95,8 @@ def prepare(source, output):
     subprocess.run(["git", "-C", str(output), "checkout", "--detach", lock["commit"]], check=True)
     check_overlay_base(lock, source / "integrations/mail/overlay", output)
     shutil.copytree(source / "integrations/mail/overlay", output, dirs_exist_ok=True)
+    apply_locale_overrides(output, json.loads((source / "integrations/mail/locale-overrides.json").read_text()))
+    make_readable(output)
     archive = output / "public/cloud-customization-source.zip"
     archive.parent.mkdir(exist_ok=True)
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as zipped:
