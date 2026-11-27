@@ -64,6 +64,17 @@ Every logout ends on the company website: `sso.LANDING`, rendered from the priva
 Signed-out hand-over (P56 follow-up): `/login?logged_out=1` and `/signed-out` forward to the landing page for top-level navigations only. A request made from an iframe (`Sec-Fetch-Dest: iframe`, for example a portal app frame that discovers the sign-out) gets the ERP's own frameable sign-out page, whose Sign in button opens in the whole tab, because the landing page refuses to be framed.
 
 
+### Sign-out on the Desk (P53)
+
+The portal page (the Desk) has one bar at the top right; its last item is **Sign out**. The bar shows on the Desk
+home only and is hidden while an application is open. It asks every open
+application for unsaved work (`{source:'cloud-desk', type:'unsaved?'}`), warns the person, tells each application to
+end its own session (`type:'signout'`), waits at most 2.5 seconds for their `{source:'cloud-session', type:'logout'}`
+answers, then calls `finish_logout`. Inside the Desk each application's own sign-out item is hidden by that
+application's script (`session.js` here; Drive, DMS and webmail in their modules). Opened on its own, an application
+shows "Back to home" instead. Messages are accepted only between the Desk's address and its own frames.
+`tests/test_desk_signout.py` pins both sides.
+
 ### Isolated test identity
 
 A marked test copy can set `cloud_test_identity_origin` to its dedicated Authentik HTTPS origin. Its

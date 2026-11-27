@@ -282,6 +282,13 @@ Made against: v16.60.2 (`2df0425`).
 - **Tests:** static only (`tests/test_portal_deep_link.py`, `tests/test_logout_and_signin.py`).
 - **Upstream:** frappe/frappe#39831 (historical, closed; not proven to be the same
   problem).
+- **Sign-out on the Desk (P53):** inside the portal the same script removes the `logout` row
+  from `frappe.ui.Sidebar.prototype.user_menu_options()`, hides a row labelled "Logout" or
+  "Log out" in menus already drawn (also Insights' user menu), and answers the Desk's
+  unsaved-work question from `cur_frm.is_dirty()`. **Upgrade: re-check** that no sign-out
+  row shows in the Desk and Insights menus and that an edited form is reported. **Silent** if
+  `user_menu_options`, the row's `name` or `cur_frm.is_dirty` changes.
+  Test: `tests/test_desk_signout.py` (static).
 
 ### FRAPPE-5 Module header and menus drawn over the Desk sidebar
 
@@ -912,6 +919,11 @@ Made against: oCIS 8.2.3, ownCloud Web 12.5.0.
   if the logout element or storage key changes, logout stops passing on and the
   refresh token is not revoked.
 - **Tests:** static only (`tests/test_onlyoffice_editor.py`, `tests/test_logout_and_signin.py`).
+- **Sign-out on the Desk (P53):** inside the portal the script hides
+  `#oc-topbar-account-logout`; opened on its own it relabels that row "Back to home" and sends
+  it to the portal. It reports unsaved work from the text editor's `#app-save-action` button.
+  **Upgrade: re-check** both views and the text editor answer. **Silent** if either id changes.
+  Test: `tests/test_desk_signout.py` (static).
 
 ### DRIVE-2 Mail attachment picker
 
@@ -1150,6 +1162,16 @@ Made against: commit `933bc18` (1.21.2), `integrations/mail/upstream.json`.
   pinned commit on 26 November 2026.
 - **Tests:** `tests/test_webmail_overlay_base.py`; constants in
   `tests/test_logout_and_signin.py`, `tests/test_rebuild_templates.py`.
+- **Sign-out on the Desk (P53):** our added `components/cloud-session-guard.tsx` hides every
+  control whose label is "Sign out", "Sign out of ..." or "Logout" inside the portal (account
+  menu, navigation rail, settings row, command palette), and turns it into "Back to home"
+  when the webmail is opened on its own. The match is on the English labels
+  (`locales/en/common.json`: `sign_out`, `sign_out_of`, `sign_out_all`, `logout`); "Sign out
+  now" in the idle-limit dialog is left alone. It reports an open composer
+  (`data-testid="email-composer"`) as unsaved work and signs out with the store's
+  `logoutAll()`. **Upgrade: re-check** the labels, the test id and each place a sign-out
+  control appears. **Silent** if a label changes. No replaced file is added for this.
+  Test: `tests/test_desk_signout.py` (static).
 
 ### WEBMAIL-2 Admin policy and blocked admin routes
 
@@ -1180,6 +1202,11 @@ Made against: 3.4.2.
 - **Upgrade:** **re-check** sign-in and logout. **Silent** if Paperless or Django builds
   the middleware earlier or changes how pages are served.
 - **Tests:** static (`tests/test_rebuild_templates.py`, `tests/test_logout_and_signin.py`).
+- **Sign-out on the Desk (P53):** inside the portal `session.js` hides the link or form that
+  points at `accounts/logout/`; opened on its own it relabels it "Back to home" and sends it
+  to the portal. It reports unsaved work from `pngx-document-detail form.ng-dirty`.
+  **Upgrade: re-check** both views and the edited-document answer. **Silent** if the logout
+  address or the component name changes. Test: `tests/test_desk_signout.py` (static).
 
 ### DMS-2 Set-up through the Django shell
 

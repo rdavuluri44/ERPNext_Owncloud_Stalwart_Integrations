@@ -1472,3 +1472,33 @@ check themselves in keep their existing workflows.
 - **Where:** `deployment/config/proxy/office-acme.yml`, `tools/prepare_test_relay.py`,
   `tools/coolify_proxy_hosts.py`, `tools/coolify_proxy_tls_resolver.py`,
   `tests/test_rebuild_templates.py`, register entry PROXY-6. AI-assisted by Claude Code.
+
+## Sign-out moves from the applications to the Desk (P53, 27 November 2026)
+
+- **Decision:** Help, notifications, search and sign-out leave each application's own screen and
+  become one set of controls on the Desk (the portal page), at the top right, with sign-out
+  last. The bar shows on the Desk home only: while an application is open it is hidden, so it
+  never covers that application's own controls, and the person returns to the Desk home to
+  use it. This change is the first step: the bar and sign-out. The Desk asks each open
+  application for unsaved work, warns the person, tells each application to end its own
+  session, and then ends the single sign-on session. Inside the Desk every application's own
+  sign-out item is hidden. An application opened on its own (a direct link) shows "Back to
+  home" in its place, which opens the Desk.
+- **How the Desk talks to the applications:** browser messages between the Desk and the
+  application's frame, answered by our own script inside that application, with the person's
+  existing session. Each side checks the other's address. The ERP server gets no per-person
+  keys to the other applications; each application keeps deciding what the person may see.
+  The later steps (notifications, search) use the same channel.
+- **Why:** One place to sign out of everything is clearer than five, and a sign-out item in
+  one application suggested it ended only that application. Asking the applications first
+  avoids losing an open form, document or draft.
+- **Consequence:** An application whose script is older than this change does not answer and
+  is not waited for (2.5 seconds at most), so the stacks can be released one at a time. The
+  unsaved-work answer covers an edited ERP form, the Drive text editor, an edited DMS document
+  and an open mail composer; the office editor saves by itself. The application sessions
+  still end on a sign-out from the single sign-on side, the shared-browser guard and the
+  idle limit as before. Desktop and phone clients are not affected.
+- **Where:** `erpnext_drive_integrations/www/place_holder.html`, `public/session.js`,
+  `integrations/drive/workspace.js`, `integrations/dms/cloud_session/`,
+  `integrations/mail/overlay/components/cloud-session-guard.tsx`, `tests/test_desk_signout.py`,
+  register entries FRAPPE-4, DRIVE-1, DMS-1 and WEBMAIL-1. AI-assisted by Claude Code.

@@ -1,5 +1,7 @@
 const FINISH = 'https://erp.example.com/api/method/erpnext_drive_integrations.portal.sso.finish_logout';
 const SIGNED_OUT = 'https://erp.example.com/login?logged_out=1';
+/** P53: the Desk (portal page) that frames this app and holds the one sign-out. */
+export const DESK = 'https://erp.example.com';
 let remoteCleanup = false;
 export function logoutEpoch(): string {
   return typeof document === 'undefined' ? '' : document.cookie.split(';').find(v => v.trim().startsWith('cloud_logout_epoch='))?.trim() || '';
