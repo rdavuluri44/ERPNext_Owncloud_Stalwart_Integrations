@@ -84,6 +84,12 @@
       "branch": "main",
       "exposure": "build"
     },
+    "frigate": {
+      "name": "Frigate (TrueNAS app)",
+      "host": true,
+      "github": "blakeblackshear/frigate",
+      "exposure": "tailnet"
+    },
     "ghcr.io/goauthentik/server": {
       "name": "authentik",
       "github": "goauthentik/authentik",

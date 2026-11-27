@@ -56,6 +56,19 @@
       ]
     },
     {
+      "id": "frigate",
+      "title": "Frigate network video recorder",
+      "summary": "Frigate settings for recording IP cameras on TrueNAS, with the login on and camera passwords kept out of the repository (P46 trial).",
+      "readme": "integrations/frigate/README.md",
+      "paths": ["integrations/frigate/**", "tests/test_frigate.py"],
+      "depends_on": [],
+      "tests": ["tests/test_frigate.py"],
+      "upstream": [
+        {"name": "Frigate", "license": "MIT", "url": "https://github.com/blakeblackshear/frigate"},
+        {"name": "OpenVINO Open Model Zoo (SSDLite MobileNet v2)", "license": "Apache-2.0", "url": "https://github.com/openvinotoolkit/open_model_zoo"}
+      ]
+    },
+    {
       "id": "erp-addon-shell",
       "title": "ERP add-on shell",
       "summary": "The single installed Frappe app: hook composition with per-feature switches (cloud_features), bootstrap, migration, shared role fixtures and app logos.",

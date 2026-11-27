@@ -644,6 +644,39 @@ discussion that led to a decision is not repeated here.
   photo and document store (P74) and passkeys in the app (P82).
 - **Where:** `docs/p-list/mobile.md` (P50), `docs/p-closed.md` (P23).
 
+### Camera recording trial with Frigate on TrueNAS (P46)
+
+- **Decision:** start P46 as a trial with one camera on the local network. Use the
+  official TrueNAS catalogue app Frigate 0.18.3 (standard image, pinned by digest),
+  detection with OpenVINO on the processor, recordings in their own dataset with a
+  100 GiB quota, and only the web port with a login published, on the local and private
+  networks. Coral is dropped: Frigate 0.18.3's hardware guide no longer recommends it for
+  new installations, and the PCIe version needs a host driver that TrueNAS updates remove.
+  Hardware for more cameras and remote sites is decided after the trial.
+- **Why:** the owner asked for a proof of concept with one camera, without capacity
+  planning. The host's processor has no graphics chip, which is enough for one camera.
+- **Adoption review (26 November 2026):** MIT licence (checked at v0.18.3); actively
+  maintained (monthly releases, last 19 November 2026); fixes are published as GitHub
+  security advisories with releases. The 2026 history is heavy: several critical flaws
+  (remote code execution, some without a login, fixed in 0.18.2 and 0.18.3). Hence 0.18.3
+  as the minimum, Frigate in the daily upstream watch, no internet exposure, and administrator
+  accounts only.
+- **Open advisories (checked 27 November 2026 against Frigate's own advisory pages and the
+  source of v0.18.3):** five list no fixed version. Two are high and are closed in 0.18.3 in
+  the code, although their pages were never updated: GHSA-c4qf-xxq4-vf55 (the logs route is
+  administrator-only now) and GHSA-mgh5-cr9h-g6hr (the proxied go2rtc interface is gone).
+  Three medium ones remain: GHSA-74x4-gw64-2mq5 (recordings of other cameras for a
+  camera-limited user; still in the web server configuration), GHSA-w3c4-957q-2jw4 (a
+  signed-in user can make the server call internal addresses; not checked in the code) and
+  GHSA-4xp7-86rr-9758 (a hostile camera can crash the bundled go2rtc 1.9.14). The first two
+  need a signed-in account with lower rights, the third a hostile camera. The code was read;
+  the attacks were not tried.
+- **Owner's acceptance (27 November 2026):** the trial runs with these open, on the private
+  network, with administrator accounts only and our own camera. No camera-limited or
+  view-only accounts until GHSA-74x4-gw64-2mq5 is fixed. Production is decided after the
+  trial, including whether detection is needed at all.
+- **Where:** `integrations/frigate/`, `deployment/upstream-watch.json`. AI-assisted by Claude.
+
 ### The mail archive reader signs in with a passkey, to mail only (P69)
 
 - **Decision:** the archive is read through the dedicated `archive-reader` account in webmail, signing in with a

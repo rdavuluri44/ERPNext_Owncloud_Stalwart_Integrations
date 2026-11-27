@@ -487,6 +487,29 @@
       ]
     },
     {
+      "name": "Frigate",
+      "repo": "https://github.com/blakeblackshear/frigate",
+      "licence": "MIT",
+      "used_in": [
+        "frigate (P46 trial)"
+      ],
+      "status": "adopted",
+      "note": "one-camera trial on the TrueNAS trial host, private network only (P46)",
+      "watch": [
+        "frigate"
+      ]
+    },
+    {
+      "name": "OpenVINO Open Model Zoo (SSDLite MobileNet v2)",
+      "repo": "https://github.com/openvinotoolkit/open_model_zoo",
+      "licence": "Apache-2.0",
+      "used_in": [
+        "frigate (P46 trial)"
+      ],
+      "status": "adopted",
+      "not_watched": "detection model bundled inside the Frigate image; it changes only with Frigate, which is watched"
+    },
+    {
       "name": "restic",
       "repo": "https://github.com/restic/restic",
       "licence": "BSD-2-Clause",

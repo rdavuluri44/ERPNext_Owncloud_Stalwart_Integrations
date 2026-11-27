@@ -43,6 +43,8 @@
 | [Linux kernel](https://kernel.org) | GPL-2.0 | hosts | daily watch: `linux` |  |
 | [Ubuntu](https://ubuntu.com) | various free licences (Canonical) | hosts | daily watch: `ubuntu` |  |
 | [TrueNAS](https://www.truenas.com) | GPL-3.0 (to verify) | backup host, test host | daily watch: `truenas` |  |
+| [Frigate](https://github.com/blakeblackshear/frigate) | MIT | frigate (P46 trial) | daily watch: `frigate` | one-camera trial on the TrueNAS trial host, private network only (P46) |
+| [OpenVINO Open Model Zoo (SSDLite MobileNet v2)](https://github.com/openvinotoolkit/open_model_zoo) | Apache-2.0 | frigate (P46 trial) | detection model bundled inside the Frigate image; it changes only with Frigate, which is watched |  |
 | [restic](https://github.com/restic/restic) | BSD-2-Clause | backup | daily watch: `restic` |  |
 | [RustFS](https://github.com/rustfs/rustfs) | Apache-2.0 | backup | daily watch: `rustfs` |  |
 | [Grafana](https://github.com/grafana/grafana) | AGPL-3.0 | monitoring | daily watch: `grafana/grafana` |  |
