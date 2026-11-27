@@ -45,6 +45,41 @@
     logout.cloudOneShot = true; app.logout = logout;
   };
   installOneShotLogout(); setInterval(installOneShotLogout, 500);
+  // P53: sign-out lives on the Desk (the portal page). Inside the portal this removes the app's own
+  // Logout row and answers the Desk's two questions. It grants nothing: the Desk ends the session.
+  if (window.self !== window.top) {
+    const DESK = 'https://erp.example.com';
+    const dropLogoutRow = () => {
+      const proto = window.frappe?.ui?.Sidebar?.prototype;
+      if (!proto?.user_menu_options || proto.user_menu_options.cloudDesk) return !!proto?.user_menu_options;
+      const original = proto.user_menu_options;
+      const wrapped = function () {
+        return original.call(this)
+          .map(group => ({ ...group, options: (group.options || []).filter(option => option.name !== 'logout') }))
+          .filter(group => group.options.length);
+      };
+      wrapped.cloudDesk = true; proto.user_menu_options = wrapped; return true;
+    };
+    if (!dropLogoutRow()) { const timer = setInterval(() => { if (dropLogoutRow()) clearInterval(timer); }, 50); setTimeout(() => clearInterval(timer), 30000); }
+    // A menu drawn before the row was removed, and Insights' own menu: hide the row by its label.
+    let sweepQueued = false;
+    const sweep = () => {
+      sweepQueued = false;
+      for (const el of document.querySelectorAll('.dropdown-item,[role="menuitem"],.menu-item')) {
+        if (!el.dataset.cloudDesk && /^log ?out$/i.test(el.textContent.trim())) { el.dataset.cloudDesk = '1'; el.style.display = 'none'; }
+      }
+    };
+    const startSweep = () => new MutationObserver(() => { if (!sweepQueued) { sweepQueued = true; setTimeout(sweep, 150); } }).observe(document.body, { childList: true, subtree: true });
+    if (document.body) startSweep(); else document.addEventListener('DOMContentLoaded', startSweep);
+    addEventListener('message', e => {
+      if (e.origin !== DESK || e.source !== window.parent || e.data?.source !== 'cloud-desk') return;
+      if (e.data.type === 'unsaved?') {
+        let dirty = false;
+        try { dirty = !!window.cur_frm?.is_dirty?.(); } catch (_) {}
+        window.parent.postMessage({ source: 'cloud-session', type: 'unsaved', value: dirty }, DESK);
+      } else if (e.data.type === 'signout') window.parent.postMessage({ source: 'cloud-session', type: 'logout' }, DESK);
+    });
+  }
   let busy = false, checking = false;
   // Bounded requests: a stalled connection (for example after computer sleep)
   // must not leave checks waiting forever or piling up.
