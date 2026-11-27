@@ -63,6 +63,30 @@ download instead of opening: look at the bridge's log for `AddAppProvider
 failed` / `i/o timeout`; the cause is a missing shared network, not the
 editor.
 
+**Drive restarted alone (P80).** Drive learns which editors exist only when the
+bridge starts and registers. When oCIS is recreated, restarted or started while
+the bridge keeps running, the list stays empty and the bridge logs nothing:
+office files only download (production, 25 November 2026, about 6.5 hours after
+a release that recreated oCIS alone). Three safeguards:
+
+- **Every script that touches oCIS** (release windows, their recover branches,
+  test deploys, manual work) runs, right after the oCIS recreate, restart or
+  start:
+
+      python3 /opt/cloud-host-check/host_check.py editor-restart --config /etc/cloud-host-check/config.json
+
+  It waits until oCIS is healthy, restarts the bridge and waits until the editor
+  is registered again (signed-in check); a non-zero exit stops the script.
+- **The nightly backup** starts the stopped containers in the listed order and
+  waits for each to be healthy before the next (list oCIS before the bridge in
+  the profile's `stop_and_copy` group).
+- **The editor check** (`cloud-editor-check.timer`, every five minutes) signs in
+  to Drive with its own low-rights account and reads the app list. When the
+  editor is missing while oCIS is healthy, it restarts the bridge once (not again
+  within 30 minutes), writes `ALERT` lines to the journal
+  (`journalctl -u cloud-editor-check`) and fails the run, so the incident is
+  visible even when the repair worked. Status: `/var/lib/cloud-host-check/editor-status.json`.
+
 ## After a reboot or restart: checklist
 
 The server restarts every container by itself (`restart: unless-stopped`; the monitoring stack uses
@@ -140,6 +164,21 @@ profile used has no Drive project but the server runs Drive, see
 `daemon-reload` does not restart Docker or any container; the Docker drop-in
 takes effect at the next Docker start. Test the boot check without rebooting
 with `python3 /opt/cloud-host-check/host_check.py boot --config /etc/cloud-host-check/config.json`.
+
+**Editor check (P80), hosts with Drive.** The renderer adds an `editor` section
+(the Drive URL from the profile; `host_checks.editor` overrides settings or is
+`false` to switch it off) and `cloud-editor-check.service/.timer`. Once per host,
+create the check account and its app token, then enable the timer:
+
+    python3 /opt/cloud-host-check/host_check.py editor-setup --config /etc/cloud-host-check/config.json
+    systemctl enable --now cloud-editor-check.timer
+
+`editor-setup` uses a 10-minute admin app token from Drive's own CLI only to
+create the account `editor-check` (a normal user, no space or admin role, a
+random password nobody keeps), then stores an app token for it in
+`/etc/cloud-host-check/drive-editor.json` (mode 600). Nothing is printed. The
+check renews that token through Drive's CLI when it expires; the account can read
+nothing but its own empty space.
 
 ## Releasing a merged change: no stack left behind (P59)
 

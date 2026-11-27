@@ -1,10 +1,10 @@
-# Onboarding to ERP Mobile: identity check, biometrics and re-onboarding
+# Onboarding to UNformat ERP: identity check, biometrics and re-onboarding
 
 **Status:** draft, applies when built (P82) · **Owner of this SOP:** HR · **Last reviewed:** 26 November 2026
 
 ## Purpose
 
-A sign-in key in ERP Mobile cannot be shared or copied, but it accepts **every** fingerprint and strong face
+A sign-in key in UNformat ERP cannot be shared or copied, but it accepts **every** fingerprint and strong face
 enrolled on the phone, and the system cannot see who the person really is. Two checks therefore stay with people:
 that the person is who they say they are, and that only their own fingerprints and face are on the phone. If they
 are skipped, a family member, a colleague or an impostor can sign in as the employee.
@@ -23,7 +23,7 @@ are skipped, a family member, a colleague or an impostor can sign in as the empl
 
 ## Steps
 
-1. The employee installs ERP Mobile, opens **Request access** and enters their work mail address, mobile number and a
+1. The employee installs UNformat ERP, opens **Request access** and enters their work mail address, mobile number and a
    face photo. The app refuses phones without a strong fingerprint sensor or strong face unlock; such a phone cannot
    be used.
 2. The project manager meets the employee **in person** and compares them with an original identity document and

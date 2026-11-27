@@ -882,10 +882,12 @@
       "repo": "https://github.com/element-hq/sygnal",
       "licence": "AGPL-3.0",
       "used_in": [
-        "P73"
+        "chat"
       ],
-      "status": "evaluating",
-      "note": "Matrix push gateway for chat alerts on phones; adoption check passed 27 November 2026 (v0.17.0; the matrix-org repository is archived)"
+      "status": "adopted",
+      "watch": [
+        "matrixdotorg/sygnal"
+      ]
     }
   ]
 }

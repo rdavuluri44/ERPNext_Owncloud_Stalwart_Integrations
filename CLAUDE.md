@@ -16,8 +16,8 @@ and a **private operations repository**. Use the project folder map to locate
 its checkout and read its current `main` branch. The private
 repository holds only records and private assets: the pending and priority list
 (`docs/pending.md`), the production release log (`docs/production-releases.md`),
-runbooks, handovers (`docs/handover-<date>.md`), deliberations, and brand assets
-such as the logo. It never holds secrets (see AGENTS.md); those stay on the servers
+runbooks, handovers (`docs/handover-<date>.md`), deliberations, and clients' brand
+assets such as their logos (our own Unformat brand is public, in `branding/`). It never holds secrets (see AGENTS.md); those stay on the servers
 and in the owner's password manager.
 
 Do these without being asked:

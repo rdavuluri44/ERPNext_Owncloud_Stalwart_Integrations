@@ -146,7 +146,7 @@ ONLYOFFICE 10.0.0 (build 169) can save a sheet view with a column filter that ha
 inside it (`<columnFilter colId="5" id="{...}"></columnFilter>`). The editor's own
 `IU()` method ("is any filter applied") then throws `Cannot read properties of null
 (reading 'IU')` when it applies the view; the grid stays blank and the file is unusable for
-everyone who opens it. It happened to the shared SRN workbook between 15:32 and 16:16 IST on
+everyone who opens it. It happened to a shared workbook between 15:32 and 16:16 IST on
 20 November (the first save with such a filter is in that window; none before it).
 
 - **Guard** (`SHEET-VIEW-FILTER-GUARD` block of `editor-wopi.ejs`, installed when the editor

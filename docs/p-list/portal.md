@@ -1,6 +1,6 @@
 # Portal (eZone): P items
 
-> **Generated file: do not edit by hand.** Published from the maintainers' private list on 27 November 2026
+> **Generated file: do not edit by hand.** Published from the maintainers' private list on 28 November 2026
 > with every line kept; only identifying names, addresses, paths and links to private records are
 > replaced by placeholders (see the [P list index](../p-list.md) for the rules).
 
@@ -220,3 +220,10 @@ These four leave every app's own screen and become universal on the Desk; the da
     in a real browser.
 - **Overlap:** public #134 (admin alerts, draft) also changes the Desk page's code file; the two are reconciled
   when the second one is ready.
+
+**Step 1 on the whole test site (28 November 2026):** the combined test build `70636f4` (public #142 with #134 and #69)
+puts the Desk bar and sign-out on the test ERP and the matching scripts into test Drive, DMS and webmail; every site
+serves the new code (receipt `p53-p72-p69-test-combined-70636f4`). The bar shows on the Desk home only (owner's
+correction). Open: the owner's browser check. On test the Desk's sign-out cannot prove Drive, Mail and DMS are signed
+out, because they use the production sign-in service; that is checked on production after promotion. Drive content
+search (owner: turn it on) is not started.

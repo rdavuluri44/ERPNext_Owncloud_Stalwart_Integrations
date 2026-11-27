@@ -41,7 +41,7 @@ told where that is possible; steps 2 and 3 first.
 6. **Drive, documents and chat (admin):** end their sessions and app tokens. **Their personal business files stay
    where they are; nothing is deleted** (owner, 26 November 2026). Hand over shared spaces they managed to their
    manager.
-7. **Phone and computers:** ask the person to remove ERP Mobile; when P82 is built, removing the key in the sign-in
+7. **Phone and computers:** ask the person to remove UNformat ERP; when P82 is built, removing the key in the sign-in
    service makes the app purge itself. Remove their computers from the allowed list when computer binding exists.
 8. **Face data (P95, when in use):** it is deleted automatically when the employee is no longer Active. Check that
    the worker no longer appears under Field Face Enrolment.

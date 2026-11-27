@@ -2,8 +2,8 @@
 
 **Status:** in use · **Owner of this SOP:** admin · **Last reviewed:** 26 November 2026
 
-P82 will replace this procedure for staff who use ERP Mobile (see
-[onboarding to ERP Mobile](onboarding-identity-and-biometrics.md)); until that is built, this is how a person gets
+P82 will replace this procedure for staff who use UNformat ERP (see
+[onboarding to UNformat ERP](onboarding-identity-and-biometrics.md)); until that is built, this is how a person gets
 access.
 
 ## Purpose
@@ -60,7 +60,7 @@ whom, date) where the private companion says.
   invitation. The old passkey is removed only after the new one works.
 - **Lost device or passkey** (owner's rule, 26 November 2026): the **project manager meets the person, checks
   their phone in person** and confirms the request. Only then does the admin send a recovery invitation. A message,
-  mail or call asking for recovery is never enough. When ERP Mobile holds the keys (P82), the project manager
+  mail or call asking for recovery is never enough. When UNformat ERP holds the keys (P82), the project manager
   confirms the request in their own app instead of telling the admin; until then they confirm it to the admin
   themselves, and the admin notes who confirmed and when.
 - **The invitation reached the wrong person:** delete it at once under **Invitations**; if a passkey was already

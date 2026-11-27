@@ -27,6 +27,7 @@ Services of the stack:
 | `configure` | runs once before the others; writes both configuration files and, the first time, MAS's signing key | no |
 | `synapse` | the chat server | `chat-synapse:8008` on the workspace network |
 | `mas` | the sign-in service for chat | `chat-mas:8080` on the workspace network |
+| `alerts` | optional: the alert gateway (Sygnal), which passes chat alerts to Google for the phone app | `alerts-gateway:5000` inside the stack only |
 | `database-synapse`, `database-mas` | one PostgreSQL each (Synapse needs the `C` locale) | inside the stack only |
 
 ## Requirements
@@ -50,9 +51,11 @@ Settings are in `deployment/stacks/inputs.json` as `CI_CHAT_CONFIGURE_*`:
 
 The `configure` service rewrites both files at every deployment and keeps the signing key. Private ports: `CI_CHAT_SYNAPSE_HOST_PORT` (8040) and `CI_CHAT_MAS_HOST_PORT` (8050), on 127.0.0.1 only.
 
-**For the business system** (the module that makes rooms from sites and teams; not in this module): the bot's token is `CI_CHAT_CONFIGURE_BRIDGE_AS_TOKEN` in the runtime's private inputs. It reaches Synapse inside the workspace network at `http://chat-synapse:8008` and uses only the client interface: create a room (alias `#site-…` or `#team-…`; give everyone else no right to invite, rename or change rules), invite, post, remove. A read-only room is one where writing needs a higher level than members have. Rooms use the server's default room version, in which the creator has full rights and must not be listed in the power levels.
+**For the business system** (the module that makes rooms from sites and teams; not in this module): the bot's token is `CI_CHAT_CONFIGURE_BRIDGE_AS_TOKEN` in the runtime's private inputs. It reaches Synapse inside the workspace network at `http://chat-synapse:8008` and uses only the client interface: create a room (alias `#site-…`, `#team-…` or `#notices-…`; give everyone else no right to invite, rename or change rules), invite, post, remove. A read-only room is one where writing needs a higher level than members have. Rooms use the server's default room version, in which the creator has full rights and must not be listed in the power levels.
 
 After the `configure` service has rewritten the files, restart `synapse` and `mas` so they read them. When a client or provider is removed from the authentication service's configuration, run its `config sync --prune` once.
+
+**Phone alerts (optional).** Put Google's service-account key for the app's Firebase project into the stack's key folder as `fcm-key.json` (`<runtime>/mounts/chat_configure_1/`, readable by root only), deploy, and start the stack with the `alerts` profile (`COMPOSE_PROFILES=alerts`). The `configure` service then writes the gateway's configuration for the app `CI_CHAT_CONFIGURE_ALERTS_APP_ID` and copies the key next to it; without a key it writes nothing and removes what was there. The app registers `http://alerts-gateway:5000/_matrix/push/v1/notify` as its push address with the format `event_id_only`, so an alert carries no name and no text. Synapse may call only this stack's own network (`CI_CHAT_CONFIGURE_NETWORK_SUBNET`, default `172.30.250.0/24`; change it where that range is taken). The gateway has no port on the host and no public route. It is the only service on the stack's `outbound` network, its way to Google; it is not on the workspace network, so a site that blocks outbound connections from that network (a test site) keeps doing so.
 
 Backups: both databases (`pg_dumpall` in each database container) and the volumes `synapse-data` (media and Synapse's signing key) and `mas-config` (MAS's signing key).
 

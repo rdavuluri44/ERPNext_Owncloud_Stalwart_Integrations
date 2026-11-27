@@ -399,6 +399,36 @@
           "name": "Matrix Authentication Service",
           "license": "AGPL-3.0",
           "url": "https://github.com/element-hq/matrix-authentication-service"
+        },
+        {
+          "name": "Sygnal",
+          "license": "AGPL-3.0",
+          "url": "https://github.com/element-hq/sygnal"
+        }
+      ]
+    },
+    {
+      "id": "chat-rooms",
+      "title": "Chat rooms from sites and teams",
+      "summary": "The business system's bot keeps the chat rooms in step with the field sites: a room per site, a room per supervisor's team and a read-only Notices room per person; nothing about rooms is stored in ERPNext.",
+      "readme": "erpnext_drive_integrations/chat_rooms/README.md",
+      "paths": [
+        "erpnext_drive_integrations/chat_rooms/**",
+        "tests/test_chat_rooms.py"
+      ],
+      "depends_on": [
+        "erp-addon-shell",
+        "custom-hr",
+        "chat"
+      ],
+      "tests": [
+        "tests/test_chat_rooms.py"
+      ],
+      "upstream": [
+        {
+          "name": "Synapse",
+          "license": "AGPL-3.0",
+          "url": "https://github.com/element-hq/synapse"
         }
       ]
     },
@@ -551,6 +581,7 @@
         "tools/render_host_checks.py",
         "tests/test_reboot_resilience.py",
         "tests/test_host_checks.py",
+        "tests/test_editor_registration.py",
         "tools/upstream_watch.py",
         "tests/test_upstream_watch.py",
         "tools/open_source.py",
@@ -589,6 +620,7 @@
         "tests/test_sso_proxy_trust.py",
         "tests/test_reboot_resilience.py",
         "tests/test_host_checks.py",
+        "tests/test_editor_registration.py",
         "tests/test_upstream_watch.py",
         "tests/test_open_source.py",
         "tests/test_upstream_posts.py"
@@ -615,6 +647,23 @@
           "url": "https://nginx.org"
         }
       ]
+    },
+    {
+      "id": "branding",
+      "title": "Default brand (Unformat)",
+      "summary": "Unformat logo, favicons and brand file: the default look, replaced per deployment through the private profile; guide, copyright and trademark note.",
+      "readme": "branding/README.md",
+      "paths": [
+        "branding/**",
+        "tests/test_branding.py"
+      ],
+      "tests": [
+        "tests/test_branding.py"
+      ],
+      "depends_on": [
+        "deployment"
+      ],
+      "upstream": []
     },
     {
       "id": "test-refresh",

@@ -6,7 +6,7 @@ refresh worker) do not change; this index groups them by module.
 
 ## Reboot resilience (`deployment`)
 
-- `host_check.py` — Post-boot check, crash-loop watch and tailnet wait for a Docker host (P57).
+- `host_check.py` — Post-boot check, crash-loop watch and tailnet wait for a Docker host (P57); the office editor's registration with Drive: five-minute check with one repair, the `editor-restart` step after any Drive restart, and the check account setup (P80).
 - `render_host_checks.py` — Render its config, systemd units and the Docker start-after-Tailscale drop-in from the private profile.
 
 ## Upstream watch (`deployment`)

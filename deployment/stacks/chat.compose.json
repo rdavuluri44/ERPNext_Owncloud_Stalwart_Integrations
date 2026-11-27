@@ -25,13 +25,17 @@
         "UPSTREAM_NAME": "${CI_CHAT_CONFIGURE_UPSTREAM_NAME:?Set CI_CHAT_CONFIGURE_UPSTREAM_NAME}",
         "LOCALPART_TEMPLATE": "${CI_CHAT_CONFIGURE_LOCALPART_TEMPLATE:?Set CI_CHAT_CONFIGURE_LOCALPART_TEMPLATE}",
         "BRIDGE_AS_TOKEN": "${CI_CHAT_CONFIGURE_BRIDGE_AS_TOKEN:?Set CI_CHAT_CONFIGURE_BRIDGE_AS_TOKEN}",
-        "BRIDGE_HS_TOKEN": "${CI_CHAT_CONFIGURE_BRIDGE_HS_TOKEN:?Set CI_CHAT_CONFIGURE_BRIDGE_HS_TOKEN}"
+        "BRIDGE_HS_TOKEN": "${CI_CHAT_CONFIGURE_BRIDGE_HS_TOKEN:?Set CI_CHAT_CONFIGURE_BRIDGE_HS_TOKEN}",
+        "NETWORK_SUBNET": "${CI_CHAT_CONFIGURE_NETWORK_SUBNET:?Set CI_CHAT_CONFIGURE_NETWORK_SUBNET}",
+        "ALERTS_APP_ID": "${CI_CHAT_CONFIGURE_ALERTS_APP_ID:?Set CI_CHAT_CONFIGURE_ALERTS_APP_ID}"
       },
       "volumes": [
         "${RUNTIME_ROOT:?Set RUNTIME_ROOT}/mounts/chat_configure_0:/configure.py:ro",
         "synapse-config:/synapse-config",
         "mas-config:/mas-config",
-        "synapse-data:/data"
+        "synapse-data:/data",
+        "${RUNTIME_ROOT:?Set RUNTIME_ROOT}/mounts/chat_configure_1:/alerts-key:ro",
+        "alerts-config:/alerts-config"
       ],
       "mem_limit": "256m",
       "ports": [],
@@ -171,6 +175,34 @@
         }
       },
       "stop_grace_period": "30s"
+    },
+    "alerts": {
+      "image": "matrixdotorg/sygnal@sha256:141f5e72fdf99a28e29ca87f3a46c19ed1cf21d5074aa3ef9df7c067e0c1c46a",
+      "restart": "unless-stopped",
+      "profiles": [
+        "alerts"
+      ],
+      "environment": {
+        "SYGNAL_CONF": "/config/sygnal.yaml"
+      },
+      "depends_on": {
+        "configure": {
+          "condition": "service_completed_successfully"
+        }
+      },
+      "volumes": [
+        "alerts-config:/config:ro"
+      ],
+      "mem_limit": "256m",
+      "ports": [],
+      "networks": {
+        "default": {
+          "aliases": [
+            "alerts-gateway"
+          ]
+        },
+        "outbound": {}
+      }
     }
   },
   "networks": {
@@ -179,14 +211,23 @@
       "name": "${WORKSPACE_NETWORK:?Create the workspace network}"
     },
     "default": {
-      "internal": true
-    }
+      "internal": true,
+      "ipam": {
+        "config": [
+          {
+            "subnet": "${CI_CHAT_CONFIGURE_NETWORK_SUBNET:?Set CI_CHAT_CONFIGURE_NETWORK_SUBNET}"
+          }
+        ]
+      }
+    },
+    "outbound": {}
   },
   "volumes": {
     "synapse-config": {},
     "mas-config": {},
     "synapse-data": {},
     "synapse-db": {},
-    "mas-db": {}
+    "mas-db": {},
+    "alerts-config": {}
   }
 }

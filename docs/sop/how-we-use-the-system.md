@@ -1,4 +1,4 @@
-# How we use the system: sign-in, ERP Mobile and attendance
+# How we use the system: sign-in, UNformat ERP and attendance
 
 **Status:** the agreed way of working, written from the owner's decisions of 25 and 26 November 2026 (P82, P95,
 P96). Each part says whether it is **live** today or **decided, not built yet** · **Owner of this SOP:** HR ·
@@ -25,7 +25,7 @@ them. The step-by-step procedures are linked; the reasons are in `docs/decisions
 
 | Situation | What you do | What the system does |
 |---|---|---|
-| First time | Install ERP Mobile, tap **Request access**, give your work mail, mobile number and a face photo. Meet your project manager with your phone and ID. | After the project manager and then the admin approve, the key is made in your phone and you are signed in. The photo is not kept. |
+| First time | Install UNformat ERP, tap **Request access**, give your work mail, mobile number and a face photo. Meet your project manager with your phone and ID. | After the project manager and then the admin approve, the key is made in your phone and you are signed in. The photo is not kept. |
 | Before onboarding | Remove any fingerprint or face on the phone that is not yours, and confirm it in the app. | Every fingerprint on the phone at that moment can open the key, so this check matters. |
 | Every sign-in | Fingerprint (or a strong face unlock). No PIN. | One match, one sign-in. Needs internet; without it the app opens for a limited time and keeps your captures until you are back online. |
 | On a computer | Open the sign-in page, scan its QR code in the app, Bluetooth on, phone next to the computer. | Signs you in on that computer. Works on every supported Android phone. |

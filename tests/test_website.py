@@ -85,15 +85,18 @@ class WebsiteModule(unittest.TestCase):
         self.assertEqual(compose["networks"]["workspace"]["aliases"], ["website-web"])
         self.assertTrue((output / "mounts/website_web_1").is_file())
 
-    def test_neutral_defaults_without_branding(self):
+    def test_unformat_defaults_without_branding(self):
         output = render()
         site = output / "mounts/website_web_0"
         page = (site / "index.html").read_text()
-        self.assertIn("<title>Welcome</title>", page)
+        self.assertIn("<title>Unformat</title>", page)          # default brand (P85)
         self.assertIn('href="https://test.example.net/"', page)   # the ERP host: staff sign-in
         self.assertTrue((site / "front/logo.svg").is_file())
         for name in FAVICON_FILES:
             self.assertTrue((site / "front" / name).is_file(), name)
+        brand = ROOT / "branding/unformat"
+        self.assertEqual((site / "front/logo.svg").read_bytes(), (brand / "logo.svg").read_bytes())
+        self.assertEqual((site / "front/favicon.svg").read_bytes(), (brand / "favicon.svg").read_bytes())
 
     def test_unsafe_profile_values_are_refused(self):
         for key, value in (("website_zone_url", "javascript:alert(1)"), ("website_zone_url", "//evil.example"),

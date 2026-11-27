@@ -1,4 +1,4 @@
-"""A saved sheet view with an empty column filter must not crash the editor (SRN workbook, 20-21 Nov 2026).
+"""A saved sheet view with an empty column filter must not crash the editor (a shared workbook, 20-21 Nov 2026).
 
 ONLYOFFICE 10.0.0 (build 169): CT_NsvFilter.IU() calls `.filter.IU()` on every column filter, but a
 column filter may have no filter (saved as <columnFilter ...></columnFilter>), which throws
@@ -33,7 +33,7 @@ ORIGINAL_IU = "function(){var q=null;if(this.wB&&this.wB.length)for(var r=0;r<th
 VIEW_XML = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             '<namedSheetViews xmlns="http://schemas.microsoft.com/office/spreadsheetml/2019/namedsheetviews">'
             '<namedSheetView name="Temporary View 1" id="{A}"></namedSheetView>'
-            '<namedSheetView name="Private - Rajesh" id="{B}"><nsvFilter filterId="{C}" tableId="3">'
+            '<namedSheetView name="Private - Asha" id="{B}"><nsvFilter filterId="{C}" tableId="3">'
             '<columnFilter colId="5" id="{D}"></columnFilter>'
             '<columnFilter colId="2" id="{E}"><filter colId="2"><x:filters xmlns:x="u"><x:filter val="v"/></x:filters></filter></columnFilter>'
             '</nsvFilter></namedSheetView></namedSheetViews>')
@@ -58,7 +58,7 @@ class SanitiserTests(unittest.TestCase):
             with zipfile.ZipFile(src) as a, zipfile.ZipFile(dst) as b:
                 self.assertEqual(a.read("xl/worksheets/sheet1.xml"), b.read("xl/worksheets/sheet1.xml"))
                 text = b.read("xl/namedSheetViews/namedSheetView1.xml").decode()
-            self.assertIn('name="Private - Rajesh"', text)       # views and their real filters stay
+            self.assertIn('name="Private - Asha"', text)       # views and their real filters stay
             self.assertIn('<x:filter val="v"/>', text)
             self.assertIn('name="Temporary View 1"', text)        # shells stay unless asked
 

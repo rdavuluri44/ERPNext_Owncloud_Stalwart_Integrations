@@ -1,6 +1,6 @@
 # Editor: P items
 
-> **Generated file: do not edit by hand.** Published from the maintainers' private list on 27 November 2026
+> **Generated file: do not edit by hand.** Published from the maintainers' private list on 28 November 2026
 > with every line kept; only identifying names, addresses, paths and links to private records are
 > replaced by placeholders (see the [P list index](../p-list.md) for the rules).
 
@@ -119,6 +119,14 @@ browser check of one document and one spreadsheet right after.
 
 **Depends on / relates to:** P57 (host checks), P59 (promotion plan), P61 (d), P72
 (monitoring alerts). Follow-up: P81.
+
+**Public #76 brought up to date with main (27 November 2026): `92b41fe`, CI passed.** Main's reboot comparison and
+alert mail (P57) and this item's editor check are both kept in `tools/host_check.py`. The earlier test-host evidence
+(`c68db04`) predates the combined file, so **a retest on the test host is needed before merge**.
+
+**Retest passed on the test host (28 November 2026)** with the combined host check `92b41fe` (receipt
+`p80-test-host-check-retest-92b41fe`). Found there: the installed host check was main's, without the editor commands, so
+the editor timer had been failing every five minutes unnoticed. #76 is ready for the owner to merge.
 
 ### P81 — Editor follow-ups: Compose safety net and release rule
 

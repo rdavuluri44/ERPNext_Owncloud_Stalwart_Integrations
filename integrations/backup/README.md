@@ -41,7 +41,12 @@ the timer.
   PostgreSQL `pg_dumpall`. No downtime.
 - `stop_and_copy` containers are stopped (30 s grace), copied to staging with
   `cp -a` and restarted in a `finally` block, before the upload; the stop
-  time is recorded per group in `last-run.json`.
+  time is recorded per group in `last-run.json`. They are started **in the
+  listed order**, each only after the previous one reports healthy (bounded by
+  `start_wait_seconds`, default 120, 0 to 600). List a service before anything
+  that registers with it: Drive's `ocis` before its editor bridge
+  (`collaboration`), which otherwise races Drive's start and can fail to
+  register (P80). Every container is started even if a wait times out.
 - Include the sign-in service's media volume (authentik `/data`: branding,
   invitation pages) and invitation templates in `paths`; its database is in
   `databases` and its secret key lives in the Coolify compose under

@@ -1,1 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="12" fill="#086b9f"/><path d="M15 19h14l5 6h15v24H15z" fill="white"/><path d="M27 33h14M34 27v13" stroke="#086b9f" stroke-width="3"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="572" height="504" viewBox="0 0 572 504" role="img" aria-labelledby="title">
+  <title id="title">Unformat</title>
+  <g fill="#1F3A5F" transform="translate(0 42) scale(1 .8) translate(0 -42)">
+      <path d="M42 42h76v282c0 49 25 76 70 76s70-27 70-76V42h76v282c0 93-57 146-146 146S42 417 42 324Z" transform="translate(42 0) scale(0.773972602740 1) translate(-42 0)"/>
+      <path d="M372 470V42h78l142 285V42h74v428h-78L446 185v285Z" transform="translate(306 0) scale(0.761904761905 1) translate(-372 0)"/>
+  </g>
+  <g fill="#E8731A" stroke="#E8731A" stroke-width="5" stroke-linejoin="round" fill-rule="evenodd">
+    <path d="M0 0h60v18H20v20h34v18H20v34H0Z" transform="translate(44.475000 411.764211) scale(0.99 0.545684211)"/>
+    <path d="M106 0c22 0 35 13 35 34v22c0 21-13 34-35 34S71 77 71 56V34C71 13 84 0 106 0Zm0 18c-10 0-15 6-15 17v20c0 11 5 17 15 17s15-6 15-17V35c0-11-5-17-15-17Z" transform="translate(56.539000 411.764211) scale(0.99 0.545684211)"/>
+    <path d="M153 0h34c20 0 31 11 31 28 0 12-6 21-16 25l21 37h-23l-18-33h-9v33h-20Zm20 18v22h13c8 0 12-4 12-11s-4-11-12-11Z" transform="translate(67.613000 411.764211) scale(0.99 0.545684211)"/>
+    <path d="M234 0h19l20 35 20-35h19v90h-20V34l-19 33-19-33v56h-20Z" transform="translate(79.677000 411.764211) scale(0.99 0.545684211)"/>
+    <path d="M339 0h19l16 90h-15l-3-18h-15l-3 18h-15Zm2.5 55h14l-7-32Z" transform="translate(91.741000 411.764211) scale(0.99 0.545684211)"/>
+    <path d="M385 0h43v18h-13v72h-17V18h-13Z" transform="translate(103.805000 411.764211) scale(0.99 0.545684211)"/>
+  </g>
+</svg>

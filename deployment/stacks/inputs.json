@@ -690,5 +690,13 @@
   "CI_CHAT_CONFIGURE_BRIDGE_HS_TOKEN": {
     "kind": "secret",
     "generate": true
+  },
+  "CI_CHAT_CONFIGURE_NETWORK_SUBNET": {
+    "kind": "setting",
+    "default": "172.30.250.0/24"
+  },
+  "CI_CHAT_CONFIGURE_ALERTS_APP_ID": {
+    "kind": "setting",
+    "default": "in.unformat.erp"
   }
 }

@@ -229,5 +229,12 @@
     "path": "chat_configure_0",
     "target": "/configure.py",
     "source_kind": "file"
+  },
+  {
+    "stack": "chat",
+    "service": "configure",
+    "path": "chat_configure_1",
+    "target": "/alerts-key",
+    "source_kind": "directory"
   }
 ]

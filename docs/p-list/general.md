@@ -1,6 +1,6 @@
 # General: P items
 
-> **Generated file: do not edit by hand.** Published from the maintainers' private list on 27 November 2026
+> **Generated file: do not edit by hand.** Published from the maintainers' private list on 28 November 2026
 > with every line kept; only identifying names, addresses, paths and links to private records are
 > replaced by placeholders (see the [P list index](../p-list.md) for the rules).
 
@@ -255,6 +255,15 @@ accelerator, which the owner named as Coral. Note for the hardware choice: the t
 Frigate no longer recommends it for new installations; choose the accelerator Frigate recommends at purchase time
 (for example an Intel graphics chip with OpenVINO, or a Hailo card) and record the choice. Disk layout, redundancy
 and the split between backup and recordings are decided with the purchase.
+
+**Advisories rechecked and accepted for the trial (27 November 2026).** Of the five Frigate advisories without a
+listed fix, the two high ones (GHSA-c4qf-xxq4-vf55, GHSA-mgh5-cr9h-g6hr) are closed in 0.18.3 in the code; three
+medium ones remain (GHSA-74x4-gw64-2mq5, GHSA-w3c4-957q-2jw4, GHSA-4xp7-86rr-9758). The code was read; no attack was
+tried. **Owner: the trial runs with these open**, on the private network, with administrator accounts only and our
+own camera; no camera-limited or view-only accounts until GHSA-74x4-gw64-2mq5 is fixed. Production is decided after
+the trial, including whether detection is needed at all (a recording-only tool has far less exposed code). Public
+draft #81 was brought up to date with main (`aac5887`, CI passed); Frigate and its bundled detection model are in the
+open-source list. Still open: a detection check and the first admin password change.
 
 ### P48 — Remote branch router and gateway firewall
 
@@ -714,6 +723,13 @@ places or networks (P82) reach the admin the same way: on the widget, by mail, o
 - **Order:** test site first, then production. Follows the working-agreements rule "What every project's system
   has" (4).
 
+**Public draft #134 brought up to date with main (27 November 2026): `ffd4d96`, CI passed, no conflicts.** Its
+first test-site run shares one build with #142 (P53), because both change the Desk; it waits for the test host.
+
+**Stage 1 on test (28 November 2026):** in the combined test build `70636f4`. The report endpoint, the mail logic (captured;
+the test site sends no mail), the Desk entry and the page pass their server-side checks (receipt
+`p53-p72-p69-test-combined-70636f4`). Open: the owner's look at the Alerts page; stage 2 (route, tokens, wiring the checks).
+
 ### P73 — Federated chat (Matrix or XMPP) in the mobile app, replacing Raven
 
 **App:** general · **Also touches:** mobile, raven, erp, signin · **State:** open · **Category:** long-term plan
@@ -740,15 +756,26 @@ accepts that risk.
   well-known files for ever): the chat server stands on its own address, separate and replaceable. The name can
   never be changed afterwards, so production starts on the company domain people keep (P70's split), not the demo
   domain. The test server has its own throwaway name.
-- **Chat name (owner, 27 November 2026, night): `firstname.initial`**, with a number on a clash (`rajesh.d`, then
-  `rajesh.d2`); made once at onboarding, never changed and never reused; addresses are `@rajesh.d:chat.<domain>`.
+- **Chat name (owner, 27 November 2026, night): `firstname.initial`**, with a number on a clash (`asha.d`, then
+  `asha.d2`); made once at onboarding, never changed and never reused; addresses are `@asha.d:chat.<domain>`.
   The sign-in user name stays the full mail address (which Matrix does not accept as a name). The sign-in service
   holds the chat name as a user attribute `chat_name` and gives it to the chat sign-in as a claim; without it a
   person cannot sign in to chat. The sign-up service (P82) generates it; until P82 is built it is set by hand.
 - **Every new server part gets** monitoring, backups and a test copy from the first deployment (working agreements).
 - **Progress (27 November 2026, night):** the stack is public PR #139 (`p73/matrix-stack`, `9890da2`) and runs on the
   test VM since 14:41 UTC (receipt `p73-test-chat-stack-9890da2`), with sign-in set up in the test sign-in service.
-  Not reachable from outside until #139 is on main and the production relay carries the two test names. Not built:
+  #139 merged at `5f3a897` (14:45 UTC); the production relay carries the two test names since 14:46 UTC (receipt
+  `p73-production-test-relay-chat-names-735b117`), so the test chat answers from outside with valid certificates.
+  13 test people have a chat name. **Merged, on test only:** production gets a chat stack only on the company domain
+  people keep (P70). The owner signed in on test (`@asha.d`). **The business system's bot** (`@erp`, no admin
+  token; people join by automatic acceptance of its invitations) is public PR #143, on test since 17:57 UTC
+  (receipt `p73-test-chat-bot-92b77c4`), merged as #143 (`2f296e2`). **The room module** (site, team and Notices
+  rooms from Field Sites, nothing stored in ERPNext; a team is the supervisor's team at a site) is public draft PR
+  #144, merged at `f30c4e2` (18:23 UTC, 27 November; tested commit `3c8aff5`): tried live against the test chat
+  server and for four minutes on the test ERP (receipt `p73-test-erp-chat-rooms-3c8aff5`). **Merged, not deployed:**
+  the test ERP is back on another session's build (#142) and gets the module with its next build from main;
+  production has no chat stack yet (P70). The Firebase project `unformat-erp` exists since 28 November 2026 (app `in.unformat.erp`); its server key is on
+  the test VM and Google accepts it. Next for alerts: the gateway (Sygnal) in the chat stack, and #82 for approvals. Not built:
   the push gateway, the ERPNext bot and rooms, monitoring, backups and the drift check for the stack, the production
   route file.
 - **First step:** the adoption check (licence, maintenance, security history, how fixes are published) for Synapse,
@@ -852,6 +879,12 @@ only the client's brand; the guide's steps work on the test site; the copyright 
 
 **Related:** P84 (client identity), P50 (per-brand app builds), P63 (demo brand), P55 (tenant logo through the
 private profile).
+
+**Merged (27 November 2026): public #87 as `f02bf30`** (branch head `486c6d3`, brought up to date with main the
+same evening; CI passed). **Merged, not deployed.** It reaches the ERP image (the default logo and favicons in the
+build) and the renderer, so the promotion plan asks for a render check of every stack. Both sites supply their own
+branding, so no visible change is expected. It goes out with the next ERP release; the mobile app's name and icons
+are still a later step.
 
 ### P88 — Project camera sites connected to the NVR over the mesh
 

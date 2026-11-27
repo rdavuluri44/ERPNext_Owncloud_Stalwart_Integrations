@@ -196,7 +196,7 @@ div {
            and clones such entries, but several of its methods assume every entry has a filter
            (CT_NsvFilter.IU() throws "Cannot read properties of null (reading 'IU')", others
            "(reading 'FH')"), the editor fails to apply changes, the grid stays blank and the
-           workbook is unusable for everyone who opens it (SRN workbook, 20-21 Nov 2026).
+           workbook is unusable for everyone who opens it (a shared workbook, 20-21 Nov 2026).
            Patching single methods is whack-a-mole, so empty entries are dropped wherever a view
            is read, written or copied, and IU() is null-safe. Applied only when the loaded build
            still has the unsafe IU(); a fixed upstream build is left alone. */

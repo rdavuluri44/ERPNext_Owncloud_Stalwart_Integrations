@@ -13,7 +13,9 @@ to Restic as mounted files / an env file, never on the command line.
 Databases are dumped online with consistent snapshots (no downtime). Stores
 that are unsafe to copy while running (e.g. Drive, Mail) are stopped briefly,
 copied to local staging and restarted before the upload; the stop is bounded
-and the containers are restarted even on failure.
+and the containers are restarted even on failure. They are started in the
+listed order, each after the previous one is healthy (list Drive before its
+editor bridge).
 """
 import argparse
 from datetime import datetime, timezone
@@ -49,6 +51,9 @@ def validate(profile):
     for group in profile.get('stop_and_copy', []):
         if not group['containers'] or any(not NAME.fullmatch(c) for c in group['containers']):
             raise ValueError('Invalid stop_and_copy containers')
+        wait = group.get('start_wait_seconds', 120)
+        if not isinstance(wait, int) or isinstance(wait, bool) or not 0 <= wait <= 600:
+            raise ValueError('start_wait_seconds must be 0 to 600')
     retention = profile.get('retention', {'daily': 7, 'weekly': 4, 'monthly': 6})
     if not all(isinstance(v, int) and v > 0 for v in retention.values()): raise ValueError('Retention counts must be positive')
     return profile
@@ -86,8 +91,36 @@ def dump(db, output, run=subprocess.run):
     if result.returncode: raise RuntimeError('Database dump failed: ' + db['name'])
 
 
-def stop_and_copy(group, staging, run=subprocess.run, clock=time.monotonic):
-    """Stop the group's containers, copy their paths, always restart them."""
+def health(name, run=subprocess.run):
+    """'healthy', 'starting', 'unhealthy', or 'none' for a container without a health check."""
+    result = run(['docker', 'inspect', '-f', '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}', name],
+                 capture_output=True, text=True)
+    return (getattr(result, 'stdout', '') or '').strip() or 'none'
+
+
+def start_in_order(containers, run=subprocess.run, clock=time.monotonic, sleep=time.sleep, wait=120):
+    """Start the containers in the listed order. Before starting the next one, wait (bounded) until the previous
+    one is healthy, so a dependent never races the service it registers with: Drive's editor bridge failed its
+    first registration on 24 and 25 November 2026 when both started at once (P80). Every container is started
+    even when a wait times out or a start fails; the first failure is raised afterwards."""
+    failure = None
+    for index, name in enumerate(containers):
+        try:
+            run(['docker', 'start', name], check=True, stdout=subprocess.DEVNULL)
+        except subprocess.CalledProcessError as error:
+            failure = failure or error
+            continue
+        if index == len(containers) - 1:
+            break
+        deadline = clock() + wait
+        while health(name, run) not in ('healthy', 'none') and clock() < deadline:
+            sleep(2)
+    if failure:
+        raise failure
+
+
+def stop_and_copy(group, staging, run=subprocess.run, clock=time.monotonic, sleep=time.sleep):
+    """Stop the group's containers, copy their paths, always restart them (in the listed order)."""
     started = clock()
     run(['docker', 'stop', '--time', '30', *group['containers']], check=True, stdout=subprocess.DEVNULL)
     try:
@@ -97,7 +130,7 @@ def stop_and_copy(group, staging, run=subprocess.run, clock=time.monotonic):
             target.parent.mkdir(parents=True, exist_ok=True)
             run(['cp', '-a', '--reflink=auto', path, str(target)], check=True)
     finally:
-        run(['docker', 'start', *group['containers']], check=True, stdout=subprocess.DEVNULL)
+        start_in_order(group['containers'], run=run, clock=clock, sleep=sleep, wait=group.get('start_wait_seconds', 120))
     return round(clock() - started, 1)
 
 

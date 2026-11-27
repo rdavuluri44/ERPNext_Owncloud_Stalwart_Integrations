@@ -2,7 +2,7 @@
 
 > **Generated file: do not edit by hand.** This is the project's work list (every "P" number used in
 > commits, pull requests, READMEs and `docs/decisions.md`) published from the maintainers' private
-> list on 27 November 2026, with every line kept. Only these categories are replaced, by placeholders: the
+> list on 28 November 2026, with every line kept. Only these categories are replaced, by placeholders: the
 > deploying organisation's name (`<tenant>`), host names (`example.com`), IP addresses
 > (documentation ranges), server file paths and rollback folders, mail addresses, names of people and
 > of third parties' internal products, business file names, and links to private records

@@ -654,7 +654,7 @@ configuration we write (`integrations/chat/configure.py`).
 ### CHAT-4 The business system's bot; invitations accepted automatically
 
 - **What and why:** an application service registration (`bridge.yaml`) for one user, `@erp`, with the aliases
-  `#site-…` and `#team-…`, and no call-back address; `auto_accept_invites` for invitations from this server. The
+  `#site-…`, `#team-…` and `#notices-…`, and no call-back address; `auto_accept_invites` for invitations from this server. The
   bot puts people into rooms by inviting them, so nothing holds an admin token. (A client of the authentication
   service cannot get Synapse's admin scope; tried on the test site, 27 November 2026.)
 - **How:** `integrations/chat/configure.py` (`bridge`, `homeserver`).
@@ -663,6 +663,17 @@ configuration we write (`integrations/chat/configure.py`).
   rules the bot sets depend on the default room version (12 on the test site: the creator is not listed in the
   power levels).
 - **Tests:** `tests/test_chat_stack.py`; live: create, invite, post, remove on the test site.
+
+### CHAT-5 Alert gateway inside the stack; Synapse may call only the stack's own network
+
+- **What and why:** Sygnal as an optional service (`alerts`, compose profile `alerts`) with one Google (FCM v1)
+  app; Synapse's `ip_range_whitelist` names the stack's own network, because Synapse refuses alerts to private
+  addresses otherwise. The stack's network has a fixed range for this. The gateway alone is on a second
+  network, `outbound`, to reach Google.
+- **How:** `integrations/chat/configure.py` (`alerts`, `write_alerts`, `homeserver`), `deployment/stacks/chat.compose.json`.
+- **Upgrade:** **re-check:** **silent** if Sygnal renames a configuration key (alerts stop; its log says so) or if
+  Synapse changes what the whitelist covers.
+- **Tests:** `tests/test_chat_stack.py`; live: the gateway asks Google about a made-up phone address.
 
 ### CHAT-3 Proxy paths that name Matrix endpoints
 

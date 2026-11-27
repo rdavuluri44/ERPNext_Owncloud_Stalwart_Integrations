@@ -27,6 +27,7 @@ ENV = {
     'UPSTREAM_CLIENT_ID': 'chat', 'UPSTREAM_CLIENT_SECRET': 'placeholder-g', 'UPSTREAM_NAME': 'Company sign-in',
     'LOCALPART_TEMPLATE': '{{ user.chat_name }}',
     'BRIDGE_AS_TOKEN': 'placeholder-h', 'BRIDGE_HS_TOKEN': 'placeholder-i',
+    'NETWORK_SUBNET': '172.30.250.0/24', 'ALERTS_APP_ID': 'com.example.app',
 }
 STACK = json.loads((ROOT / 'deployment/stacks/chat.compose.json').read_text(encoding='utf-8'))
 INPUTS = json.loads((ROOT / 'deployment/stacks/inputs.json').read_text(encoding='utf-8'))
@@ -83,6 +84,7 @@ class Configuration(unittest.TestCase):
         self.assertFalse(re.fullmatch(users[0]['regex'], '@someone:chat.example.net'), 'the bot cannot act as a person')
         alias = bridge['namespaces']['aliases'][0]['regex']
         self.assertTrue(re.fullmatch(alias, '#site-north-yard:chat.example.net'))
+        self.assertTrue(re.fullmatch(alias, '#notices-asha.d:chat.example.net'))
         self.assertFalse(re.fullmatch(alias, '#lunch:chat.example.net'))
         self.assertNotEqual(bridge['as_token'], bridge['hs_token'])
         with self.assertRaises(ValueError):
@@ -142,6 +144,43 @@ class Configuration(unittest.TestCase):
             self.assertEqual(configure.main({**ENV, 'UPSTREAM_CLIENT_SECRET': ''}, root / 's', root / 'm', root / 'd'), 1)
             self.assertFalse((root / 's').exists())
 
+    def test_alerts_only_go_to_the_gateway_inside_this_stacks_own_network(self):
+        self.assertEqual(self.synapse['ip_range_whitelist'], ['172.30.250.0/24'])
+        self.assertTrue(configure.ALERTS_URL.startswith('http://alerts-gateway:5000/'))
+        for bad, word in (('10.0.0.0/8', 'at most 256'), ('8.8.8.0/24', 'private'), ('not a network', 'network')):
+            with self.assertRaises(ValueError) as refused:
+                configure.settings({**ENV, 'NETWORK_SUBNET': bad})
+            self.assertIn(word, str(refused.exception))
+        with self.assertRaises(ValueError):
+            configure.settings({**ENV, 'ALERTS_APP_ID': 'not an app id'})
+
+    def test_the_gateway_is_configured_only_where_a_key_was_placed(self):
+        made_up = {'type': 'service_account', 'project_id': 'example-project', 'private_key': 'placeholder-k',
+                   'client_email': 'sender@example-project.example'}
+        gateway = configure.alerts(self.values, made_up)
+        self.assertEqual(gateway['apps'], {'com.example.app': {
+            'type': 'gcm', 'api_version': 'v1', 'project_id': 'example-project',
+            'service_account_file': '/config/' + configure.ALERTS_KEY_NAME}})
+        self.assertNotIn('placeholder-k', json.dumps(gateway), 'the key stays in its own file')
+        with self.assertRaises(ValueError):
+            configure.alerts(self.values, {'type': 'authorized_user'})
+        with tempfile.TemporaryDirectory() as folder, mock.patch.object(configure, 'signing_key', return_value=b'KEY-1'):
+            root = Path(folder)
+            (root / 'k').mkdir()
+            run = lambda: configure.main(ENV, root / 's', root / 'm', root / 'd', root / 'k', root / 'a')  # noqa: E731
+            self.assertEqual(run(), 0)
+            self.assertFalse((root / 'a' / 'sygnal.yaml').exists(), 'no key, no gateway configuration')
+            (root / 'k' / configure.ALERTS_KEY_NAME).write_text(json.dumps(made_up))
+            self.assertEqual(run(), 0)
+            self.assertEqual(json.loads((root / 'a' / 'sygnal.yaml').read_text())['http']['port'], 5000)
+            self.assertEqual(json.loads((root / 'a' / configure.ALERTS_KEY_NAME).read_text()), made_up)
+            (root / 'k' / configure.ALERTS_KEY_NAME).unlink()
+            self.assertEqual(run(), 0)
+            self.assertFalse((root / 'a' / 'sygnal.yaml').exists(), 'the key was taken away: nothing stale stays')
+            self.assertFalse((root / 'a' / configure.ALERTS_KEY_NAME).exists())
+            (root / 'k' / configure.ALERTS_KEY_NAME).write_text('not json')
+            self.assertEqual(run(), 1, 'a wrong key file stops the run')
+
 
 class Stack(unittest.TestCase):
     def test_every_setting_the_script_needs_is_passed_and_declared(self):
@@ -181,6 +220,26 @@ class Stack(unittest.TestCase):
         self.assertEqual(services['synapse']['networks']['workspace'], {'aliases': ['chat-synapse']})
         self.assertEqual(services['mas']['networks']['workspace'], {'aliases': ['chat-mas']})
         self.assertTrue(all('@sha256:' in service['image'] for service in services.values()))
+
+    def test_the_alert_gateway_is_optional_private_and_reads_only_its_own_files(self):
+        gateway = STACK['services']['alerts']
+        self.assertEqual(gateway['profiles'], ['alerts'], 'it starts only where an operator asks for it')
+        self.assertEqual(gateway['ports'], [], 'no port on the host: only Synapse calls it')
+        self.assertEqual(gateway['volumes'], ['alerts-config:/config:ro'])
+        self.assertEqual(gateway['depends_on'], {'configure': {'condition': 'service_completed_successfully'}})
+        self.assertEqual(gateway['networks'], {'default': {'aliases': ['alerts-gateway']}, 'outbound': {}},
+                         'its own way out to Google, and not on the shared network of the other applications')
+        self.assertEqual(STACK['networks']['outbound'], {})
+        self.assertFalse([name for name, s in STACK['services'].items() if name != 'alerts' and 'outbound' in s['networks']],
+                         'nothing else in the stack gets a way out through it')
+        subnet = '${CI_CHAT_CONFIGURE_NETWORK_SUBNET:?Set CI_CHAT_CONFIGURE_NETWORK_SUBNET}'
+        self.assertEqual(STACK['networks']['default'], {'internal': True, 'ipam': {'config': [{'subnet': subnet}]}})
+        self.assertEqual(STACK['services']['configure']['environment']['NETWORK_SUBNET'], subnet,
+                         'Synapse is told exactly the network the gateway is in')
+        key_mount = [v for v in STACK['services']['configure']['volumes'] if v.endswith(':/alerts-key:ro')]
+        self.assertEqual(len(key_mount), 1, 'the key folder is read-only, and only the one-time service sees it')
+        self.assertFalse([v for name, s in STACK['services'].items() if name != 'configure'
+                          for v in s.get('volumes', []) if 'alerts-key' in v])
 
 
 class Rendering(unittest.TestCase):
