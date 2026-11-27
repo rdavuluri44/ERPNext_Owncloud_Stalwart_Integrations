@@ -654,7 +654,7 @@ configuration we write (`integrations/chat/configure.py`).
 ### CHAT-4 The business system's bot; invitations accepted automatically
 
 - **What and why:** an application service registration (`bridge.yaml`) for one user, `@erp`, with the aliases
-  `#site-…` and `#team-…`, and no call-back address; `auto_accept_invites` for invitations from this server. The
+  `#site-…`, `#team-…` and `#notices-…`, and no call-back address; `auto_accept_invites` for invitations from this server. The
   bot puts people into rooms by inviting them, so nothing holds an admin token. (A client of the authentication
   service cannot get Synapse's admin scope; tried on the test site, 27 November 2026.)
 - **How:** `integrations/chat/configure.py` (`bridge`, `homeserver`).

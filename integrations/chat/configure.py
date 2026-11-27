@@ -98,7 +98,7 @@ def bridge(values):
         'id': 'business-system', 'url': None, 'sender_localpart': BRIDGE_USER, 'rate_limited': False,
         'as_token': values['BRIDGE_AS_TOKEN'], 'hs_token': values['BRIDGE_HS_TOKEN'],
         'namespaces': {'users': [{'exclusive': True, 'regex': '@' + BRIDGE_USER + ':' + server}],
-                       'aliases': [{'exclusive': True, 'regex': '#(site|team)-.*:' + server}], 'rooms': []},
+                       'aliases': [{'exclusive': True, 'regex': '#(site|team|notices)-.*:' + server}], 'rooms': []},
     }
 
 

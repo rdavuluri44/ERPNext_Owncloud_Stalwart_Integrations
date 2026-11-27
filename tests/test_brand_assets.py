@@ -24,7 +24,7 @@ class BrandAssets(unittest.TestCase):
         config.update(extra)
         return render(ROOT, Path(out) / "build", config)
 
-    def test_neutral_placeholders_ship_with_the_repository(self):
+    def test_default_brand_ships_with_the_repository(self):
         public = ROOT / "erpnext_drive_integrations/public"
         for name in FAVICON_FILES:
             self.assertTrue((public / ("company-" + name)).is_file(), name)

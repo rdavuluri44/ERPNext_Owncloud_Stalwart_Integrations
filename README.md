@@ -90,7 +90,7 @@ of the AI assistance.
 
 ## License
 
-Copyright © 2026 Unformat and contributors. This repository is free software
+Copyright © 2026 unformat.in. This repository is free software
 under the **GNU Affero General Public License v3.0 or later**
 ([LICENSE](LICENSE)): if you run a modified version as a network service, you
 must offer its users the modified source. Upstream products, the app icons

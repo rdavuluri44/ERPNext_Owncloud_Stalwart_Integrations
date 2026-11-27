@@ -1,0 +1,17 @@
+{
+  "about": "Default brand of this software (P85). A deployment replaces it through its private profile; see branding/README.md.",
+  "name": "Unformat",
+  "website_title": "Unformat",
+  "website_name": "Unformat",
+  "colours": {
+    "primary": "#1F3A5F",
+    "accent": "#E8731A"
+  },
+  "logo": "logo.svg",
+  "favicons": ["favicon.svg", "favicon-16.png", "favicon-32.png", "favicon-48.png", "favicon-180.png", "favicon-192.png", "favicon-512.png"],
+  "mobile_app": {
+    "name": "Unformat",
+    "app_id": "in.unformat.erp",
+    "note": "Not wired into the mobile build yet; follow-up step of P85, agreed with the mobile app's maintainers."
+  }
+}

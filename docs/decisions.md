@@ -6,6 +6,26 @@ discussion that led to a decision is not repeated here.
 
 ## 2026-11-27
 
+### Chat rooms follow the sites, and the business system stores nothing about them (P73)
+
+- **Decision:**
+  - The bot keeps three kinds of room: one per enabled Field Site (every enabled member), one per supervisor's
+    team at a site (the supervisor, the engineer assigned to them, the site's approvers), and a read-only Notices
+    room per person.
+  - A room is found by a fixed address made from the site's record name (and the supervisor's chat name), and its
+    members are read from the chat server at every run. There is no room table in ERPNext.
+  - Rooms are brought in step after every saved change of a Field Site or of a person's chat name, and once an
+    hour for everything.
+  - A person takes part only with a chat name on their User record; people without one are counted and left out.
+    The chat name cannot be changed once set.
+  - A failure of the chat server never stops a save; it is logged and tried again.
+- **Why:** owner, 27 November 2026: rooms are made by the server side, people join and leave with their site
+  assignment, and ERPNext is not to hold what another system already holds (modules stay separate and
+  replaceable). A team is the supervisor's team because attendance is organised that way. Reading members from
+  the chat server each time makes every run a repair, so a missed run or a manual change heals itself.
+- **Where:** `erpnext_drive_integrations/chat_rooms/` (`rules.py`, `matrix.py`, `sync.py`, `hooks.py`),
+  `tests/test_chat_rooms.py`, `integrations/chat/configure.py` (the bot also owns `#notices-…` addresses).
+
 ### Chat: the business system acts through a bot that invites; nothing holds an admin token (P73)
 
 - **Decision:** the business system has one chat identity, the bot `@erp`, with its own token. It creates the site
@@ -181,6 +201,20 @@ discussion that led to a decision is not repeated here.
   `deployment/host-checks.example.json`, `docs/production-moves.md`, `tests/test_host_checks.py`.
 
 ## 2026-11-26
+
+### Unformat is the default brand, public and replaceable (P85)
+
+- **Decision:** our own brand, Unformat (the "UN / format" logo, favicons, name and colours), is published in
+  `branding/unformat/` and is the default look: the ERP's logo and favicons and the front page's title and name.
+  A deployment replaces it through its private profile (`company_logo`, `company_favicon_dir`, `website_title`,
+  `website_name`), as before. The copyright notice reads "Copyright © 2026 unformat.in"; the name and logo are
+  trademarks of unformat.in, free to use to run, test and show the software, replaced by anyone shipping it as
+  their own product. The mobile app's name, app ID and icons follow in a later step with the app's maintainers.
+- **Why:** the owner aims to keep about 95% of the work public; our brand is part of it, and users always keep the
+  choice of replacing it. Clients' brands stay private (P84). Deployments that supply their own branding, such as
+  production and the test site, see no change.
+- **Where:** `branding/`, `erpnext_drive_integrations/public/company-*`, `tools/prepare_runtime.py`, `README.md`,
+  `LICENSES.md`, `tests/test_branding.py`.
 
 ### After a reboot every container that ran before must run again; the admin is mailed (P57)
 

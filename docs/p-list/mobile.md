@@ -1,6 +1,6 @@
 # Mobile: P items
 
-> **Generated file: do not edit by hand.** Published from the maintainers' private list on 27 November 2026
+> **Generated file: do not edit by hand.** Published from the maintainers' private list on 28 November 2026
 > with every line kept; only identifying names, addresses, paths and links to private records are
 > replaced by placeholders (see the [P list index](../p-list.md) for the rules).
 

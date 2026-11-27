@@ -83,6 +83,7 @@ class Configuration(unittest.TestCase):
         self.assertFalse(re.fullmatch(users[0]['regex'], '@someone:chat.example.net'), 'the bot cannot act as a person')
         alias = bridge['namespaces']['aliases'][0]['regex']
         self.assertTrue(re.fullmatch(alias, '#site-north-yard:chat.example.net'))
+        self.assertTrue(re.fullmatch(alias, '#notices-asha.d:chat.example.net'))
         self.assertFalse(re.fullmatch(alias, '#lunch:chat.example.net'))
         self.assertNotEqual(bridge['as_token'], bridge['hs_token'])
         with self.assertRaises(ValueError):

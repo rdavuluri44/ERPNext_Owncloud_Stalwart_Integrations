@@ -19,6 +19,9 @@ from render_runtime import render, FAVICON_FILES, public_mappings
 import runtime_mounts
 from runtime_mounts import copy_files, identity_proxy_files, copy_dirs
 
+# Default brand (P85): a deployment replaces it through its profile (branding/README.md).
+BRAND = json.loads((Path(__file__).resolve().parents[1] / 'branding/unformat/brand.json').read_text())
+
 
 def write_private(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -257,8 +260,8 @@ def prepare(source, output, profile):
             raise ValueError('website_zone_color must be a #RRGGBB colour')
         classes = 'art-' + art + (' zone-badge' if style == 'badge' else '')
         page = site/'index.html'
-        page.write_text(page.read_text().replace('__SITE_TITLE__', text('website_title', 'Welcome'))
-                        .replace('__SITE_NAME__', text('website_name', 'Company')).replace('__EMPLOYEE_ZONE_URL__', zone)
+        page.write_text(page.read_text().replace('__SITE_TITLE__', text('website_title', BRAND['website_title']))
+                        .replace('__SITE_NAME__', text('website_name', BRAND['website_name'])).replace('__EMPLOYEE_ZONE_URL__', zone)
                         .replace('__SITE_TAGLINE__', tagline).replace('__ZONE_LABEL_HTML__', label_html)
                         .replace('__PAGE_CLASSES__', classes).replace('__PAGE_STYLE__', '--zone-bg:' + color))
         placeholders = build/'erpnext_drive_integrations/public'

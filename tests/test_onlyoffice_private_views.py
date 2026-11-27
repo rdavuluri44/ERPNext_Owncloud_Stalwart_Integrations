@@ -50,7 +50,7 @@ function fakeEditor(existing) {
   return { api: api, views: views };
 }
 function simulate(factory, existing) {
-  var ed = fakeEditor(existing), k = factory(ed.api, 'Private - Rajesh', window);
+  var ed = fakeEditor(existing), k = factory(ed.api, 'Private - Asha', window);
   ed.api.asc_registerCallback('asc_onActiveSheetChanged', k.schedule);
   k.run();
   return ed;
@@ -175,13 +175,13 @@ class PrivateSheetViewTests(unittest.TestCase):
     def test_old_logic_loops_and_new_logic_creates_exactly_one_named_view(self):
         result = self.run_simulation()
         self.assertGreater(result["old"], 3, "the simulation must reproduce the loop with the old algorithm")
-        self.assertEqual(result["fixed"], ["Private - Rajesh"])
+        self.assertEqual(result["fixed"], ["Private - Asha"])
 
     def test_a_sheet_with_many_views_gets_no_new_one(self):
         result = self.run_simulation()
         self.assertEqual(result["cap"], 20)
         self.assertEqual(result["full"], 20, "no view is added to a sheet that already has the cap")
-        self.assertEqual(result["below"], ["Private - Rajesh"], "below the cap the person still gets one")
+        self.assertEqual(result["below"], ["Private - Asha"], "below the cap the person still gets one")
 
     def test_the_block_is_what_the_editor_page_uses(self):
         self.assertIn("var keeper = makePrivateViewKeeper(api, name, w);", EJS)
