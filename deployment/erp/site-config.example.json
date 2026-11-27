@@ -13,5 +13,15 @@
   "cloud_raven_mobile_enabled": false,
   "cloud_native_mobile_clients": [],
   "cloud_legacy_rpc_aliases": {},
-  "hov_respond_host": "respond.example.com"
+  "hov_respond_host": "respond.example.com",
+  "cloud_alerts": {
+    "sources": {
+      "web-1": "0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "role": "System Manager",
+    "links": [
+      {"label": "Monitoring", "url": "https://monitoring.example.com/", "note": "dashboards and logs"}
+    ],
+    "mail": true
+  }
 }

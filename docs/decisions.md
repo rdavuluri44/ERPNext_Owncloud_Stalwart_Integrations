@@ -1290,3 +1290,22 @@ check themselves in keep their existing workflows.
 - **Where:** `deployment/config/proxy/office-acme.yml`, `tools/prepare_test_relay.py`,
   `tools/coolify_proxy_hosts.py`, `tools/coolify_proxy_tls_resolver.py`,
   `tests/test_rebuild_templates.py`, register entry PROXY-6. AI-assisted by Claude Code.
+
+### One alert inbox for the admin (P72, P53)
+
+- **Decision:** Every check on every server reports to one inbox in ERP (the System Alert record and the
+  `/admin-alerts` page) through one sender, `tools/send_alert.py`, with a token per server (source); ERP keeps
+  only each token's SHA-256 in site config. Each problem has a key, so a repeat updates one record, a passing
+  check resolves it and a new failure reopens it. Who is an admin comes from site config (`cloud_alerts.role`),
+  defaulting to System Manager, because ERP roles are not mapped from sign-in groups. The admin reaches the
+  inbox through an **Alerts** entry on the Desk with the unread count, not an inline widget, because the Desk is
+  an app-frame shell: each entry opens a page in the frame. Critical alerts are mailed at once (and their
+  resolve), everything still open is summarised in one mail a day, and when ERP cannot be reached the sender
+  mails a critical alert directly through the host-check mail sender. The token travels in `X-Alert-Token`,
+  because Frappe refuses any request with an unknown two-part `Authorization` header before a guest method runs.
+  Stage 2 wires the existing checks to the sender and opens a narrow proxy route for the report method only.
+- **Why:** owner, 26 November 2026: alerts nobody watches are no alerts, and the admin is the one who acts. One
+  inbox with one record per problem avoids a mail per check run; the direct fallback covers the case where the
+  inbox itself is down.
+- **Where:** `erpnext_drive_integrations/admin_alerts/`, `erpnext_drive_integrations/www/admin_alerts.*`,
+  `erpnext_drive_integrations/www/place_holder.py`, `tools/send_alert.py`, SOP F5. AI-assisted by Claude Code.
