@@ -77,10 +77,13 @@ set `device: GPU` and hardware decoding instead.
 
 **Security.** Frigate published many advisories in 2026, several critical.
 Keep to the newest release, and watch it daily (`frigate` in
-`deployment/upstream-watch.json`). As of 26 November 2026, GHSA-c4qf-xxq4-vf55,
-GHSA-74x4-gw64-2mq5, GHSA-mgh5-cr9h-g6hr, GHSA-4xp7-86rr-9758 and
-GHSA-w3c4-957q-2jw4 list no fixed version; the first three need a signed-in
-viewer, so the trial has the administrator only.
+`deployment/upstream-watch.json`). As of 27 November 2026 five advisories list
+no fixed version. Two high ones are closed in 0.18.3 in the code
+(GHSA-c4qf-xxq4-vf55, GHSA-mgh5-cr9h-g6hr); three medium ones remain
+(GHSA-74x4-gw64-2mq5, GHSA-w3c4-957q-2jw4, GHSA-4xp7-86rr-9758). The remaining
+ones need a signed-in account with lower rights or a hostile camera, so the
+trial has administrator accounts only, our own camera, and no internet
+exposure; the owner accepted this for the trial (`docs/decisions.md`).
 
 ## Tests
 

@@ -590,8 +590,22 @@ discussion that led to a decision is not repeated here.
   maintained (monthly releases, last 19 November 2026); fixes are published as GitHub
   security advisories with releases. The 2026 history is heavy: several critical flaws
   (remote code execution, some without a login, fixed in 0.18.2 and 0.18.3). Hence 0.18.3
-  as the minimum, Frigate in the daily upstream watch, no internet exposure, and no viewer
-  accounts while GHSA-c4qf-xxq4-vf55, GHSA-74x4-gw64-2mq5 and GHSA-mgh5-cr9h-g6hr list no fix.
+  as the minimum, Frigate in the daily upstream watch, no internet exposure, and administrator
+  accounts only.
+- **Open advisories (checked 27 November 2026 against Frigate's own advisory pages and the
+  source of v0.18.3):** five list no fixed version. Two are high and are closed in 0.18.3 in
+  the code, although their pages were never updated: GHSA-c4qf-xxq4-vf55 (the logs route is
+  administrator-only now) and GHSA-mgh5-cr9h-g6hr (the proxied go2rtc interface is gone).
+  Three medium ones remain: GHSA-74x4-gw64-2mq5 (recordings of other cameras for a
+  camera-limited user; still in the web server configuration), GHSA-w3c4-957q-2jw4 (a
+  signed-in user can make the server call internal addresses; not checked in the code) and
+  GHSA-4xp7-86rr-9758 (a hostile camera can crash the bundled go2rtc 1.9.14). The first two
+  need a signed-in account with lower rights, the third a hostile camera. The code was read;
+  the attacks were not tried.
+- **Owner's acceptance (27 November 2026):** the trial runs with these open, on the private
+  network, with administrator accounts only and our own camera. No camera-limited or
+  view-only accounts until GHSA-74x4-gw64-2mq5 is fixed. Production is decided after the
+  trial, including whether detection is needed at all.
 - **Where:** `integrations/frigate/`, `deployment/upstream-watch.json`. AI-assisted by Claude.
 
 ### The mail archive reader signs in with a passkey, to mail only (P69)
