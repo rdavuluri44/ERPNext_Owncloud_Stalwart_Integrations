@@ -116,6 +116,7 @@
       "paths": [
         "tests/test_app_menu_link.py",
         "tests/test_logout_and_signin.py",
+        "tests/test_desk_signout.py",
         "tests/test_portal_deep_link.py",
         "erpnext_drive_integrations/portal/*",
         "erpnext_drive_integrations/public/session.js",
@@ -139,6 +140,7 @@
       "tests": [
         "tests/test_app_menu_link.py",
         "tests/test_logout_and_signin.py",
+        "tests/test_desk_signout.py",
         "tests/test_portal_deep_link.py",
         "tests/portal/test_mobile.py",
         "tests/test_portal_menu_columns.py",

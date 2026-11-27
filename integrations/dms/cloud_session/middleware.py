@@ -26,6 +26,6 @@ class WorkspaceSessionMiddleware:
         if request.user.is_authenticated and not response.streaming and 'text/html' in response.get('Content-Type', '') and not response.get('Content-Encoding'):
             content = response.content
             if b'</body>' in content:
-                response.content = content.replace(b'</body>', b'<script src="/cloud-session.js?v=20261119-marker" defer></script></body>')
+                response.content = content.replace(b'</body>', b'<script src="/cloud-session.js?v=20261127-desk" defer></script></body>')
                 response['Content-Length'] = str(len(response.content))
         return response
