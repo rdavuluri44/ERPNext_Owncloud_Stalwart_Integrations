@@ -9,6 +9,10 @@ refresh worker) do not change; this index groups them by module.
 - `host_check.py` — Post-boot check, crash-loop watch and tailnet wait for a Docker host (P57).
 - `render_host_checks.py` — Render its config, systemd units and the Docker start-after-Tailscale drop-in from the private profile.
 
+## Admin alert inbox (`admin-alerts`)
+
+- `send_alert.py` — Send one alert (or its resolve) to the ERP alert inbox, or wrap a check (`run -- COMMAND`) so its result opens or resolves an alert; mails critical alerts directly when ERP is unreachable (P72, P53).
+
 ## Upstream watch (`deployment`)
 
 - `open_source.py` — One list of every open-source project we use, borrow from or evaluate; renders the README acknowledgements and `docs/open-source.md` and checks them against the upstream watch and `modules.json` (P35).

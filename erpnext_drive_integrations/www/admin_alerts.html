@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Alerts</title>
+<style>
+body{margin:0;background:#f8fafc;color:#1e293b;font:15px/1.5 system-ui,sans-serif}
+main{max-width:860px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:24px;font-weight:600;margin:0 0 4px}h2{font-size:18px;font-weight:600;margin:28px 0 10px}
+.muted{color:#64748b}.empty{padding:14px 16px;background:#fff;border:1px solid #e2e8f0;border-radius:10px}
+ol{list-style:none;margin:0;padding:0}
+.alert{background:#fff;border:1px solid #e2e8f0;border-left:6px solid #94a3b8;border-radius:10px;padding:12px 16px;margin:0 0 10px}
+.alert.critical{border-left-color:#b91c1c}.alert.warning{border-left-color:#b45309}.alert.info{border-left-color:#1d4ed8}
+.alert h3{font-size:16px;font-weight:600;margin:0 0 4px}.alert p{margin:2px 0}
+.sev{display:inline-block;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:1px 8px;border-radius:999px;background:#e2e8f0;margin-right:6px}
+.critical .sev{background:#fee2e2;color:#7f1d1d}.warning .sev{background:#fef3c7;color:#78350f}.info .sev{background:#dbeafe;color:#1e3a8a}
+.new{font-size:12px;font-weight:700;color:#7f1d1d;margin-left:6px}
+pre{white-space:pre-wrap;word-break:break-word;background:#f1f5f9;border-radius:6px;padding:8px 10px;margin:8px 0 0;font-size:13px}
+a{color:#075985}a:focus-visible{outline:3px solid #7dd3fc;outline-offset:2px}
+ul.tools{padding-left:20px}
+</style></head>
+<body><main>
+<h1>Alerts</h1>
+<p class="muted">Reported by the checks on every server. An alert closes by itself when its check passes again.</p>
+
+<h2 id="open">Open ({{ open_alerts | length }})</h2>
+{% if open_alerts %}<ol aria-labelledby="open">
+{% for a in open_alerts %}<li class="alert {{ a.severity | e }}"><h3><span class="sev">{{ a.severity | e }}</span>{{ a.title | e }}{% if a.unread %}<span class="new">New</span>{% endif %}</h3>
+<p class="muted">{{ a.source | e }}{% if a.host %} · {{ a.host | e }}{% endif %} · since {{ (a.first_seen | string)[:16] | e }} · last {{ (a.last_seen | string)[:16] | e }} · reported {{ a.repeat_count or 1 }} time{% if (a.repeat_count or 1) != 1 %}s{% endif %}</p>
+{% if a.detail %}<pre>{{ a.detail | e }}</pre>{% endif %}
+{% if a.link %}<p><a href="{{ a.link | e }}"{% if not a.link.startswith('/') %} target="_blank" rel="noopener"{% endif %}>Where to act</a></p>{% endif %}</li>
+{% endfor %}</ol>{% else %}<p class="empty">Nothing open. All checks that report here are passing.</p>{% endif %}
+
+<h2 id="resolved">Resolved in the last 7 days ({{ resolved_alerts | length }})</h2>
+{% if resolved_alerts %}<ol aria-labelledby="resolved">
+{% for a in resolved_alerts %}<li class="alert {{ a.severity | e }}"><h3><span class="sev">{{ a.severity | e }}</span>{{ a.title | e }}</h3>
+<p class="muted">{{ a.source | e }}{% if a.host %} · {{ a.host | e }}{% endif %} · from {{ (a.first_seen | string)[:16] | e }} · resolved {{ (a.resolved_at | string)[:16] | e }} · reported {{ a.repeat_count or 1 }} time{% if (a.repeat_count or 1) != 1 %}s{% endif %}</p>
+{% if a.detail %}<pre>{{ a.detail | e }}</pre>{% endif %}
+{% if a.link %}<p><a href="{{ a.link | e }}"{% if not a.link.startswith('/') %} target="_blank" rel="noopener"{% endif %}>Where it was handled</a></p>{% endif %}</li>
+{% endfor %}</ol>{% else %}<p class="empty">None.</p>{% endif %}
+
+{% if admin_links %}<h2 id="tools">Admin tools</h2>
+<p class="muted">{{ links_note | e }}</p>
+<ul class="tools" aria-labelledby="tools">{% for l in admin_links %}<li><a href="{{ l.url | e }}" target="_blank" rel="noopener">{{ l.label | e }}</a>{% if l.note %} <span class="muted">({{ l.note | e }})</span>{% endif %}</li>{% endfor %}</ul>{% endif %}
+</main></body></html>

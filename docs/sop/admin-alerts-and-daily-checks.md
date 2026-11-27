@@ -11,6 +11,11 @@ advisories, replies to our upstream posts), but a result nobody reads protects n
 November 2026 that the **admin** receives the alerts and that the sign-in admin also sees alerts and exceptions in a
 widget on their Desk. Until that delivery exists, this SOP is the daily look.
 
+**Alert inbox, stage 1 (built 27 November 2026, live only once released):** the inbox in ERP (the **Alerts**
+entry on the Desk, page `/admin-alerts`), the mail for critical alerts and the daily summary. The checks do not
+report to it yet (stage 2 wires them). Once a check reports there, its step below becomes "look at the inbox"; until then do the
+steps as written.
+
 ## Who
 
 - **Admin:** looks every working day and acts or passes on.
