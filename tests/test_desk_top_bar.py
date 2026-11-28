@@ -198,10 +198,10 @@ class OnlyInsideTheDesk(unittest.TestCase):
         http = self.routes()
         drive = http['middlewares']['isolated-desk-only-drive']['redirectRegex']
         self.assertEqual(drive['regex'], r'^https://drive\.example\.net(/.*)?$')
-        self.assertEqual(drive['replacement'], 'https://erp.example.net/#drive:${1}')
+        self.assertEqual(drive['replacement'], 'https://erp.example.net/place_holder#drive:${1}')
         self.assertFalse(drive['permanent'])
         self.assertEqual(http['middlewares']['isolated-desk-only-erp']['redirectRegex']['replacement'],
-                         'https://erp.example.net/#open:${1}')
+                         'https://erp.example.net/place_holder#open:${1}')
 
     def test_what_programs_and_outsiders_use_is_never_listed(self):
         http = self.routes()

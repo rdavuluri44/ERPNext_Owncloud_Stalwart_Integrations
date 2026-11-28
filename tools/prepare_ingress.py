@@ -131,7 +131,7 @@ def prepare(source, profile):
         visit='Method(`GET`) && Header(`Sec-Fetch-Dest`, `document`)'
         def desk_only(name,host,label,pages):
             middlewares['desk-only-'+name]={'redirectRegex':{'regex':'^https://'+re.escape(host)+'(/.*)?$',
-                'replacement':'https://'+hosts['erp']+'/#'+label+':${1}','permanent':False}}
+                'replacement':'https://'+hosts['erp']+'/place_holder#'+label+':${1}','permanent':False}}
             route('desk-only-'+name,host,'noop@internal',350,'('+visit+' && ('+' || '.join(pages)+'))',
                   middleware=['desk-only-'+name])
         desk_only('drive',hosts['drive'],'drive',['Path(`/`)','PathPrefix(`/files/spaces`)','PathPrefix(`/files/shares`)',
