@@ -133,6 +133,11 @@ class UniversalSearchAndNotifications(unittest.TestCase):
         self.assertIn("f.contentWindow.postMessage(Object.assign({source:'cloud-desk',type},extra||{}),o)", SCRIPT)
         self.assertNotIn(",'*')", SCRIPT)
 
+    def test_an_application_loaded_in_the_background_never_takes_the_person_away(self):
+        # 28 November 2026, on the test site: searching loaded Mail hidden, Mail asked to sign in, and the Desk
+        # left for the sign-in page. Mail's sign-in is honoured only while Mail is the application shown.
+        self.assertIn("e.data.type==='authorize'){if([...frames.values()].find(f=>f.contentWindow===e.source)?.hidden)return;try{", SCRIPT)
+
     def test_a_result_opens_only_a_path_of_that_application(self):
         self.assertIn(r"/^\/(?!\/)[^\s\\]*$/.test(path)", SCRIPT)
         self.assertIn("return u.origin===new URL(app.url,location.href).origin?u.href:'';", SCRIPT)
