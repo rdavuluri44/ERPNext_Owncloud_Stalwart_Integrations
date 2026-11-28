@@ -63,13 +63,11 @@ export function CloudSessionGuard() {
       'display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-around!important;padding:0 8px!important;overflow:visible!important;box-sizing:border-box}' +
       '.uf-rail-inner>nav,.uf-rail-inner>div{display:contents!important}' +
       '.uf-rail-inner .uf-lane-hide{display:none!important}' +
-      '.uf-rail-inner [class*="h-px"],.uf-rail-inner [role=separator],.uf-rail-inner hr{display:none!important}' +
       '.uf-rail-inner .uf-lane-settings{order:4}.uf-rail-inner .uf-lane-add{order:5}' +
       '.uf-pane-row{margin-bottom:44px!important}' +
       '.uf-collapse{display:none!important}' +
-      'body.uf-lane-top .uf-rail-inner{position:static!important;width:100%!important;justify-content:flex-start!important;gap:6px;border-bottom:1px solid rgba(128,128,128,.25)}' +
-      'body.uf-lane-top .uf-rail{width:100%!important;height:44px!important}' +
-      'body.uf-lane-top .uf-rail-parent{flex-direction:column!important}' +
+      'body.uf-lane-top .uf-rail-inner{top:var(--uf-parent-top,0px);width:100%!important;justify-content:flex-start!important;gap:6px;border-bottom:1px solid rgba(128,128,128,.25)}' +
+      'body.uf-lane-top .uf-rail-parent{padding-top:44px!important;box-sizing:border-box}' +
       '}';
     document.head.appendChild(css);
     const wide = () => window.matchMedia('(min-width:1024px)').matches;
@@ -86,24 +84,28 @@ export function CloudSessionGuard() {
       let lower: HTMLElement | null = settings && settings.parentElement !== nav ? settings.parentElement : null;
       while (lower && lower.parentElement !== inner) lower = lower.parentElement;
       lower?.querySelectorAll('a,button').forEach(el => { if (el !== settings) el.classList.add('uf-lane-hide'); });
+      // Dividers and anything else in the two groups that is not an entry.
+      [nav, lower].forEach(group => Array.from(group?.children || []).forEach(el => { if (!el.matches('a,button') && !el.querySelector('a,button')) el.classList.add('uf-lane-hide'); }));
+      document.documentElement.style.setProperty('--uf-parent-top', Math.round(rail.parentElement?.getBoundingClientRect().top || 0) + 'px');
       const folders = document.querySelector<HTMLElement>('[data-tour="sidebar"]'), pane = folders?.parentElement, head = pane?.firstElementChild;
       const row = head && head !== folders ? head.firstElementChild as HTMLElement | null : null;
       document.body.classList.toggle('uf-lane-top', !row);
       if (!row || !pane) return;
       row.classList.add('uf-pane-row');
-      // The fold button is the row's button without a text (the account name is the other one).
-      const fold = Array.from(row.querySelectorAll<HTMLButtonElement>('button')).find(b => !(b.textContent || '').trim());
-      if (fold) {
-        // A pane folded earlier is opened once, then its fold button goes.
-        if (wide() && pane.getBoundingClientRect().width < 160 && !fold.dataset.ufOpened) { fold.dataset.ufOpened = '1'; fold.click(); }
-        fold.classList.add('uf-collapse');
-      }
+      // The fold buttons are the row's buttons without a text (the account name is the other one); one of
+      // them is drawn on narrow screens only.
+      const folds = Array.from(row.querySelectorAll<HTMLButtonElement>('button')).filter(b => !(b.textContent || '').trim());
+      const fold = folds.find(b => b.getBoundingClientRect().width > 0) || folds[0];
+      // A pane folded earlier is opened once, then its fold button goes.
+      if (fold && wide() && pane.getBoundingClientRect().width < 160 && !fold.dataset.ufOpened) { fold.dataset.ufOpened = '1'; fold.click(); }
+      folds.forEach(b => b.classList.add('uf-collapse'));
       document.documentElement.style.setProperty('--uf-lane-top', Math.round(row.getBoundingClientRect().bottom) + 'px');
       document.documentElement.style.setProperty('--uf-lane-width', Math.round(pane.getBoundingClientRect().width) + 'px');
     };
     let queued = false;
     const observer = new MutationObserver(() => { if (!queued) { queued = true; window.requestAnimationFrame(() => { queued = false; arrange(); }); } });
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+    // The webmail redraws its elements and drops our marks with it, so class changes are watched too.
+    observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
     window.addEventListener('resize', arrange); arrange();
     return () => { observer.disconnect(); window.removeEventListener('resize', arrange); css.remove(); };
   }, []);
