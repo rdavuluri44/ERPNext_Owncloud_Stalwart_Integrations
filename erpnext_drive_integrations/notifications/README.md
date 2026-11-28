@@ -40,7 +40,7 @@ decision says only that something waits, with the link. A notice's text goes to 
 - `rules.py`: the decisions without Frappe (channels, one record per person and thing, reminder hours, 90 days,
   the numbers of "what waits for me").
 
-**Choices made here, to confirm with the owner:**
+**Choices (owner, 28 November 2026):**
 
 - The phone channel (`mobile_push`) keeps the phone list and the sending; its own triggers moved here, so an
   event has one trigger and a phone rings once.

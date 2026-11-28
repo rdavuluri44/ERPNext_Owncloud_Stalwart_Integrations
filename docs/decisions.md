@@ -22,7 +22,7 @@ discussion that led to a decision is not repeated here.
     an event has one trigger.
 - **Why:** owner, 27 November 2026 (P108, and the answers on the app's plan): one place decides who is told what
   and how, alerts carry no content, and the numbers the app shows come from the server.
-- **Choices to confirm with the owner:** a returned attendance entry counts as "decide"; a person without a phone
+- **Choices (owner, 28 November 2026):** a returned attendance entry counts as "decide"; a person without a phone
   gets one mail and no reminders; no second mail where a workflow already mails its approvers; nothing sends
   "inform" yet (admin alerts and document notices will); the portal's older opt-in browser alerts keep their own
   triggers for now.
