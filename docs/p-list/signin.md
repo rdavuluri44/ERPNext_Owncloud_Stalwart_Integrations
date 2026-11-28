@@ -79,7 +79,7 @@ on `main` at `5db9a66`. The merge tree matches the tested TrueNAS revision
 and the test invitation mail setting. Production identity reconciliation
 and promotion remain open under P49.
 
-**Production cutover preflight.** [PR #67](https://github.com/rdavuluri44/ERPNext_Owncloud_Stalwart_Integrations/pull/67)
+**Production cutover preflight.** [PR #67](https://github.com/rdavuluri44/erpnext_drive_integrations/pull/67)
 updates the affected identity pins and renders both gateway configs. All
 GitHub checks and the isolated PostgreSQL 16.15 to 16.16 upgrade rehearsal
 passed. A production scratch render preserved the running environment and

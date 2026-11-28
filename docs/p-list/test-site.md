@@ -250,7 +250,7 @@ sign-in server; the production test entries are retired.
 
 ### P105 — Test site ready for the native app's five-phone test round
 
-**App:** test-site · **Also touches:** erp, signin, mobile · **State:** blocked
+**App:** test-site · **Also touches:** erp, signin, mobile · **State:** in progress
 
 **Why (owner, 27 November 2026: "go for rest of all" on the native app developer's request, public PR #114,
 issuecomment-7214300268):** the first test round of the native Android app (P50, Phase 1) runs on five phones in the
@@ -270,11 +270,43 @@ office, one role per phone, against the test site only.
    App Link on the test domain (agent's recommendation over a private scheme), the client ID in
    `cloud_native_mobile_clients`, and `assetlinks.json` with the test build's SHA-256 fingerprint.
 
-**Blocked on:** the testers' mail addresses (to the owner privately, never in the public PR); the colleague collects
-them (owner, 27 November). The signing fingerprint arrived on #114 on 27 November (issuecomment-7216179275).
+**Owner, 28 November 2026: made-up accounts instead of real addresses.** The round no longer waits for six tester
+mail addresses: the agent makes six made-up accounts and tests the server side itself. The accounts are
+passkey-only, as the test sign-in service is built, so there are no passwords to keep; each phone gets a one-time
+enrolment link when the round is scheduled, kept on the test server and passed privately.
 
-**Acceptance:** each of the five signs in on their own phone with their own passkey and sees only their role's
-screens; every "must be refused" call in the request is refused by ERPNext itself; the sixth account gets the clear
-"signed in but not allowed" message.
+**Done on the test site (28 November 2026; private receipt of that day):**
+- Parts 1 to 3, except the fence: six made-up accounts in the test sign-in service and in ERPNext (five with exactly
+  their job's roles, a linked Employee, department, designation and reporting lines; one with no role and no
+  Employee), ten workers under the supervisor, a second project and site none of the five belongs to, two entries
+  waiting for the project manager and one returned to the supervisor (made through the attendance service), and one
+  open leave request of the supervisor waiting for the project manager. ERPNext has no active workflow on the test
+  site, so the request is a leave application with its approver. The project manager also has `Leave Approver`.
+  User permissions are what ERPNext gives every employee (own company, own employee record); the limit to a
+  project or site comes from the site's member list.
+- **Checked by the agent, server side:** 94 of 94 calls over HTTP, as each of the six, answered as the role
+  requires: what must be refused is refused by ERPNext itself (other project, approvals, verifications, admin
+  settings, other people's records, a switched-off account), and what is allowed works. The seed tool can be run
+  again without changing anything.
+
+**Found:**
+- An HR person with a linked Employee sees only their own employee record, because ERPNext adds that restriction
+  with the Employee. A real HR person needs it lifted; to decide for the test HR person.
+- Refusals of approve and return answer HTTP 417, not 403 (the page of calls says so).
+
+**Still open:**
+- **Part 4:** the sign-in client for the native app and the app-link file. It needs the app's final ID (the test
+  builds are to move from the neutral default ID) and the return address; the app-link file is not served by
+  anything yet.
+- **The fence:** the test site has none (radius 0). It needs the office's location, given privately.
+- **Enrolment links** for the accounts without a passkey, when the round is scheduled (valid 24 hours).
+- **Not checkable by the agent:** sign-in with a passkey, the app on a phone, and the path through the gateway with
+  the app's own access token (the server makes one only after a real passkey sign-in, by design).
+
+**Acceptance, in two parts:**
+- **Server side, checked by the agent (done 28 November 2026):** every "must be refused" call in the request is
+  refused by ERPNext itself for each role, and the allowed calls work.
+- **Five phones (open):** each of the five signs in on their own phone with their own passkey and sees only their
+  role's screens; the sixth account gets the clear "signed in but not allowed" message.
 
 **Related:** P50, P82, P95, P103, P104.
