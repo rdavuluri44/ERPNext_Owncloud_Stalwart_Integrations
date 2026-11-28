@@ -58,7 +58,7 @@ class OnlyofficeStartPageTests(unittest.TestCase):
         self.assertIn("'@media (max-width:768px){#status-action,#status-sheets-bar-box,#status-tabs-scroll,'", PATCHED)
         self.assertIn("'#status-zoom-box>:not(#cloud-strip-toggle){display:none!important}}'", PATCHED)
         # Tabs first: file name and logo shrink, wider scroll arrows.
-        self.assertIn("'section.box-tabs>section.tabs{flex:1 1 auto!important;min-width:0}'", PATCHED)
+        self.assertIn("'.box-tabs>section.tabs{flex:1 1 auto!important;min-width:0}'", PATCHED)
         self.assertIn('section.tabs>a.scroll{min-width:28px!important', PATCHED)
         self.assertIn("'canvas-dark-cell-title-text-filtered': '#1F5BC6'", PATCHED)
 
@@ -87,7 +87,7 @@ class OnlyofficeStartPageTests(unittest.TestCase):
         self.assertIn('developed ' + "' +\n                            'by Ascensio System SIA", PATCHED)
         self.assertNotIn('#right-menu{display:none', PATCHED)
         self.assertNotIn('#left-btn-chat,#left-btn-about{display:none', PATCHED)
-        self.assertIn('.btn-current-user,#slot-btn-search{display:none!important}', PATCHED)
+        self.assertIn('.btn-current-user,#slot-btn-search,#slot-btn-edit-mode{display:none!important}', PATCHED)
         self.assertNotIn('#left-menu{display:none', PATCHED)
         self.assertNotIn('"goback"', PATCHED)
         self.assertIn('"onRequestSharingSettings": undefined', PATCHED)
@@ -173,8 +173,14 @@ class DriveEditorFrameTests(unittest.TestCase):
         # row starts after them.
         self.assertIn('body.uf-onlyoffice #app-top-bar-close{right:auto!important;left:10px!important;width:32px!important;height:32px!important;top:0!important}', js)
         self.assertIn('body.uf-onlyoffice #oc-openfile-contextmenu-trigger{right:auto!important;left:46px!important}', js)
-        self.assertIn("'section.box-tabs{padding-left:84px!important}'", PATCHED)
-        self.assertIn("'section.box-tabs>.extra.left{order:3;flex:0 100 auto!important;min-width:34px;overflow:hidden}'", PATCHED)
+        self.assertIn("'.box-tabs{padding-left:84px!important}'", PATCHED)
+        self.assertIn("'.box-tabs>.extra.left{order:3;flex:0 100 auto!important;min-width:34px;overflow:hidden}'", PATCHED)
+        # P117: the tabs row is a <section> in spreadsheets and presentations but a <div> in text documents,
+        # so the layout names the class only; with "section.box-tabs" text documents kept the stock header.
+        self.assertNotIn('section.box-tabs', PATCHED)
+        self.assertIn("'.box-tabs>.extra.right{flex:0 100 auto!important;min-width:40px;overflow:hidden}'", PATCHED)
+        # P117: no "Editing" mode button in the header of text documents.
+        self.assertIn('#slot-btn-search,#slot-btn-edit-mode{display:none!important}', PATCHED)
         self.assertIn('#app-top-bar-close svg{width:24px!important;height:24px!important}', js)
         self.assertIn('#oc-files-context-menu *{font-family:"Segoe UI",Arial', js)
         # Drive closes its file menu when the editor reports a click.

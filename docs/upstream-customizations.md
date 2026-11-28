@@ -1043,6 +1043,12 @@ on the pinned image 26 November 2026).
   `/var/www/onlyoffice/documentserver/web-apps/apps/api/wopi/editor-wopi.ejs`. Injects
   CSS and DOM changes into the editor frame by element ID and uses `Asc` sheet-view
   APIs.
+- **Relies on (re-check at every upgrade):** the header's class and ID names, which differ between the
+  editors: the tabs row is `section.box-tabs` in spreadsheets and presentations and `div.box-tabs` in text
+  documents, PDFs and diagrams (our CSS names `.box-tabs`); `#slot-btn-edit-mode` (the "Editing" button of
+  text documents, hidden); the name the editor gives a new sheet view is **not** relied on (it changed from
+  "Temporary View N" to "ViewN"). Open one text document, one spreadsheet and one presentation after an
+  upgrade and compare the header rows (P117).
 - **Upgrade:** **re-apply** with the README procedure: `tools/refresh_editor_original.py`
   copies the new image's own start page (without starting the image) and records
   image and checksum in `integrations/onlyoffice/upstream.json`; then re-apply our

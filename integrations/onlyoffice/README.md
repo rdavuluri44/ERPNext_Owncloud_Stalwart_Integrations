@@ -18,6 +18,11 @@ Editor (this module, `editor-wopi.ejs`):
   the space first: the file name and the logo shrink (the logo down to its
   icon) before the tabs scroll; the tab scroll arrows are 28 px wide. Avatar, header search, Share and open-file-location are removed (the
   co-editor count appears only while others are in the file).
+  The same row in every editor (P117, 28 November 2026): the tabs row is a `<section class="box-tabs">` in
+  spreadsheets and presentations but a `<div class="box-tabs">` in text documents, PDFs and diagrams, so the
+  layout names the class only. Text documents had kept the stock header until then. The "Editing" mode
+  button of text documents (`#slot-btn-edit-mode`) is hidden; Track changes stays on the Collaboration tab,
+  the Viewing and Reviewing modes are no longer reachable from the header.
 - **Logo:** kept, as the licence requires, but not linked to the vendor site.
 - **Always the light theme** (also on devices in dark mode), so the agreed
   greys, icons and headers look the same everywhere.
@@ -47,6 +52,10 @@ Editor (this module, `editor-wopi.ejs`):
   do not change what others see; protected sheets are skipped; no green
   "Sheet View mode" headers.
   Loop guard (21 Nov 2026): one created view per person, sheet and visit; no second attempt while one is in flight. Before, creating a view fired the sheet-changed event before the rename showed in the list, so another view was created each time (22 "Temporary View N" in one shared workbook). Tested by a headless-Chrome simulation (`tests/test_onlyoffice_private_views.py`). Stray "Temporary View N" views already in a file are removed by hand in View manager.
+  New views are recognised by being new (28 Nov 2026, P117): the editor has named a new view "Temporary View N"
+  and "ViewN"; the keeper knew only the first name, renamed nothing and made a view at each attempt (seven
+  "ViewN" in one file on the test site). It now takes the active view whose name was not in the list before.
+  Views left behind under such names are not removed automatically.
   Isolation (23 Nov 2026, P61): a private view exists to keep each person's filters and sorting out of
   everyone else's work (others may see the views; their cursors stay visible, they only show where someone
   is). ONLYOFFICE refuses to create or rename a view while another person has View manager open or is

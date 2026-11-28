@@ -297,7 +297,9 @@ div {
                        right strip's contextual settings buttons; their panels still
                        open on the left, and the empty left column collapses while
                        no panel is open. */
-                    css.textContent = '#box-right-btn-group .btn-current-user,#slot-btn-search{display:none!important}' +
+                    /* Owner (P117): no "Editing" mode button in the header of text documents; Community
+                       ignores the setting for it. Track changes stays on the Collaboration tab. */
+                    css.textContent = '#box-right-btn-group .btn-current-user,#slot-btn-search,#slot-btn-edit-mode{display:none!important}' +
                         /* Owner: the right strip stays, in the header grey. */
                         '#view-right-menu>.tool-menu-btns{background-color:#D9D9D9!important}' +
                         /* Owner: the logo stays (licence: notices and attribution are
@@ -305,15 +307,17 @@ div {
                         '#header-logo{pointer-events:none!important;cursor:default!important}' +
                         /* Owner: Drive's ✕ and ⋮ sit at the top left (easier to reach on
                            phones); the tabs start after them. */
-                        'section.box-tabs{padding-left:84px!important}' +
+                        /* The tabs row is a <section> in spreadsheets and presentations and a <div> in text
+                           documents, PDFs and diagrams: the class alone names it in every editor (P117). */
+                        '.box-tabs{padding-left:84px!important}' +
                         /* Owner: ONLYOFFICE's logo takes the far right (✕'s old place).
                            The tabs get the space first: file name and logo shrink (the
                            logo down to its icon) before the tabs scroll; wider scroll
                            arrows are easier to hit. */
-                        'section.box-tabs>.extra.left{order:3;flex:0 100 auto!important;min-width:34px;overflow:hidden}' +
+                        '.box-tabs>.extra.left{order:3;flex:0 100 auto!important;min-width:34px;overflow:hidden}' +
                         '#header-logo{padding-right:6px!important}' +
-                        'section.box-tabs>section.tabs{flex:1 1 auto!important;min-width:0}' +
-                        'section.box-tabs>.extra.right{flex:0 100 auto!important;min-width:40px;overflow:hidden}' +
+                        '.box-tabs>section.tabs{flex:1 1 auto!important;min-width:0}' +
+                        '.box-tabs>.extra.right{flex:0 100 auto!important;min-width:40px;overflow:hidden}' +
                         '#box-doc-name{flex:0 1 auto!important;min-width:0!important}#rib-doc-name{min-width:0!important}' +
                         'section.tabs>a.scroll{min-width:28px!important;width:28px!important}' +
                         /* Owner: the side strip opens from a hamburger at the bottom right
@@ -539,6 +543,10 @@ div {
                             }
                             if (list.length >= MAX_VIEWS) return;
                             busy = true;
+                            /* The new view is recognised by being new and active, never by its name: the
+                               editor has named new views "Temporary View N" and "ViewN" (28 November 2026:
+                               seven "ViewN" in one file, none renamed, because only the first name was known). */
+                            var before = list.map(function (v) { return v.asc_getName(); });
                             api.asc_addNamedSheetView(null, true);
                             var ticks = 0;
                             var timer = w.setInterval(function () {
@@ -548,7 +556,7 @@ div {
                                     var now = views();
                                     if (mineIn(now)) finished = true;
                                     else if (!created[key]) {
-                                        var fresh = now.filter(function (v) { return v.asc_getIsActive() && /^Temporary View \d+$/.test(v.asc_getName()); })[0];
+                                        var fresh = now.filter(function (v) { return v.asc_getIsActive() && before.indexOf(v.asc_getName()) < 0; })[0];
                                         if (fresh) { created[key] = fresh; fresh.asc_setName(name); }
                                     }
                                 } catch (e) {}
