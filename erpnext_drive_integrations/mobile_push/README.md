@@ -10,8 +10,9 @@ phone writes the visible text itself and, for approvals, shows the full-page rin
 attendance to approve or verify), and your entry was **returned** to you. Approved entries and other
 notifications send nothing.
 
-**What leaves the server:** the kind (`approval`, `verify`, `returned`), the document type, the document ID, and
-for attendance the site and its name. Never a person's name, an amount or other business data. The phone opens the
+**What leaves the server:** the kind (`approval`, `verify`, `returned`; from the notification service also
+`reminder` and `remove`), the document type, the document ID, for attendance the site and its name, and the
+service's short fields (`needs`, and for a reminder a count and hours). Never a person's name, an amount or other business data. The phone opens the
 details only after the app lock, from ERPNext, as the signed-in person.
 
 ## Contents
@@ -20,9 +21,8 @@ details only after the app lock, from ERPNext, as the signed-in person.
   on/off, registered. **One phone per person**: registering a new phone removes the older one; the same push
   address signed in by someone else moves to them; a disabled user's phones are removed.
 - `api.register_device(token, platform)`, `api.unregister_device(token)`: POST only, for the signed-in person only.
-- `events.py`: `Notification Log` after insert (custom_hr's attendance notices, by the entry's state) and
-  `Workflow Action` after insert (Open: people holding one of its roles who have a phone and may read the
-  document; never the person who moved it there).
+- `events.py`: a disabled person's phones are removed. **What sends an alert, and to whom, is decided by the
+  notification service** (`../notifications/`): it uses this module to reach phones, so an event has one trigger.
 - `sender.py`: queued after commit on the `short` queue; Google token signed with the service-account key (RS256,
   PyJWT), cached until a minute before expiry. A 404 / `UNREGISTERED` answer switches that phone off; a 400 never
   does (a bad message must not switch off every phone). No retry: a missed alert still shows in the app.
@@ -35,9 +35,8 @@ HTTPS from the workers to `oauth2.googleapis.com` and `fcm.googleapis.com`. A Fi
 
 ## Reuse
 
-Any Frappe site can use it: the triggers are standard `Workflow Action` and `Notification Log` events; only the
-attendance part reads `Field Attendance Entry` (custom-hr) and does nothing when that DocType is absent from a
-notice. The phone side is `mobile/` (mobile-app module).
+Any Frappe site can use it: call `sender.send(users, kind, doctype, docname)`. The triggers are in the
+notification service. The phone side is `mobile/` (mobile-app module).
 
 ## Configuration
 
@@ -59,9 +58,9 @@ Without `mobile_push_fcm_key_file` nothing is sent and nothing fails. Switch the
 ## Tests
 
 `python tests/test_mobile_push.py`: the rules on the real module (data only, no text for Google, dead addresses
-only on 404 / `UNREGISTERED`), the triggers on the real `events` module with a fake frappe (role holders with a
-phone who may read the document; attendance only when waiting or returned), and the surface (POST only, own
-records only, sending after commit, nothing secret in logs, the device list for System Managers only).
+only on 404 / `UNREGISTERED`, the service's fields never replace the message's) and the surface (POST only, own
+records only, sending after commit, nothing secret in logs, the device list for System Managers only). Who is
+alerted and when: `python tests/test_notification_service.py`.
 
 ## Licenses
 

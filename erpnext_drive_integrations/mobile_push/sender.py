@@ -43,28 +43,32 @@ def _access_token(key):
     return body['access_token']
 
 
-def send(users, kind, doctype, docname=None, site=None, site_label=None):
+def send(users, kind, doctype=None, docname=None, site=None, site_label=None, extra=None, include_actor=False):
     """Queue one alert for these people; it goes out after the current transaction commits, so a save is never
-    slowed down or undone by Google."""
-    users = rules.recipients(users, frappe.session.user)
+    slowed down or undone by Google. The person whose action caused it is left out, unless the message is for
+    their phone too (`include_actor`: an alert to remove)."""
+    users = rules.recipients(users, None if include_actor else frappe.session.user)
     if users and configured():
         frappe.enqueue('erpnext_drive_integrations.mobile_push.sender.deliver', queue='short', enqueue_after_commit=True,
-                       users=users, kind=kind, doctype=doctype, docname=docname, site=site, site_label=site_label)
+                       users=users, kind=kind, doctype=doctype, docname=docname, site=site, site_label=site_label,
+                       extra=extra)
 
 
-def deliver(users, kind, doctype, docname=None, site=None, site_label=None):
+def deliver(users, kind, doctype=None, docname=None, site=None, site_label=None, extra=None):
     """Background job: one data message per phone of these people. A dead address is switched off; other failures
-    are logged without the address or the message."""
+    are logged without the address or the message. Returns how many phones Google accepted the message for."""
     devices = frappe.get_all('Mobile Device', filters={'user': ['in', users], 'enabled': 1}, fields=['name', 'token'])
     if not devices or not configured():
-        return
+        return 0
     key = _key()
     url = f"https://fcm.googleapis.com/v1/projects/{key['project_id']}/messages:send"
     headers = {'Authorization': f'Bearer {_access_token(key)}'}
+    accepted = 0
     for device in devices:
-        response = requests.post(url, json=rules.message(device.token, kind, doctype, docname, site, site_label),
+        response = requests.post(url, json=rules.message(device.token, kind, doctype, docname, site, site_label, extra),
                                  headers=headers, timeout=10)
         if response.ok:
+            accepted += 1
             continue
         try:
             body = response.json()
@@ -75,3 +79,4 @@ def deliver(users, kind, doctype, docname=None, site=None, site_label=None):
         else:
             # ponytail: no retry; a missed alert still shows in the app's Inbox and bell. Add a retry queue if needed.
             frappe.log_error('Mobile push not delivered', f'FCM answered {response.status_code} for {doctype} ({kind}).')
+    return accepted

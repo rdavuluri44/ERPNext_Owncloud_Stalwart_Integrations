@@ -1,8 +1,8 @@
 """mobile-push: alerts to closed phones through Google FCM (owner, 26 November 2026).
 
-The rules are tested on the real module; the triggers run on the real `events` module against a small fake frappe.
-These checks fail if a name or amount could reach Google, if a 400 could switch phones off, if someone could
-register a phone for another person, or if an approval reached a person who may not read the document.
+The rules are tested on the real module. These checks fail if a name or amount could reach Google, if a 400
+could switch phones off, or if someone could register a phone for another person. Who is alerted, and when, is
+the notification service's (`tests/test_notifications.py`).
 """
 import json
 import sys
@@ -20,7 +20,7 @@ fake.whitelist = lambda **_: (lambda f: f)
 fake._ = lambda s: s
 sys.modules['frappe'] = fake
 from erpnext_drive_integrations import hooks  # noqa: E402
-from erpnext_drive_integrations.mobile_push import events, rules  # noqa: E402
+from erpnext_drive_integrations.mobile_push import rules  # noqa: E402
 
 TOKEN = 'f' * 30 + ':APA91b' + 'x' * 120
 
@@ -37,17 +37,18 @@ class Rules(unittest.TestCase):
         self.assertNotIn('notification', m, 'the phone writes the text; Google never sees one')
         self.assertEqual(m['android']['priority'], 'HIGH')
         self.assertEqual(m['data'], {'v': '1', 'kind': 'approval', 'doctype': 'Payment Entry', 'docname': 'ACC-PAY-0001'})
-        site = rules.message(TOKEN, 'verify', rules.ATTENDANCE, 'FAE-1', 'S1', 'Site A')['message']['data']
+        site = rules.message(TOKEN, 'verify', 'Field Attendance Entry', 'FAE-1', 'S1', 'Site A')['message']['data']
         self.assertEqual(set(site), {'v', 'kind', 'doctype', 'docname', 'site', 'site_label'})
         self.assertTrue(all(isinstance(v, str) for v in site.values()), 'FCM data values must be strings')
 
-    def test_only_waiting_and_returned_attendance_alerts(self):
-        self.assertEqual(rules.attendance_kind('Submitted'), 'approval')
-        self.assertEqual(rules.attendance_kind('Verified'), 'approval')
-        self.assertEqual(rules.attendance_kind('Pending Verification'), 'verify')
-        self.assertEqual(rules.attendance_kind('Returned'), 'returned')
-        for quiet in ('Approved', 'Draft', None):
-            self.assertIsNone(rules.attendance_kind(quiet))
+    def test_the_service_s_own_fields_never_replace_the_message_s(self):
+        data = rules.message(TOKEN, 'approval', 'Payment Entry', 'ACC-PAY-0001',
+                             extra={'needs': 'decide', 'kind': 'other', 'docname': 'X', 'count': 3})['message']['data']
+        self.assertEqual(data, {'v': '1', 'kind': 'approval', 'doctype': 'Payment Entry', 'docname': 'ACC-PAY-0001',
+                                'needs': 'decide', 'count': '3'})
+        bare = rules.message(TOKEN, 'reminder', extra={'count': 2, 'oldest_hours': 5})['message']
+        self.assertEqual(bare['data'], {'v': '1', 'kind': 'reminder', 'count': '2', 'oldest_hours': '5'})
+        self.assertEqual(bare['android']['collapse_key'], 'reminder:')
 
     def test_dead_address_only_on_404_or_unregistered(self):
         self.assertTrue(rules.dead_token(404, None))
@@ -58,74 +59,7 @@ class Rules(unittest.TestCase):
 
     def test_recipients_skip_the_actor_and_system_users(self):
         self.assertEqual(rules.recipients(['b', 'a', 'a', None, 'Guest', 'Administrator', 'me'], 'me'), ['a', 'b'])
-
-
-class FakeSite:
-    """Just enough frappe for the triggers: rows by doctype, roles, permissions; records what would be sent."""
-
-    def __init__(self, devices, roles=None, readable=(), entry=None):
-        self.devices, self.roles, self.readable, self.entry, self.sent = devices, roles or {}, set(readable), entry, []
-        fake.db = types.SimpleNamespace(get_value=self.get_value)
-        fake.get_all = self.get_all
-        fake.has_permission = lambda doctype, ptype, name, user: (user, name) in self.readable
-        events.sender.send = lambda users, kind, doctype, docname=None, site=None, site_label=None: self.sent.append(
-            (sorted(users), kind, doctype, docname, site, site_label))
-
-    def get_value(self, doctype, name, fields, as_dict=False):
-        if doctype == 'User':
-            return 1
-        if doctype == 'Field Site':
-            return 'Site A'
-        return types.SimpleNamespace(**self.entry) if self.entry else None
-
-    def get_all(self, doctype, filters=None, pluck=None, distinct=False, fields=None):
-        if doctype == 'Has Role':
-            return sorted({u for u, rs in self.roles.items() if set(rs) & set(filters['role'][1])})
-        if doctype == 'Mobile Device':
-            return sorted({u for u in filters['user'][1] if u in self.devices})
-        raise AssertionError(doctype)
-
-
-def action(**values):
-    row = {'status': 'Open', 'reference_doctype': 'Purchase Order', 'reference_name': 'PO-1', 'user': None,
-           'permitted_roles': [types.SimpleNamespace(role='Purchase Manager')]}
-    row.update(values)
-    return types.SimpleNamespace(get=row.get, **row)
-
-
-class WorkflowApprovals(unittest.TestCase):
-    def test_role_holders_with_a_phone_who_may_read_it(self):
-        site = FakeSite(devices={'pm@x', 'other@x', 'actor@example.com'},
-                        roles={'pm@x': ['Purchase Manager'], 'other@x': ['Purchase Manager'], 'clerk@x': ['Purchase Manager'],
-                               'actor@example.com': ['Purchase Manager'], 'hr@x': ['HR Manager']},
-                        readable={('pm@x', 'PO-1'), ('actor@example.com', 'PO-1')})
-        events.on_workflow_action(action())
-        # other@x cannot read it (user permissions), clerk@x has no phone, hr@x lacks the role. The actor is still
-        # listed here; sender.send drops them (rules.recipients, tested above).
-        self.assertEqual(site.sent, [(['actor@example.com', 'pm@x'], 'approval', 'Purchase Order', 'PO-1', None, None)])
-
-    def test_closed_or_incomplete_actions_send_nothing(self):
-        site = FakeSite(devices={'pm@x'}, roles={'pm@x': ['Purchase Manager']}, readable={('pm@x', 'PO-1')})
-        events.on_workflow_action(action(status='Completed'))
-        events.on_workflow_action(action(reference_name=None))
-        self.assertEqual(site.sent, [])
-
-
-class AttendanceNotices(unittest.TestCase):
-    def notice(self, state):
-        site = FakeSite(devices={'pm@x'}, entry={'state': state, 'site': 'S1'})
-        events.on_notification(types.SimpleNamespace(document_type=rules.ATTENDANCE, document_name='FAE-1', for_user='pm@x'))
-        return site.sent
-
-    def test_waiting_and_returned_alert_with_the_site(self):
-        self.assertEqual(self.notice('Submitted'), [(['pm@x'], 'approval', rules.ATTENDANCE, 'FAE-1', 'S1', 'Site A')])
-        self.assertEqual(self.notice('Returned')[0][1], 'returned')
-
-    def test_approved_and_other_notices_send_nothing(self):
-        self.assertEqual(self.notice('Approved'), [])
-        site = FakeSite(devices={'pm@x'})
-        events.on_notification(types.SimpleNamespace(document_type='ToDo', document_name='T1', for_user='pm@x'))
-        self.assertEqual(site.sent, [])
+        self.assertEqual(rules.recipients(['b', 'me', 'Guest'], None), ['b', 'me'], 'an alert to remove is for the actor too')
 
 
 class Surface(unittest.TestCase):
@@ -156,8 +90,6 @@ class Surface(unittest.TestCase):
         self.assertIn('Mobile Push', (ROOT / 'erpnext_drive_integrations/modules.txt').read_text(encoding='utf-8').splitlines())
 
     def test_hooks_are_composed(self):
-        self.assertIn('erpnext_drive_integrations.mobile_push.events.on_workflow_action', hooks.doc_events['Workflow Action']['after_insert'])
-        self.assertIn('erpnext_drive_integrations.mobile_push.events.on_notification', hooks.doc_events['Notification Log']['after_insert'])
         self.assertIn('erpnext_drive_integrations.mobile_push.events.on_user_update', hooks.doc_events['User']['on_update'])
 
 

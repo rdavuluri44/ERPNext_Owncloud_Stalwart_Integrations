@@ -254,6 +254,18 @@
       ]
     },
     {
+      "id": "notifications",
+      "title": "Notification service",
+      "summary": "One function through which the business system tells a person something: a decision alerts the phone and is reminded every 4 hours by day, information goes to the Notices room in chat, mail is the fallback; each event once, a record of what was sent, and the numbers of what waits for a person.",
+      "readme": "erpnext_drive_integrations/notifications/README.md",
+      "paths": ["erpnext_drive_integrations/notifications/**", "tests/test_notifications.py", "tests/test_notification_service.py"],
+      "depends_on": ["erp-addon-shell", "mobile-push", "chat-rooms", "custom-hr"],
+      "tests": ["tests/test_notifications.py", "tests/test_notification_service.py"],
+      "upstream": [
+        {"name": "Frappe Framework", "license": "MIT", "url": "https://github.com/frappe/frappe"}
+      ]
+    },
+    {
       "id": "onboarding",
       "title": "Vendor onboarding and response links",
       "summary": "Vendor onboarding with KYC and amendments, single-use device-bound response links (yes/no, documents) with audit trail, WhatsApp consent capture, construction schedule page and monitoring.",

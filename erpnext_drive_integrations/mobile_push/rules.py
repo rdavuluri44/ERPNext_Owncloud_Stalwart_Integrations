@@ -1,10 +1,8 @@
-"""Mobile push without Frappe: what is sent, when, and when a phone's push address is dead. Tested directly."""
+"""Mobile push without Frappe: what a message holds, and when a phone's push address is dead. Tested directly.
+What is sent, and when, is the notification service's (`notifications/rules.py`)."""
 import hashlib
 import re
 
-ATTENDANCE = 'Field Attendance Entry'
-# Owner, 26 November 2026: alert only what waits for the person and what was returned to them, not every approval.
-ATTENDANCE_KINDS = {'Submitted': 'approval', 'Verified': 'approval', 'Pending Verification': 'verify', 'Returned': 'returned'}
 _TOKEN = re.compile(r'[A-Za-z0-9_:\-]{100,4096}')
 
 
@@ -17,21 +15,20 @@ def token_hash(token):
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-def attendance_kind(state):
-    """Why an attendance notification is worth an alert, or None (approved, draft: nothing waits)."""
-    return ATTENDANCE_KINDS.get(state)
-
-
-def message(token, kind, doctype, docname=None, site=None, site_label=None):
+def message(token, kind, doctype=None, docname=None, site=None, site_label=None, extra=None):
     """One FCM v1 data message, high priority so a sleeping phone wakes. Data only: the phone writes the visible
     text from the kind, the document type and the site, so no person's name, amount or other business data ever
-    leaves the server. A newer alert of the same kind and type replaces an older one that is still queued."""
-    data = {'v': '1', 'kind': kind, 'doctype': doctype}
-    for field, value in (('docname', docname), ('site', site), ('site_label', site_label)):
+    leaves the server. A newer alert of the same kind and type replaces an older one that is still queued.
+    `extra` is for the notification service's own short fields (what the message needs, a count); it can never
+    replace the fields above."""
+    data = {'v': '1', 'kind': kind}
+    for field, value in (('doctype', doctype), ('docname', docname), ('site', site), ('site_label', site_label)):
         if value:
             data[field] = str(value)
+    for field, value in (extra or {}).items():
+        data.setdefault(str(field), str(value))
     return {'message': {'token': token, 'data': data,
-                        'android': {'priority': 'HIGH', 'ttl': '3600s', 'collapse_key': f'{kind}:{doctype}'}}}
+                        'android': {'priority': 'HIGH', 'ttl': '3600s', 'collapse_key': f"{kind}:{doctype or ''}"}}}
 
 
 def dead_token(status, body):
@@ -44,5 +41,6 @@ def dead_token(status, body):
 
 
 def recipients(users, actor):
-    """Real people only, never the person whose action caused the alert, each once."""
+    """Real people only, never the person whose action caused the alert, each once. Pass no actor when the
+    message is also for the person who acted (an alert to remove from their own phone)."""
     return sorted({u for u in users if u and u not in ('Guest', 'Administrator', actor)})

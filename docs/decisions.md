@@ -6,6 +6,28 @@ discussion that led to a decision is not repeated here.
 
 ## 2026-11-28
 
+### The notification service: one trigger, one record per person and thing (P108)
+
+- **Decision:**
+  - Every message the business system sends to a person goes through `notifications.service.notify`. A message is
+    either **decide** (it waits for the person: the phone alerts round the clock, with a reminder every 4 hours
+    between 07:00 and 21:00) or **inform** (the read-only Notices room in chat; it never rings). Mail is the
+    fallback.
+  - One record per person and thing (`Notification Record`), without any text, kept 90 days after it is closed.
+    The database refuses a second open record, so a repeated event is sent once.
+  - When a thing leaves the state its records were made for, they are closed and the phones get a content-free
+    "remove" message. An hourly run closes what the events missed.
+  - "What waits for me" (`notifications.api.waiting`) gives numbers only: in total, per kind of thing and per site.
+  - The phone channel (`mobile_push`) keeps the phone list and the sending. Its triggers moved into the service, so
+    an event has one trigger.
+- **Why:** owner, 27 November 2026 (P108, and the answers on the app's plan): one place decides who is told what
+  and how, alerts carry no content, and the numbers the app shows come from the server.
+- **Choices to confirm with the owner:** a returned attendance entry counts as "decide"; a person without a phone
+  gets one mail and no reminders; no second mail where a workflow already mails its approvers; nothing sends
+  "inform" yet (admin alerts and document notices will); the portal's older opt-in browser alerts keep their own
+  triggers for now.
+- **Where:** `erpnext_drive_integrations/notifications/`, `erpnext_drive_integrations/mobile_push/`.
+
 ### The phone app is named "UNformat ERP" (P85, P50)
 
 - **Decision:** the phone app's name is **UNformat ERP**, replacing "ERP Mobile". It is the default brand's app name
