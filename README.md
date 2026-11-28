@@ -73,11 +73,12 @@ authentik, ownCloud Infinite Scale, ownCloud Web, ocis-konnectd, ONLYOFFICE Docs
 Bulwark Webmail, Paperless-ngx, Apache Tika, Gotenberg, Coolify, Traefik, nginx, Docker Engine (Moby),
 MariaDB, PostgreSQL, Redis, Python, Node.js, CoreDNS, Tailscale, Linux kernel, Ubuntu, TrueNAS, restic,
 RustFS, Grafana, Loki, Alloy, Prometheus, node_exporter, cAdvisor, Expo and Expo Router, React Native, React,
-OpenCV (opencv-python-headless) and OpenCV Zoo: SFace and YuNet. Used before: Raven (removed from the ERP
-image in P108 (owner, 27 November 2026); Matrix replaces it as the internal chat (P73)), Collabora Online
-(used until November 2026, replaced by ONLYOFFICE Docs, P42). Thank you to their communities. Each remains
-under its own licence; the full list with licences, where each is used, how we track it and what we are
-evaluating is in [docs/open-source.md](docs/open-source.md) (see also LICENSES.md).
+OpenCV (opencv-python-headless), OpenCV Zoo: SFace and YuNet, Synapse, Matrix Authentication Service, Sygnal
+and Element Web. Used before: Raven (removed from the ERP image in P108 (owner, 27 November 2026); Matrix
+replaces it as the internal chat (P73)), Collabora Online (used until November 2026, replaced by ONLYOFFICE
+Docs, P42). Thank you to their communities. Each remains under its own licence; the full list with licences,
+where each is used, how we track it and what we are evaluating is in
+[docs/open-source.md](docs/open-source.md) (see also LICENSES.md).
 <!-- OPEN-SOURCE:END -->
 
 ## AI-assisted development
@@ -89,7 +90,7 @@ of the AI assistance.
 
 ## License
 
-Copyright © 2026 Unformat and contributors. This repository is free software
+Copyright © 2026 unformat.in. This repository is free software
 under the **GNU Affero General Public License v3.0 or later**
 ([LICENSE](LICENSE)): if you run a modified version as a network service, you
 must offer its users the modified source. Upstream products, the app icons

@@ -1,6 +1,6 @@
 # ERP: P items
 
-> **Generated file: do not edit by hand.** Published from the maintainers' private list on 27 November 2026
+> **Generated file: do not edit by hand.** Published from the maintainers' private list on 28 November 2026
 > with every line kept; only identifying names, addresses, paths and links to private records are
 > replaced by placeholders (see the [P list index](../p-list.md) for the rules).
 
@@ -26,7 +26,9 @@ Confirm compatibility with the running Frappe/ERP versions, install and configur
 
 Set up the provider/business number, deploy/configure the connector, prepare approved message templates and webhooks, and implement authenticated reply-to-record mapping.
 
-**Also (owner, 27 November 2026):** a WhatsApp verification flow for onboarding (P82): a 6-digit code to the mobile number the person gave, valid 10 minutes, 5 tries, a new code after 60 seconds; an authentication message template approved by Meta. No SMS and no Firebase for phone checks; mail codes stay on our own mail server. Verify sending onboarding links and recording vendor yes/no responses against the intended response request or PO with an audit trail. No live sending is currently established.
+**Also (owner, 27 November 2026):** a WhatsApp verification flow for onboarding (P82): a 6-digit code to the mobile number the person gave, valid 10 minutes, 5 tries, a new code after 60 seconds; an authentication message template approved by Meta. No SMS and no Firebase for phone checks; mail codes stay on our own mail server.
+
+**Official API only (owner, 27 November 2026, evening):** the owner asked whether a Matrix-WhatsApp bridge could replace Meta's API now that Matrix is the chat. No: the usual bridge (mautrix-whatsapp) acts as an unofficial WhatsApp Web client on an ordinary number, which WhatsApp's terms forbid for automated messages, and such numbers get banned, sometimes for good (agent's reading of public sources, not of Meta's current terms text). P04 stays on Meta's WhatsApp Business API; mail is the fallback until the Meta number exists. A bridge between Matrix rooms and WhatsApp for staff-to-vendor chats could come later, and then on the official API. Verify sending onboarding links and recording vendor yes/no responses against the intended response request or PO with an audit trail. No live sending is currently established.
 
 ### P05 — Live GSTIN lookup and form prefill
 

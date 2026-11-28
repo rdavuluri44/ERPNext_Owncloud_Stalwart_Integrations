@@ -8,7 +8,7 @@ PAGE = (Path(__file__).resolve().parents[1] / 'erpnext_drive_integrations/www/pl
 
 class PortalMenuColumnTests(unittest.TestCase):
     def test_script_switches_on_more_than_five_icons(self):
-        self.assertIn("nav.querySelectorAll(':scope > a[data-app-id]').length>5", PAGE)
+        self.assertIn("nav.querySelectorAll(':scope > a[data-app-id],:scope > a[data-external]').length>5", PAGE)
         self.assertIn("nav.classList.add('ph-two-cols')", PAGE)
 
     def test_two_column_rule_fills_down_then_across(self):

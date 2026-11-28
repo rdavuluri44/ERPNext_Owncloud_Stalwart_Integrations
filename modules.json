@@ -363,6 +363,70 @@
       ]
     },
     {
+      "id": "chat",
+      "title": "Chat (Matrix: Synapse and its authentication service)",
+      "summary": "The internal chat server: Synapse with the Matrix Authentication Service, signing in through the sign-in service; its stack and the script that writes both configurations.",
+      "readme": "integrations/chat/README.md",
+      "paths": [
+        "integrations/chat/**",
+        "deployment/stacks/chat.compose.json",
+        "tests/test_chat_stack.py"
+      ],
+      "depends_on": [
+        "authentik-identity"
+      ],
+      "tests": [
+        "tests/test_chat_stack.py"
+      ],
+      "upstream": [
+        {
+          "name": "Synapse",
+          "license": "AGPL-3.0",
+          "url": "https://github.com/element-hq/synapse"
+        },
+        {
+          "name": "Matrix Authentication Service",
+          "license": "AGPL-3.0",
+          "url": "https://github.com/element-hq/matrix-authentication-service"
+        },
+        {
+          "name": "Sygnal",
+          "license": "AGPL-3.0",
+          "url": "https://github.com/element-hq/sygnal"
+        },
+        {
+          "name": "Element Web",
+          "license": "AGPL-3.0",
+          "url": "https://github.com/element-hq/element-web"
+        }
+      ]
+    },
+    {
+      "id": "chat-rooms",
+      "title": "Chat rooms from sites and teams",
+      "summary": "The business system's bot keeps the chat rooms in step with the field sites: a room per site, a room per supervisor's team and a read-only Notices room per person; nothing about rooms is stored in ERPNext.",
+      "readme": "erpnext_drive_integrations/chat_rooms/README.md",
+      "paths": [
+        "erpnext_drive_integrations/chat_rooms/**",
+        "tests/test_chat_rooms.py"
+      ],
+      "depends_on": [
+        "erp-addon-shell",
+        "custom-hr",
+        "chat"
+      ],
+      "tests": [
+        "tests/test_chat_rooms.py"
+      ],
+      "upstream": [
+        {
+          "name": "Synapse",
+          "license": "AGPL-3.0",
+          "url": "https://github.com/element-hq/synapse"
+        }
+      ]
+    },
+    {
       "id": "document-worker",
       "title": "Drive to DMS document worker",
       "summary": "Moves new Drive uploads into Paperless with owner-preserving permissions and generated links; enrollment and link retargeting tools.",
@@ -511,6 +575,7 @@
         "tools/render_host_checks.py",
         "tests/test_reboot_resilience.py",
         "tests/test_host_checks.py",
+        "tests/test_editor_registration.py",
         "tools/upstream_watch.py",
         "tests/test_upstream_watch.py",
         "tools/open_source.py",
@@ -522,6 +587,7 @@
         "deployment/config/onlyoffice-local-production-linux.json",
         "deployment/stacks/drive.compose.json",
         "deployment/stacks/mail.compose.json",
+        "deployment/stacks/chat.compose.json",
         "deployment/stacks/dms.compose.json",
         "deployment/stacks/processing.compose.json",
         "deployment/stacks/identity.compose.json",
@@ -548,6 +614,7 @@
         "tests/test_sso_proxy_trust.py",
         "tests/test_reboot_resilience.py",
         "tests/test_host_checks.py",
+        "tests/test_editor_registration.py",
         "tests/test_upstream_watch.py",
         "tests/test_open_source.py",
         "tests/test_upstream_posts.py"
@@ -574,6 +641,23 @@
           "url": "https://nginx.org"
         }
       ]
+    },
+    {
+      "id": "branding",
+      "title": "Default brand (Unformat)",
+      "summary": "Unformat logo, favicons and brand file: the default look, replaced per deployment through the private profile; guide, copyright and trademark note.",
+      "readme": "branding/README.md",
+      "paths": [
+        "branding/**",
+        "tests/test_branding.py"
+      ],
+      "tests": [
+        "tests/test_branding.py"
+      ],
+      "depends_on": [
+        "deployment"
+      ],
+      "upstream": []
     },
     {
       "id": "test-refresh",

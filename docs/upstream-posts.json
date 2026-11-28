@@ -44,11 +44,15 @@
       ],
       "status": "waiting",
       "watch": true,
-      "last_seen": "2026-11-26T08:41:00Z",
+      "last_seen": "2026-11-26T08:41:03Z",
       "thread_state": "open",
       "checks": [
         {
           "date": "2026-11-26",
+          "result": "nothing new"
+        },
+        {
+          "date": "2026-11-28",
           "result": "nothing new"
         }
       ]
@@ -63,14 +67,18 @@
         "P89",
         "P61"
       ],
-      "status": "waiting",
+      "status": "answered",
       "watch": true,
-      "last_seen": "2026-11-26T08:41:00Z",
+      "last_seen": "2026-11-27T10:54:43Z",
       "thread_state": "open",
       "checks": [
         {
           "date": "2026-11-26",
           "result": "nothing new"
+        },
+        {
+          "date": "2026-11-28",
+          "result": "1 new reply, thread open: the maintainers reproduced it and opened their bug 85458; no fix yet, our workaround stays"
         }
       ]
     },
@@ -86,12 +94,16 @@
       "status": "fixed",
       "watch": true,
       "next": "When a Coolify release carries commit 8dbaecc and we run it: remove our workaround, update its register entry, and say so on the issue (working agreements).",
-      "last_seen": "2026-11-26T12:15:00Z",
+      "last_seen": "2026-11-26T12:15:36Z",
       "thread_state": "closed (completed)",
       "checks": [
         {
           "date": "2026-11-26",
           "result": "closed as completed by the maintainer with commit 8dbaecc (12:15 UTC); a contributor had offered a fix from a fork at 09:38."
+        },
+        {
+          "date": "2026-11-28",
+          "result": "nothing new"
         }
       ],
       "register": [
@@ -107,14 +119,18 @@
       "p_items": [
         "P89"
       ],
-      "status": "waiting",
+      "status": "fixed",
       "watch": true,
-      "last_seen": "2026-11-26T08:41:00Z",
-      "thread_state": "open",
+      "last_seen": "2026-11-27T03:39:21Z",
+      "thread_state": "closed",
       "checks": [
         {
           "date": "2026-11-26",
           "result": "nothing new"
+        },
+        {
+          "date": "2026-11-28",
+          "result": "the pull request was merged on 27 November 2026 (the removal is for version 17, not for the version we run); our guard FRAPPE-3 stays until we upgrade"
         }
       ]
     },
@@ -130,11 +146,15 @@
       ],
       "status": "waiting",
       "watch": true,
-      "last_seen": "2026-11-26T08:41:00Z",
+      "last_seen": "2026-11-26T08:41:06Z",
       "thread_state": "open",
       "checks": [
         {
           "date": "2026-11-26",
+          "result": "nothing new"
+        },
+        {
+          "date": "2026-11-28",
           "result": "nothing new"
         }
       ]
@@ -151,11 +171,15 @@
       ],
       "status": "waiting",
       "watch": true,
-      "last_seen": "2026-11-26T08:41:00Z",
+      "last_seen": "2026-11-26T08:41:08Z",
       "thread_state": "open",
       "checks": [
         {
           "date": "2026-11-26",
+          "result": "nothing new"
+        },
+        {
+          "date": "2026-11-28",
           "result": "nothing new"
         }
       ]
@@ -172,11 +196,15 @@
       ],
       "status": "waiting",
       "watch": true,
-      "last_seen": "2026-11-26T08:41:00Z",
+      "last_seen": "2026-11-26T08:41:10Z",
       "thread_state": "open",
       "checks": [
         {
           "date": "2026-11-26",
+          "result": "nothing new"
+        },
+        {
+          "date": "2026-11-28",
           "result": "nothing new"
         }
       ]
@@ -199,6 +227,10 @@
         {
           "date": "2026-11-26",
           "result": "nothing new"
+        },
+        {
+          "date": "2026-11-28",
+          "result": "nothing new"
         }
       ]
     },
@@ -220,6 +252,10 @@
         {
           "date": "2026-11-26",
           "result": "nothing new"
+        },
+        {
+          "date": "2026-11-28",
+          "result": "nothing new"
         }
       ]
     },
@@ -235,11 +271,39 @@
       "status": "waiting",
       "watch": true,
       "next": "The answer decides P95's residual risk before production.",
-      "last_seen": "2026-11-26T13:19:00Z",
+      "last_seen": "2026-11-26T13:19:45Z",
       "thread_state": "open",
       "checks": [
         {
           "date": "2026-11-26",
+          "result": "nothing new (posted the same day)"
+        },
+        {
+          "date": "2026-11-28",
+          "result": "nothing new"
+        }
+      ]
+    },
+    {
+      "id": "sygnal-image-health-check",
+      "url": "https://github.com/element-hq/sygnal/issues/326#issuecomment-7232356852",
+      "kind": "comment",
+      "posted": "2026-11-28",
+      "summary": "Sygnal image: the built-in health check calls curl, which the image lacks; a Python check as workaround",
+      "p_items": [
+        "P73"
+      ],
+      "register": [
+        "CHAT-6"
+      ],
+      "status": "waiting",
+      "watch": true,
+      "next": "When the image ships a check that works, remove our override (CHAT-6).",
+      "last_seen": "2026-11-28T02:27:00Z",
+      "thread_state": "open",
+      "checks": [
+        {
+          "date": "2026-11-28",
           "result": "nothing new (posted the same day)"
         }
       ]

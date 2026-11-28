@@ -1,0 +1,52 @@
+{
+  "default_server_config": {
+    "m.homeserver": {
+      "base_url": "https://chat.example.com"
+    }
+  },
+  "disable_custom_urls": true,
+  "disable_guests": true,
+  "disable_3pid_login": true,
+  "force_verification": false,
+  "brand": "Chat",
+  "default_country_code": "IN",
+  "default_federate": false,
+  "default_theme": "light",
+  "show_labs_settings": false,
+  "features": {},
+  "mobile_guide_toast": false,
+  "sso_redirect_options": {
+    "immediate": true
+  },
+  "oidc_metadata": {
+    "client_uri": "https://chat-web.example.com/"
+  },
+  "room_directory": {
+    "servers": []
+  },
+  "integrations_ui_url": "",
+  "integrations_rest_url": "",
+  "integrations_widgets_urls": [],
+  "element_call": {
+    "disable": true,
+    "use_exclusively": false
+  },
+  "setting_defaults": {
+    "breadcrumbs": true,
+    "UIFeature.voip": false,
+    "UIFeature.widgets": false,
+    "UIFeature.feedback": false,
+    "UIFeature.identityServer": false,
+    "UIFeature.thirdPartyId": false,
+    "UIFeature.registration": false,
+    "UIFeature.passwordReset": false,
+    "UIFeature.deactivate": false,
+    "UIFeature.shareQrCode": false,
+    "UIFeature.shareSocial": false,
+    "UIFeature.locationSharing": false,
+    "UIFeature.urlPreviews": false,
+    "UIFeature.advancedEncryption": false,
+    "UIFeature.allowCreatingPublicRooms": false,
+    "UIFeature.allowCreatingPublicSpaces": false
+  }
+}

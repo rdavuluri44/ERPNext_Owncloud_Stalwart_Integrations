@@ -89,6 +89,42 @@ class BackupTests(unittest.TestCase):
         state = (Path(self.p['state']) / 'last-run.json').read_text()
         self.assertIn('failed', state)
 
+    def test_drive_starts_before_its_editor_bridge_and_waits_for_health(self):
+        """P80: the bridge registers with Drive at start, so it must not race Drive's own start."""
+        answers = {'ocis-1': iter(['starting', 'starting', 'healthy'])}
+        calls = []
+
+        def run(argv, **kw):
+            calls.append(argv)
+            if argv[:2] == ['docker', 'inspect']:
+                return types.SimpleNamespace(returncode=0, stdout=next(answers[argv[-1]]) + '\n')
+            return types.SimpleNamespace(returncode=0, stdout='')
+        clock = iter(range(0, 1000, 2))
+        backup.start_in_order(['ocis-1', 'collaboration-1'], run=run, clock=lambda: next(clock), sleep=lambda s: None)
+        self.assertEqual([c[:2] + c[-1:] for c in calls],
+                         [['docker', 'start', 'ocis-1'], ['docker', 'inspect', 'ocis-1'], ['docker', 'inspect', 'ocis-1'],
+                          ['docker', 'inspect', 'ocis-1'], ['docker', 'start', 'collaboration-1']])
+
+    def test_a_wait_that_times_out_or_a_failed_start_still_starts_everything(self):
+        calls = []
+
+        def run(argv, **kw):
+            calls.append(argv)
+            if argv[:2] == ['docker', 'start'] and argv[-1] == 'a':
+                raise subprocess.CalledProcessError(1, argv)
+            return types.SimpleNamespace(returncode=0, stdout='unhealthy\n')
+        clock = iter(range(0, 10000, 30))
+        with self.assertRaises(subprocess.CalledProcessError):
+            backup.start_in_order(['a', 'b', 'c'], run=run, clock=lambda: next(clock), sleep=lambda s: None, wait=60)
+        self.assertEqual([c[-1] for c in calls if c[:2] == ['docker', 'start']], ['a', 'b', 'c'])
+
+    def test_start_wait_is_validated(self):
+        group = self.p['stop_and_copy'][0]
+        for bad in ['60', -1, 601, True]:
+            with self.assertRaises(ValueError):
+                backup.validate(dict(self.p, stop_and_copy=[dict(group, start_wait_seconds=bad)]))
+        backup.validate(dict(self.p, stop_and_copy=[dict(group, start_wait_seconds=0)]))
+
     def test_dumps_are_consistent_online_snapshots(self):
         maria = ' '.join(backup.dump_command({'kind': 'mariadb', 'container': 'db'}))
         self.assertIn('--single-transaction', maria); self.assertIn('--all-databases', maria)

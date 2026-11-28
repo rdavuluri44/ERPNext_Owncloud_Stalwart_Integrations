@@ -2,7 +2,7 @@
 
 > **Generated file: do not edit by hand.** This is the project's work list (every "P" number used in
 > commits, pull requests, READMEs and `docs/decisions.md`) published from the maintainers' private
-> list on 27 November 2026, with every line kept. Only these categories are replaced, by placeholders: the
+> list on 28 November 2026, with every line kept. Only these categories are replaced, by placeholders: the
 > deploying organisation's name (`<tenant>`), host names (`example.com`), IP addresses
 > (documentation ranges), server file paths and rollback folders, mail addresses, names of people and
 > of third parties' internal products, business file names, and links to private records
@@ -139,7 +139,7 @@ not ranked or scheduled; the owner decides if and when one starts)
 | **P22** AI assistant | read-only first; provider and data policy undecided |
 | **P29**, **P30**, **P48** Headscale, Technitium DNS, branch router | one chain, P48 depends on P29 and P30; nothing is broken today |
 | **P46** TrueNAS NVR | one-camera trial started 26 Nov; hardware for more cameras after the trial |
-| **P53** Desk widgets and universal search | **parked by the owner**: do not start |
+| **P53** Desk widgets and universal search | **taken up 27 Nov:** the admin alerts widget (with P72), and help, notifications, search and sign-out moved from the apps to the Desk; the day-planning widgets stay **parked** |
 | **P107** user support: "Report a problem" in the apps, and an admin support desk (Frappe Helpdesk proposed) | **parked by the owner** 27 Nov: take up later; no RustDesk, no paid tool; P103 first |
 
 **Done, closed, redundant or irrelevant items** are not in the lists any more: see [the closed log](p-closed.md) (one line each; numbers are never reused).
@@ -161,7 +161,7 @@ its app's list (copy the `**App:**` line from a neighbour), then run `python3 to
 | Editor | [pending/editor.md](p-list/editor.md) | 3 | 3 |
 | ERP | [pending/erp.md](p-list/erp.md) | 15 | 15 |
 | Mail | [pending/mail.md](p-list/mail.md) | 6 | 6 |
-| Mobile | [pending/mobile.md](p-list/mobile.md) | 9 | 9 |
+| Mobile | [pending/mobile.md](p-list/mobile.md) | 10 | 10 |
 | Portal (eZone) | [pending/portal.md](p-list/portal.md) | 4 | 4 |
 | Raven and Insights | [pending/raven.md](p-list/raven.md) | 1 | 1 |
 | Sign-in | [pending/signin.md](p-list/signin.md) | 8 | 8 |
@@ -255,4 +255,5 @@ its app's list (copy the `**App:**` line from a neighbour), then run `python3 to
 | P107 | User support: "Report a problem" in the apps, and an admin support desk | [General](p-list/general.md) | erp, mobile, portal, signin · **State:** parked | parked |
 | P108 | Remove Raven from ERPNext; all messages through our own channels | [General](p-list/general.md) | raven, mail, mobile, portal, signin, general · **State:** open | open |
 | P109 | A light mail client in the phone app (JMAP) | [Mobile](p-list/mobile.md) | mail, signin · **State:** open · **Category:** now | open |
+| P110 | Delegation of approvals (deputy, peers, the higher official) | [Mobile](p-list/mobile.md) | erp, signin · **State:** open | open |
 <!-- APP-INDEX-END -->

@@ -1,6 +1,6 @@
 # Portal (eZone): P items
 
-> **Generated file: do not edit by hand.** Published from the maintainers' private list on 27 November 2026
+> **Generated file: do not edit by hand.** Published from the maintainers' private list on 28 November 2026
 > with every line kept; only identifying names, addresses, paths and links to private records are
 > replaced by placeholders (see the [P list index](../p-list.md) for the rules).
 
@@ -185,3 +185,68 @@ in P53 stays parked.**
   and Frigate.
   - The panel says these are reachable only over the tailnet and use their own administrator sign-in until P102.
   - The addresses come from the deployment profile, not the code.
+
+**Taken up (owner's go, 27 November 2026): help, notifications, search and sign-out move from the apps to the Desk.**
+These four leave every app's own screen and become universal on the Desk; the day-planning widgets stay parked.
+- **Owner's decisions (27 November 2026):**
+  1. **How the Desk asks each app:** through the app's own script of ours in a background frame, with the person's
+     existing session, so each app decides what the person may see. The ERP server gets no per-person keys to the
+     other apps.
+  2. **DMS notifications:** "documents in your inbox" and "failed imports" (the DMS has no per-person feed).
+  3. **Help:** one Desk help page with a short guide per app; "Report a problem" (P107) plugs in later and stays
+     parked.
+  4. **Apps opened outside the Desk** (direct links, desktop and phone clients): a "back to eZone" link, no
+     sign-out or help item.
+  5. **Unsaved work:** warn before signing out when an app has an open editor or draft.
+- **Build order:** sign-out, help, notifications (grouped by app), search (one box, results show the app).
+- **Where the four sit (owner, 27 November 2026):** at the top right of the Desk, sign-out last.
+- **Step 1 (sign-out):** public draft #142; not yet on the test site.
+- **Read-only check on the test site (27 November 2026, test ERP at `5cc6d1a`; nothing changed):**
+  - **ERP** (Frappe 16.60.2): global search answers and is permission-aware (32 record types indexed); the
+    notification list has read, unread and mark-as-read calls. The help menu's three items can be hidden in
+    Navbar Settings. "Log out" is not listed there in version 16, so our session script hides it.
+  - **Insights:** no search or notifications of its own; dashboards, workbooks and queries are ERP records, found
+    by name.
+  - **Drive** (ownCloud Infinite Scale 8.2.3): the search, notification and live-event services run. **Content
+    search is off** (no text extractor configured): search finds names and tags only. Turning it on means pointing
+    Drive at the Tika service we already run, and a re-index. **Owner (27 November 2026): turn it on**, as its
+    own change, tested first.
+  - **Mail** (Stalwart 1.1.1, webmail 1.21.2): the mail interface answers; the webmail has its own search,
+    notification centre, help links and shortcuts screen, in source we already build from.
+  - **DMS** (Paperless-ngx 3.4.2): a global search call exists; inbox counts and import tasks exist; no
+    notification feed (confirmed).
+  - **Office editor** (ONLYOFFICE 10.0.0): opens inside Drive; only its help and About entries are affected.
+  - **Not checked:** a signed-in person's calls through the frames (needs the bridge first), and the menu items
+    in a real browser.
+- **Overlap:** public #134 (admin alerts, draft) also changes the Desk page's code file; the two are reconciled
+  when the second one is ready.
+
+**Step 1 on the whole test site (28 November 2026):** the combined test build `70636f4` (public #142 with #134 and #69)
+puts the Desk bar and sign-out on the test ERP and the matching scripts into test Drive, DMS and webmail; every site
+serves the new code (receipt `p53-p72-p69-test-combined-70636f4`). The bar shows on the Desk home only (owner's
+correction). Open: the owner's browser check. On test the Desk's sign-out cannot prove Drive, Mail and DMS are signed
+out, because they use the production sign-in service; that is checked on production after promotion. Drive content
+search (owner: turn it on) is not started.
+
+**Additional scope (owner, 28 November 2026): the dashboards are organised into nine.** Parked with the rest of the
+day-planning widgets; not started, nothing designed yet.
+- The dashboards are grouped into **nine dashboards**, and **each one is visible to a person according to that
+  person's access**: someone without access to an area does not see its dashboard.
+- The nine, in the owner's order and with the owner's names:
+  1. Acts, Taxes
+  2. Fin, AP, AR
+  3. HR, PR
+  4. Assets
+  5. Proc, Inv
+  6. Production
+  7. Prod, Sales
+  8. Budget, Proj
+  9. IT Admin
+- Six of the names are the same as the head-office spaces in Drive since 28 November 2026 ("Acts, Taxes",
+  "Fin, AP, AR", "HR, PR", "Assets", "Proc, Inv", "Prod, Sales"), so a department finds its files and its
+  figures under one name. "Production", "Budget, Proj" and "IT Admin" have no Drive space of that name.
+- **To settle with the owner at planning:** what each of the nine shows; what "access" is decided by (ERP roles, Drive
+  space membership, or groups in the sign-in service); what "Prod" stands for in "Prod, Sales" next to the separate
+  "Production"; whether "IT Admin" is the admin alerts widget and links panel already taken up above, or a
+  dashboard beside them; and how this fits the existing rule that each widget asks the app with the person's own
+  session.

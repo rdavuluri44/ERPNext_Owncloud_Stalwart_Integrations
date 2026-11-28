@@ -1,0 +1,402 @@
+"""The chat stack (P73): Synapse with the Matrix Authentication Service, signing in through the sign-in service.
+
+Offline: the script that writes both configurations runs for real against a temporary folder (without the signing
+key, which needs the `cryptography` package of the Synapse image), and the stack file and the test routes are read
+as data. Every value below is a made-up placeholder.
+"""
+import importlib.util
+import json
+import re
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location('chat_configure', ROOT / 'integrations/chat/configure.py')
+configure = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(configure)
+
+ENV = {
+    'CHAT_SERVER_NAME': 'chat.example.net', 'CHAT_PUBLIC_URL': 'https://chat.example.net',
+    'CHAT_AUTH_URL': 'https://chat-auth.example.net/', 'SYNAPSE_DB_PASSWORD': 'placeholder-a',
+    'MAS_DB_PASSWORD': 'placeholder-b', 'SHARED_SECRET': 'placeholder-c', 'MACAROON_SECRET': 'placeholder-d',
+    'FORM_SECRET': 'placeholder-e', 'MAS_ENCRYPTION_SECRET': 'placeholder-f',
+    'UPSTREAM_ID': '01KBCHATSS0PR0V1DERAAAAAAA', 'UPSTREAM_ISSUER': 'https://sso.example.net/application/o/chat/',
+    'UPSTREAM_CLIENT_ID': 'chat', 'UPSTREAM_CLIENT_SECRET': 'placeholder-g', 'UPSTREAM_NAME': 'Company sign-in',
+    'LOCALPART_TEMPLATE': '{{ user.chat_name }}',
+    'BRIDGE_AS_TOKEN': 'placeholder-h', 'BRIDGE_HS_TOKEN': 'placeholder-i',
+    'NETWORK_SUBNET': '172.30.250.0/24', 'ALERTS_APP_ID': 'com.example.app',
+}
+STACK = json.loads((ROOT / 'deployment/stacks/chat.compose.json').read_text(encoding='utf-8'))
+INPUTS = json.loads((ROOT / 'deployment/stacks/inputs.json').read_text(encoding='utf-8'))
+KEY_FILE = 'signing' + '.pem'
+
+
+class Configuration(unittest.TestCase):
+    def setUp(self):
+        self.values = configure.settings(ENV)
+        self.synapse = configure.homeserver(self.values)
+        self.mas = configure.mas(self.values)
+
+    def test_sign_in_only_through_the_sign_in_service(self):
+        self.assertFalse(self.synapse['enable_registration'])
+        self.assertEqual(self.synapse['password_config'], {'enabled': False})
+        self.assertTrue(self.synapse['matrix_authentication_service']['enabled'])
+        self.assertEqual(self.mas['passwords'], {'enabled': False})
+        providers = self.mas['upstream_oauth2']['providers']
+        self.assertEqual(len(providers), 1, 'one provider and no passwords: MAS goes straight to it')
+        self.assertEqual(providers[0]['claims_imports']['localpart']['action'], 'require')
+        self.assertIn('chat', providers[0]['scope'].split(), 'the chat name comes with its own scope')
+        self.assertEqual(INPUTS['CI_CHAT_CONFIGURE_LOCALPART_TEMPLATE']['default'], '{{ user.chat_name }}')
+        mappings = json.loads((ROOT / 'deployment/scope-mappings.example.json').read_text(encoding='utf-8'))
+        chat = [m for m in mappings if m['scope_name'] == 'chat']
+        self.assertEqual(len(chat), 1)
+        self.assertIn('chat_name', chat[0]['expression'])
+
+    def test_people_cannot_change_what_the_sign_in_service_says(self):
+        account = self.mas['account']
+        for name in ('email_change_allowed', 'displayname_change_allowed', 'password_registration_enabled',
+                     'password_change_allowed', 'password_recovery_enabled', 'account_deactivation_allowed'):
+            self.assertIs(account[name], False, name)
+        imports = self.mas['upstream_oauth2']['providers'][0]['claims_imports']
+        self.assertEqual(imports['displayname']['action'], 'force')
+        self.assertEqual(imports['email']['action'], 'force')
+
+    def test_no_federation_and_rooms_not_encrypted_by_default(self):
+        self.assertEqual(self.synapse['federation_domain_whitelist'], [])
+        self.assertEqual(self.synapse['trusted_key_servers'], [])
+        self.assertEqual(self.synapse['encryption_enabled_by_default_for_room_type'], 'off')
+        names = [name for listener in self.synapse['listeners'] for r in listener['resources'] for name in r['names']]
+        self.assertEqual(names, ['client'], 'no federation resource is served')
+
+    def test_the_business_system_has_a_bot_and_needs_no_admin_right(self):
+        bridge = configure.bridge(self.values)
+        self.assertEqual(self.synapse['app_service_config_files'], ['/config/bridge.yaml'])
+        self.assertIsNone(bridge['url'], 'Synapse never calls the business system')
+        self.assertEqual(bridge['sender_localpart'], 'erp')
+        users = bridge['namespaces']['users']
+        self.assertEqual(len(users), 1)
+        self.assertTrue(users[0]['exclusive'], 'nobody else can take the bot\'s name')
+        self.assertTrue(re.fullmatch(users[0]['regex'], '@erp:chat.example.net'))
+        self.assertFalse(re.fullmatch(users[0]['regex'], '@erp:chatXexample.net'), 'the dots of the name are literal')
+        self.assertFalse(re.fullmatch(users[0]['regex'], '@someone:chat.example.net'), 'the bot cannot act as a person')
+        alias = bridge['namespaces']['aliases'][0]['regex']
+        self.assertTrue(re.fullmatch(alias, '#site-north-yard:chat.example.net'))
+        self.assertTrue(re.fullmatch(alias, '#notices-asha.d:chat.example.net'))
+        self.assertFalse(re.fullmatch(alias, '#lunch:chat.example.net'))
+        self.assertNotEqual(bridge['as_token'], bridge['hs_token'])
+        with self.assertRaises(ValueError):
+            configure.settings({**ENV, 'BRIDGE_HS_TOKEN': ENV['BRIDGE_AS_TOKEN']})
+        self.assertEqual(self.synapse['auto_accept_invites'],
+                         {'enabled': True, 'only_for_direct_messages': False, 'only_from_local_users': True},
+                         'the bot puts people into rooms by inviting them; only this server can invite')
+        self.assertNotIn('clients', self.mas, 'no client with admin rights exists')
+        self.assertNotIn('policy', self.mas)
+        self.assertNotIn('server_notices', self.synapse, 'the bot makes the Notices room of each person itself')
+
+    def test_both_sides_share_one_value_and_name_each_other(self):
+        self.assertEqual(self.synapse['matrix_authentication_service']['secret'], self.mas['matrix']['secret'])
+        self.assertEqual(self.synapse['matrix_authentication_service']['endpoint'], 'http://mas:8080/')
+        self.assertEqual(self.mas['matrix']['endpoint'], 'http://synapse:8008')
+        self.assertEqual(self.mas['matrix']['homeserver'], self.synapse['server_name'])
+        self.assertIn('@database-mas:5432/mas', self.mas['database']['uri'])
+        self.assertEqual(self.synapse['database']['args']['host'], 'database-synapse')
+
+    def test_addresses_end_in_a_slash_and_the_key_is_stable_hex(self):
+        self.assertEqual(self.synapse['public_baseurl'], 'https://chat.example.net/')
+        self.assertEqual(self.mas['http']['public_base'], 'https://chat-auth.example.net/')
+        key = self.mas['secrets']['encryption']
+        self.assertRegex(key, r'^[0-9a-f]{64}$')
+        self.assertEqual(key, configure.encryption_key('placeholder-f'), 'the same input gives the same key')
+        self.assertNotEqual(key, configure.encryption_key('another'))
+
+    def test_bad_settings_are_named_without_their_values(self):
+        for change, word in (({'SHARED_SECRET': ''}, 'SHARED_SECRET'), ({'UPSTREAM_ID': 'not-a-ulid'}, 'ULID'),
+                             ({'CHAT_PUBLIC_URL': 'http://chat.example.net/'}, 'https'),
+                             ({'CHAT_SERVER_NAME': 'Chat Example'}, 'host name')):
+            with self.assertRaises(ValueError) as refused:
+                configure.settings({**ENV, **change})
+            self.assertIn(word, str(refused.exception))
+            for value in ('placeholder-a', 'placeholder-g', 'placeholder-d'):
+                self.assertNotIn(value, str(refused.exception))
+
+    def test_files_are_written_private_and_the_signing_key_is_kept(self):
+        with tempfile.TemporaryDirectory() as folder, mock.patch.object(configure, 'signing_key', return_value=b'KEY-1'):
+            root = Path(folder)
+            self.assertEqual(configure.main(ENV, root / 's', root / 'm', root / 'd'), 0)
+            self.assertEqual(json.loads((root / 's/homeserver.yaml').read_text())['server_name'], 'chat.example.net')
+            self.assertEqual(json.loads((root / 'm/config.yaml').read_text())['matrix']['homeserver'], 'chat.example.net')
+            self.assertEqual((root / 'm' / KEY_FILE).read_bytes(), b'KEY-1')
+            with mock.patch.object(configure, 'signing_key', return_value=b'KEY-2'):
+                self.assertEqual(configure.main({**ENV, 'UPSTREAM_NAME': 'Renamed'}, root / 's', root / 'm', root / 'd'), 0)
+            self.assertEqual((root / 'm' / KEY_FILE).read_bytes(), b'KEY-1', 'a second run keeps the key')
+            renamed = json.loads((root / 'm/config.yaml').read_text())['upstream_oauth2']['providers'][0]['human_name']
+            self.assertEqual(renamed, 'Renamed', 'the configuration itself is rewritten')
+            if sys.platform != 'win32':
+                for name in ('s/homeserver.yaml', 'm/config.yaml', 'm/' + KEY_FILE):
+                    self.assertEqual((root / name).stat().st_mode & 0o777, 0o600, name)
+
+    def test_missing_settings_stop_before_anything_is_written(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            self.assertEqual(configure.main({**ENV, 'UPSTREAM_CLIENT_SECRET': ''}, root / 's', root / 'm', root / 'd'), 1)
+            self.assertFalse((root / 's').exists())
+
+    def test_alerts_only_go_to_the_gateway_inside_this_stacks_own_network(self):
+        self.assertEqual(self.synapse['ip_range_whitelist'], ['172.30.250.0/24'])
+        self.assertTrue(configure.ALERTS_URL.startswith('http://alerts-gateway:5000/'))
+        for bad, word in (('10.0.0.0/8', 'at most 256'), ('8.8.8.0/24', 'private'), ('not a network', 'network')):
+            with self.assertRaises(ValueError) as refused:
+                configure.settings({**ENV, 'NETWORK_SUBNET': bad})
+            self.assertIn(word, str(refused.exception))
+        with self.assertRaises(ValueError):
+            configure.settings({**ENV, 'ALERTS_APP_ID': 'not an app id'})
+
+    def test_the_gateway_is_configured_only_where_a_key_was_placed(self):
+        made_up = {'type': 'service_account', 'project_id': 'example-project', 'private_key': 'placeholder-k',
+                   'client_email': 'sender@example-project.example'}
+        gateway = configure.alerts(self.values, made_up)
+        self.assertEqual(gateway['apps'], {'com.example.app': {
+            'type': 'gcm', 'api_version': 'v1', 'project_id': 'example-project',
+            'service_account_file': '/config/' + configure.ALERTS_KEY_NAME}})
+        self.assertNotIn('placeholder-k', json.dumps(gateway), 'the key stays in its own file')
+        with self.assertRaises(ValueError):
+            configure.alerts(self.values, {'type': 'authorized_user'})
+        with tempfile.TemporaryDirectory() as folder, mock.patch.object(configure, 'signing_key', return_value=b'KEY-1'):
+            root = Path(folder)
+            (root / 'k').mkdir()
+            run = lambda: configure.main(ENV, root / 's', root / 'm', root / 'd', root / 'k', root / 'a')  # noqa: E731
+            self.assertEqual(run(), 0)
+            self.assertFalse((root / 'a' / 'sygnal.yaml').exists(), 'no key, no gateway configuration')
+            (root / 'k' / configure.ALERTS_KEY_NAME).write_text(json.dumps(made_up))
+            self.assertEqual(run(), 0)
+            self.assertEqual(json.loads((root / 'a' / 'sygnal.yaml').read_text())['http']['port'], 5000)
+            self.assertEqual(json.loads((root / 'a' / configure.ALERTS_KEY_NAME).read_text()), made_up)
+            (root / 'k' / configure.ALERTS_KEY_NAME).unlink()
+            self.assertEqual(run(), 0)
+            self.assertFalse((root / 'a' / 'sygnal.yaml').exists(), 'the key was taken away: nothing stale stays')
+            self.assertFalse((root / 'a' / configure.ALERTS_KEY_NAME).exists())
+            (root / 'k' / configure.ALERTS_KEY_NAME).write_text('not json')
+            self.assertEqual(run(), 1, 'a wrong key file stops the run')
+
+
+class Stack(unittest.TestCase):
+    def test_every_setting_the_script_needs_is_passed_and_declared(self):
+        passed = STACK['services']['configure']['environment']
+        self.assertEqual(set(passed), set(configure.REQUIRED))
+        for name, value in passed.items():
+            declared = re.fullmatch(r'\$\{(CI_CHAT_CONFIGURE_[A-Z_]+):\?[^}]*\}', value)
+            self.assertTrue(declared, name)
+            self.assertEqual(declared.group(1), 'CI_CHAT_CONFIGURE_' + name)
+            self.assertIn(declared.group(1), INPUTS)
+
+    def test_the_client_value_is_never_generated_and_the_others_are(self):
+        self.assertEqual(INPUTS['CI_CHAT_CONFIGURE_UPSTREAM_CLIENT_SECRET'], {'kind': 'secret', 'generate': False})
+        for name in ('SYNAPSE_DB_PASSWORD', 'MAS_DB_PASSWORD', 'SHARED_SECRET', 'MACAROON_SECRET', 'FORM_SECRET',
+                     'MAS_ENCRYPTION_SECRET', 'BRIDGE_AS_TOKEN', 'BRIDGE_HS_TOKEN'):
+            self.assertEqual(INPUTS['CI_CHAT_CONFIGURE_' + name], {'kind': 'secret', 'generate': True}, name)
+        self.assertTrue(configure.ULID.fullmatch(INPUTS['CI_CHAT_CONFIGURE_UPSTREAM_ID']['default']))
+
+    def test_services_wait_for_the_configuration_and_their_database(self):
+        services = STACK['services']
+        self.assertEqual(services['configure']['restart'], 'no')
+        for name, database in (('synapse', 'database-synapse'), ('mas', 'database-mas')):
+            needs = services[name]['depends_on']
+            self.assertEqual(needs['configure'], {'condition': 'service_completed_successfully'})
+            self.assertEqual(needs[database], {'condition': 'service_healthy'})
+            self.assertTrue(any(v.endswith(':/config:ro') for v in services[name]['volumes']), name + ' only reads its file')
+        self.assertEqual(services['database-synapse']['environment']['POSTGRES_INITDB_ARGS'], '--encoding=UTF8 --locale=C')
+
+    def test_databases_stay_inside_the_stack_and_ports_are_private(self):
+        services = STACK['services']
+        for name in ('database-synapse', 'database-mas', 'configure'):
+            self.assertEqual(services[name]['networks'], {'default': {}}, name)
+            self.assertEqual(services[name]['ports'], [], name)
+        for name in ('synapse', 'mas'):
+            for port in services[name]['ports']:
+                self.assertTrue(port.startswith('127.0.0.1:'), port)
+        self.assertEqual(services['synapse']['networks']['workspace'], {'aliases': ['chat-synapse']})
+        self.assertEqual(services['mas']['networks']['workspace'], {'aliases': ['chat-mas']})
+        self.assertTrue(all('@sha256:' in service['image'] for service in services.values()))
+
+    def test_the_alert_gateway_is_optional_private_and_reads_only_its_own_files(self):
+        gateway = STACK['services']['alerts']
+        self.assertEqual(gateway['profiles'], ['alerts'], 'it starts only where an operator asks for it')
+        self.assertEqual(gateway['ports'], [], 'no port on the host: only Synapse calls it')
+        self.assertEqual(gateway['volumes'], ['alerts-config:/config:ro'])
+        check = gateway['healthcheck']['test']
+        self.assertEqual(check[:3], ['CMD', 'python', '-c'], 'the image has no curl: its own check always fails')
+        self.assertIn('http://localhost:5000/health', check[3])
+        self.assertNotIn('curl', ' '.join(check))
+        self.assertEqual(gateway['depends_on'], {'configure': {'condition': 'service_completed_successfully'}})
+        self.assertEqual(gateway['networks'], {'default': {'aliases': ['alerts-gateway']}, 'outbound': {}},
+                         'its own way out to Google, and not on the shared network of the other applications')
+        self.assertEqual(STACK['networks']['outbound'], {})
+        self.assertFalse([name for name, s in STACK['services'].items() if name != 'alerts' and 'outbound' in s['networks']],
+                         'nothing else in the stack gets a way out through it')
+        subnet = '${CI_CHAT_CONFIGURE_NETWORK_SUBNET:?Set CI_CHAT_CONFIGURE_NETWORK_SUBNET}'
+        self.assertEqual(STACK['networks']['default'], {'internal': True, 'ipam': {'config': [{'subnet': subnet}]}})
+        self.assertEqual(STACK['services']['configure']['environment']['NETWORK_SUBNET'], subnet,
+                         'Synapse is told exactly the network the gateway is in')
+        key_mount = [v for v in STACK['services']['configure']['volumes'] if v.endswith(':/alerts-key:ro')]
+        self.assertEqual(len(key_mount), 1, 'the key folder is read-only, and only the one-time service sees it')
+        self.assertFalse([v for name, s in STACK['services'].items() if name != 'configure'
+                          for v in s.get('volumes', []) if 'alerts-key' in v])
+
+
+class Rendering(unittest.TestCase):
+    HOSTS = {name: ('test.example.net' if name == 'erp' else 'test-' + name + '.example.net')
+             for name in ('erp', 'sso', 'drive', 'office', 'mail', 'dms', 'respond')}
+
+    def test_the_chat_screen_is_pinned_private_and_only_reads_its_configuration(self):
+        web = STACK['services']['web']
+        self.assertRegex(web['image'], r'^ghcr\.io/element-hq/element-web@sha256:[0-9a-f]{64}$')
+        self.assertEqual(web['ports'], [], 'no port on the host: only the proxy reaches it')
+        self.assertEqual(web['volumes'], ['${RUNTIME_ROOT:?Set RUNTIME_ROOT}/mounts/chat_web_0:/app/config.json:ro'])
+        self.assertEqual(web['networks'], {'workspace': {'aliases': ['chat-web']}},
+                         'static pages: not on the stack\'s own network, so it cannot reach the databases')
+        self.assertEqual(web['environment'], {'ELEMENT_WEB_PORT': '8080'}, 'no secret and no setting but its port')
+        mounts = json.loads((ROOT / 'deployment/stacks/mounts.json').read_text(encoding='utf-8'))
+        self.assertIn({'stack': 'chat', 'service': 'web', 'path': 'chat_web_0', 'target': '/app/config.json',
+                       'source_kind': 'file'}, mounts)
+        sys.path.insert(0, str(ROOT / 'tools'))
+        try:
+            import runtime_mounts
+        finally:
+            sys.path.pop(0)
+        self.assertEqual(runtime_mounts.copy_files['/app/config.json'], 'integrations/chat/element-config.json')
+
+    def test_the_chat_screen_talks_only_to_our_own_chat_server(self):
+        text = (ROOT / 'integrations/chat/element-config.json').read_text(encoding='utf-8')
+        config = json.loads(text)
+        self.assertEqual(config['default_server_config'], {'m.homeserver': {'base_url': 'https://chat.example.com'}},
+                         'our server only, and no identity server')
+        self.assertTrue(config['disable_custom_urls'], 'nobody picks another server')
+        self.assertTrue(config['disable_guests'] and config['disable_3pid_login'])
+        self.assertEqual(config['sso_redirect_options'], {'immediate': True}, 'straight to the sign-in service')
+        self.assertEqual(config['oidc_metadata'], {'client_uri': 'https://chat-web.example.com/'})
+        self.assertFalse(config['default_federate'])
+        self.assertEqual((config['integrations_ui_url'], config['integrations_rest_url'],
+                          config['integrations_widgets_urls']), ('', '', []), 'no outside integration manager')
+        self.assertTrue(config['element_call']['disable'])
+        for feature in ('voip', 'widgets', 'feedback', 'identityServer', 'thirdPartyId', 'registration',
+                        'passwordReset', 'deactivate', 'shareSocial', 'locationSharing', 'urlPreviews'):
+            self.assertIs(config['setting_defaults']['UIFeature.' + feature], False, feature)
+        for outside in ('matrix.org', 'element.io', 'vector.im', 'jitsi', 'posthog', 'maptiler', 'bug_report'):
+            self.assertNotIn(outside, text, 'nothing is sent to ' + outside)
+        addresses = set(re.findall(r'https://[^"/]+', text))
+        self.assertEqual(addresses, {'https://chat.example.com', 'https://chat-web.example.com'})
+
+    def test_the_chat_screen_has_its_own_name_and_may_not_be_framed(self):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest('needs PyYAML, as the ingress renderer does')
+        chat = {**self.HOSTS, 'chat': 'test-chat.example.net', 'chat-auth': 'test-chat-auth.example.net'}
+        self.assertFalse([name for name in self.routes(chat)['routers'] if 'chat-web' in name])
+        http = self.routes({**chat, 'chat-web': 'test-chat-web.example.net'})
+        router = http['routers']['isolated-chat-web']
+        self.assertEqual(router['rule'], 'Host(`test-chat-web.example.net`)')
+        self.assertNotEqual(router['rule'], http['routers']['isolated-chat']['rule'].split(' && ')[0],
+                            'never the chat server\'s own name: uploaded files are served from that one')
+        self.assertEqual(http['services']['isolated-chat-web']['loadBalancer']['servers'][0]['url'], 'http://chat-web:8080')
+        headers = http['middlewares'][router['middlewares'][0]]['headers']['customResponseHeaders']
+        self.assertEqual(headers['X-Frame-Options'], 'SAMEORIGIN')
+        self.assertEqual(headers['Content-Security-Policy'], "frame-ancestors 'self'")
+        self.assertEqual(headers['X-Content-Type-Options'], 'nosniff')
+        self.assertFalse([name for name in self.routes({**self.HOSTS, 'chat-web': 'test-chat-web.example.net'})['routers']
+                          if 'chat' in name], 'no screen without a chat server')
+
+    def test_the_menu_entry_opens_its_own_tab_and_only_where_the_site_names_the_address(self):
+        page = (ROOT / 'erpnext_drive_integrations/www/place_holder.html').read_text(encoding='utf-8')
+        source = (ROOT / 'erpnext_drive_integrations/www/place_holder.py').read_text(encoding='utf-8')
+        self.assertIn("chat = frappe.conf.get('cloud_chat_web_url')", source)
+        self.assertIn("re.fullmatch(r'https://[a-z0-9.-]+/', chat)", source, 'an https address and nothing else')
+        self.assertIn("'external': True", source)
+        self.assertIn('{% if app.external %}data-external target="_blank" rel="noopener noreferrer"{% else %}'
+                      'data-app-id="{{ app.id | e }}"{% endif %}', page)
+        self.assertIn(".filter(a=>!a.external)", page, 'never put into a frame: its sign-in pages refuse one')
+        logo = (ROOT / 'erpnext_drive_integrations/public/app-logos/external-chat.svg').read_text(encoding='utf-8')
+        self.assertTrue(logo.startswith('<svg ') and 'script' not in logo and 'href' not in logo)
+
+    def test_the_relay_carries_the_chat_screen_s_name_only_when_the_profile_has_it(self):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest('needs PyYAML, as the relay renderer does')
+        sys.path.insert(0, str(ROOT / 'tools'))
+        try:
+            from prepare_test_relay import prepare as relay
+        finally:
+            sys.path.pop(0)
+        hosts = dict(self.HOSTS, **{'chat': 'test-chat.example.net', 'chat-auth': 'test-chat-auth.example.net'})
+        base = {'tier': 'test', 'instance': 'trial', 'relay_target': '100.64.0.20', 'hosts': hosts}
+        self.assertFalse([name for name in relay(base)['http']['routers'] if 'chat-web' in name])
+        routers = relay(dict(base, hosts=dict(hosts, **{'chat-web': 'test-chat-web.example.net'})))['http']['routers']
+        self.assertEqual(routers['cloud-test-relay-test-chat-web']['rule'], 'Host(`test-chat-web.example.net`)')
+
+    def routes(self, hosts):
+        sys.path.insert(0, str(ROOT / 'tools'))
+        try:
+            from prepare_ingress import prepare as ingress
+        finally:
+            sys.path.pop(0)
+        return ingress(ROOT, {'hosts': hosts, 'ingress_prefix': 'isolated'})['http']
+
+    def test_routes_only_where_the_profile_names_the_chat_hosts(self):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest('needs PyYAML, as the ingress renderer does')
+        self.assertFalse([name for name in self.routes(self.HOSTS)['routers'] if 'chat' in name])
+        http = self.routes({**self.HOSTS, 'chat': 'test-chat.example.net', 'chat-auth': 'test-chat-auth.example.net'})
+        routers = http['routers']
+        self.assertEqual(routers['isolated-chat']['service'], 'isolated-chat')
+        self.assertEqual(routers['isolated-chat-auth']['service'], 'isolated-chat-auth')
+        delegated = routers['isolated-chat-delegated']
+        self.assertEqual(delegated['service'], 'isolated-chat-auth')
+        self.assertGreater(delegated['priority'], routers['isolated-chat']['priority'])
+        pattern = re.search(r'PathRegexp\(`([^`]+)`\)', delegated['rule']).group(1)
+        for path in ('/_matrix/client/v3/login', '/_matrix/client/v3/logout', '/_matrix/client/v3/refresh'):
+            self.assertTrue(re.search(pattern, path), path)
+        for path in ('/_matrix/client/v3/sync', '/_matrix/client/v3/login/sso/redirect', '/_synapse/admin/v1/users'):
+            self.assertFalse(re.search(pattern, path), path)
+        self.assertNotIn('/_synapse/admin', routers['isolated-chat']['rule'], 'the admin interface is not routed')
+        self.assertEqual(http['services']['isolated-chat']['loadBalancer']['servers'][0]['url'], 'http://chat-synapse:8008')
+        self.assertEqual(http['services']['isolated-chat-auth']['loadBalancer']['servers'][0]['url'], 'http://chat-mas:8080')
+
+
+    def test_the_relay_and_the_host_block_carry_the_chat_names_only_when_the_profile_has_them(self):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest('needs PyYAML, as the relay renderer does')
+        sys.path.insert(0, str(ROOT / 'tools'))
+        try:
+            from prepare_test_relay import prepare as relay
+            try:
+                from test_host_aliases import render as aliases
+            except ImportError:  # the host tool needs Linux (fcntl)
+                aliases = None
+        finally:
+            sys.path.pop(0)
+        base = {'tier': 'test', 'instance': 'trial', 'relay_target': '100.64.0.20', 'hosts': dict(self.HOSTS)}
+        without = relay(base)['http']['routers']
+        self.assertFalse([name for name in without if 'chat' in name])
+        chat = dict(self.HOSTS, **{'chat': 'test-chat.example.net', 'chat-auth': 'test-chat-auth.example.net'})
+        routers = relay(dict(base, hosts=chat))['http']['routers']
+        self.assertEqual(routers['cloud-test-relay-test-chat']['rule'], 'Host(`test-chat.example.net`)')
+        self.assertEqual(routers['cloud-test-relay-test-chat-auth']['rule'], 'Host(`test-chat-auth.example.net`)')
+        self.assertIn('Host(`test-chat-auth.example.net`)', routers['cloud-test-relay-http']['rule'],
+                      'port 80 too, for the certificate challenge of the test host')
+        with self.assertRaises(ValueError):
+            relay(dict(base, hosts=dict(chat, chat='chat.example.net')))
+        if aliases:
+            self.assertIn('test-chat.example.net test-chat-auth.example.net', aliases('', dict(base, hosts=chat)))
+            self.assertNotIn('chat', aliases('', base))
+
+
+if __name__ == '__main__':
+    unittest.main()

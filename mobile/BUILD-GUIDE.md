@@ -1,4 +1,4 @@
-# ERP Mobile: build guide for agents and developers
+# UNformat ERP: build guide for agents and developers
 
 The one guide for building the native app in this module. **Order of authority:** the repository's `AGENTS.md`
 (binding for everything), then this guide, then `mobile/AGENTS.md` (Expo basics), then any other document.
@@ -10,7 +10,9 @@ Status: owner decisions of 22 and 23 November 2026; nothing in sections 6 to 12 
 
 ## 1. Owner decisions (22 November 2026)
 
-1. One universal app name, **ERP Mobile**; no company name in code, assets or docs.
+1. One app name, **UNformat ERP** (owner, 28 November 2026; before that "ERP Mobile"). It is the default brand's app
+   name (`branding/unformat/brand.json`, `mobile_app.name`) and a deployment replaces it through its brand settings;
+   no client's name in code, assets or docs.
 2. Bottom tabs **Today · Inbox · My HR · Menu** (replaces the earlier Work/Chat/Mail/Drive layout of P50).
    **No Chat, Mail or Drive** in the app: they are separate apps, and the Menu has no links to them.
 3. **Web parity by role:** everything a person can do on the web (all their DocTypes, onboarding forms, reports

@@ -1,3 +1,5 @@
+import re
+
 import frappe
 from frappe.boot import get_app_data
 from frappe.utils.oauth import get_oauth2_authorize_url
@@ -52,6 +54,12 @@ def get_context(context):
         {'id': 'mail', 'name': 'Mail', 'url': 'https://mail.example.com/mail/folder/inbox', 'logo': '/assets/erpnext_drive_integrations/app-logos/external-mail.svg'},
         {'id': 'dms', 'name': 'DMS', 'url': 'https://dms.example.com/', 'logo': '/assets/erpnext_drive_integrations/app-logos/external-dms.svg'},
     ])
+    # The chat screen (P73) signs in through pages that refuse to be shown inside another page, so it opens
+    # in its own tab. Listed only where the site names its address.
+    chat = frappe.conf.get('cloud_chat_web_url')
+    if isinstance(chat, str) and re.fullmatch(r'https://[a-z0-9.-]+/', chat):
+        apps.append({'id': 'chat', 'name': 'Chat', 'url': chat, 'external': True,
+                     'logo': '/assets/erpnext_drive_integrations/app-logos/external-chat.svg'})
     context.portal_apps = apps
     context.logout_url = '/api/method/erpnext_drive_integrations.portal.sso.finish_logout'
     return context

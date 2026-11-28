@@ -34,7 +34,7 @@
   "source_files_origins": ["https://drive.example.com"],
   "source_dms_origins": ["https://dms.example.com"],
   "refresh_ready": false,
-  "test_oauth_clients": [{"app_name": "ERP Mobile", "client_id": "exampleclient1", "native": true, "skip_authorization": true, "redirect_uris": "erpmobile://oauth/callback exp://192.0.2.20:8081/--/oauth/callback", "default_redirect_uri": "erpmobile://oauth/callback"}],
+  "test_oauth_clients": [{"app_name": "UNformat ERP", "client_id": "exampleclient1", "native": true, "skip_authorization": true, "redirect_uris": "erpmobile://oauth/callback exp://192.0.2.20:8081/--/oauth/callback", "default_redirect_uri": "erpmobile://oauth/callback"}],
   "test_form_smtp": {"host": "mail.example.com", "address": "100.64.0.10", "port": 465, "user": "test-forms@example.com", "sender": "Test forms <test-forms@example.com>", "password_file": "/etc/cloud-integrations/test-form-smtp.password"},
   "refresh_users": ["alex@example.com"],
   "export_ssh": {

@@ -57,6 +57,7 @@ them before an upgrade of Frappe, authentik, Drive, Coolify or the host.
 - [ERPNext](#erpnext)
 - [HRMS (Frappe HR)](#hrms-frappe-hr)
 - [India Compliance](#india-compliance)
+- [Chat (Synapse and the Matrix Authentication Service)](#chat-synapse-and-the-matrix-authentication-service)
 - [Insights](#insights)
 - [Payment apps and India Payroll](#payment-apps-and-india-payroll)
 - [authentik](#authentik)
@@ -632,6 +633,87 @@ Made against: v16.11.1 (`6898239`).
 - **How:** `onboarding/kyc.py`, `onboarding/setup.py`.
 - **Upgrade:** **re-check.**
 
+## Chat (Synapse and the Matrix Authentication Service)
+
+Made against: Synapse v1.166.0, Matrix Authentication Service v1.30.0. Both run unmodified; everything here is
+configuration we write (`integrations/chat/configure.py`).
+
+### CHAT-1 Sign-in delegated to the authentication service, which uses only the sign-in service
+
+- **What and why:** Synapse's `matrix_authentication_service` block; passwords and registration off on both sides;
+  one upstream OAuth2 provider; people cannot change name or mail address or deactivate their account. One passkey
+  sign-in for everything (P73).
+- **How:** `integrations/chat/configure.py` (`homeserver`, `mas`), `deployment/stacks/chat.compose.json`.
+- **Upgrade:** **re-check:** **loud** if a key is renamed (the service refuses to start); **silent** if a new
+  sign-in or registration path is added upstream with a default of "on". Read both release notes for new
+  account, registration and login options.
+- **Tests:** `tests/test_chat_stack.py`.
+
+### CHAT-2 No federation; rooms not encrypted by default
+
+- **What and why:** `federation_domain_whitelist: []`, no trusted key servers, no federation listener;
+  `encryption_enabled_by_default_for_room_type: off`, so the company can keep and search rooms.
+- **How:** `integrations/chat/configure.py` (`homeserver`).
+- **Upgrade:** **re-check:** **silent** if a default changes. People can still switch encryption on in a room
+  they manage until the room rules made by the server side forbid it (P73, not built).
+- **Tests:** `tests/test_chat_stack.py`.
+
+### CHAT-4 The business system's bot; invitations accepted automatically
+
+- **What and why:** an application service registration (`bridge.yaml`) for one user, `@erp`, with the aliases
+  `#site-…`, `#team-…` and `#notices-…`, and no call-back address; `auto_accept_invites` for invitations from this server. The
+  bot puts people into rooms by inviting them, so nothing holds an admin token. (A client of the authentication
+  service cannot get Synapse's admin scope; tried on the test site, 27 November 2026.)
+- **How:** `integrations/chat/configure.py` (`bridge`, `homeserver`).
+- **Upgrade:** **re-check:** **silent** if `auto_accept_invites` changes its meaning or default (people would
+  stop appearing in their rooms); **loud** if the registration format changes (Synapse refuses to start). The room
+  rules the bot sets depend on the default room version (12 on the test site: the creator is not listed in the
+  power levels).
+- **Tests:** `tests/test_chat_stack.py`; live: create, invite, post, remove on the test site.
+
+### CHAT-5 Alert gateway inside the stack; Synapse may call only the stack's own network
+
+- **What and why:** Sygnal as an optional service (`alerts`, compose profile `alerts`) with one Google (FCM v1)
+  app; Synapse's `ip_range_whitelist` names the stack's own network, because Synapse refuses alerts to private
+  addresses otherwise. The stack's network has a fixed range for this. The gateway alone is on a second
+  network, `outbound`, to reach Google.
+- **How:** `integrations/chat/configure.py` (`alerts`, `write_alerts`, `homeserver`), `deployment/stacks/chat.compose.json`.
+- **Upgrade:** **re-check:** **silent** if Sygnal renames a configuration key (alerts stop; its log says so) or if
+  Synapse changes what the whitelist covers.
+- **Tests:** `tests/test_chat_stack.py`; live: the gateway asks Google about a made-up phone address.
+
+### CHAT-6 Our own health check for the alert gateway (workaround)
+
+- **What and why:** the Sygnal image (v0.17.0) declares a health check that calls `curl`, but the image does not
+  contain `curl`. The container is reported "unhealthy" for ever, although the gateway answers. Our stack file
+  replaces the check with one that uses the image's own Python to ask the same address (`/health`).
+- **How:** `deployment/stacks/chat.compose.json` (`alerts`, `healthcheck`).
+- **Upgrade:** **re-check:** **loud** if the image loses Python on the path or moves the health address (the
+  container turns "unhealthy"). **Retire** the override when the image ships a check that works.
+- **Tests:** `tests/test_chat_stack.py`; live: the container reports "healthy".
+- **Upstream:** element-hq/sygnal#326 (open: the image has neither `curl` nor `wget`); our note is in
+  `docs/upstream-posts.md` (issuecomment-7232356852).
+
+### CHAT-7 The chat screen for browsers: Element Web with our configuration
+
+- **What and why:** the unchanged Element Web image with one configuration file that names only our chat
+  server and switches off everything that calls an outside service (integration manager, calls, identity
+  server, link previews, location sharing, feedback). No file of theirs is replaced.
+- **How:** `integrations/chat/element-config.json` (mounted as `/app/config.json`),
+  `deployment/stacks/chat.compose.json` (`web`), `tools/prepare_ingress.py` (its own host, not frameable).
+- **Upgrade:** **re-check:** **silent** if a setting is renamed or a new feature that calls an outside service
+  is on by default (read the release notes and `docs/config.md` of the new version; watch the browser's
+  network list on the test site for addresses other than ours).
+- **Tests:** `tests/test_chat_stack.py`; live: sign in, open a room, post, sign out on the test site.
+
+### CHAT-3 Proxy paths that name Matrix endpoints
+
+- **What:** `/_matrix`, `/_synapse/client` and `/_synapse/mas` go to Synapse; `/_matrix/client/*/login`, `logout`
+  and `refresh` go to the authentication service; `/_synapse/admin` is not routed.
+- **How:** `tools/prepare_ingress.py` (test site). Production route file: not written yet.
+- **Upgrade:** **re-check:** **silent** if upstream adds a delegated path (sign-in from an app then fails).
+- **Tests:** `tests/test_chat_stack.py`.
+
 ## Insights
 
 Made against: v3.50.3 (`d733108`).
@@ -973,6 +1055,12 @@ on the pinned image 26 November 2026).
   `/var/www/onlyoffice/documentserver/web-apps/apps/api/wopi/editor-wopi.ejs`. Injects
   CSS and DOM changes into the editor frame by element ID and uses `Asc` sheet-view
   APIs.
+- **Relies on (re-check at every upgrade):** the header's class and ID names, which differ between the
+  editors: the tabs row is `section.box-tabs` in spreadsheets and presentations and `div.box-tabs` in text
+  documents, PDFs and diagrams (our CSS names `.box-tabs`); `#slot-btn-edit-mode` (the "Editing" button of
+  text documents, hidden); the name the editor gives a new sheet view is **not** relied on (it changed from
+  "Temporary View N" to "ViewN"). Open one text document, one spreadsheet and one presentation after an
+  upgrade and compare the header rows (P117).
 - **Upgrade:** **re-apply** with the README procedure: `tools/refresh_editor_original.py`
   copies the new image's own start page (without starting the image) and records
   image and checksum in `integrations/onlyoffice/upstream.json`; then re-apply our

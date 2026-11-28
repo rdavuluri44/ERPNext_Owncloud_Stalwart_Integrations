@@ -72,7 +72,7 @@ SQLCipher database, hit Windows' 260-character path limit, which the Android too
 
 ## Reuse
 
-1. In ERPNext, create an **OAuth Client** for the app (app name `ERP Mobile`): grant type Authorization Code,
+1. In ERPNext, create an **OAuth Client** for the app (app name `UNformat ERP`): grant type Authorization Code,
    response type Code, token endpoint auth method None, redirect URI `<APP_SCHEME>://oauth/callback`. Add its
    ID to the site setting `cloud_native_mobile_clients` (with `cloud_native_mobile_enabled`) so
    `portal/mobile.py` accepts it.

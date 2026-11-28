@@ -19,6 +19,9 @@ from render_runtime import render, FAVICON_FILES, public_mappings
 import runtime_mounts
 from runtime_mounts import copy_files, identity_proxy_files, copy_dirs
 
+# Default brand (P85): a deployment replaces it through its profile (branding/README.md).
+BRAND = json.loads((Path(__file__).resolve().parents[1] / 'branding/unformat/brand.json').read_text())
+
 
 def write_private(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -202,9 +205,13 @@ def prepare(source, output, profile):
                            'company_logo':profile.get('company_logo'),'company_favicon_dir':profile.get('company_favicon_dir'),'landing_url':profile.get('landing_url'),
                            'asset_version':profile.get('commit')})
     projects = profile.get('projects',['erp','drive','editor','mail','dms','processing'])
+    # The chat stack (P73) is opt-in and has two names of its own; without them the renderer would fall back to
+    # the bare domain, which on a test site is not a test name.
+    if 'chat' in projects and not {'chat','chat-auth'} <= hosts.keys():
+        raise ValueError('The chat stack needs the host names chat and chat-auth')
     mounts = json.loads((source/'deployment/stacks/mounts.json').read_text())
     # Which mount is made from which repository file: tools/runtime_mounts.py (shared with the drift check).
-    persistent_targets = {'/var/lib/cloud-integration','/var/lib/ocis','/state',
+    persistent_targets = {'/var/lib/cloud-integration','/var/lib/ocis','/state','/alerts-key',
         '/usr/src/paperless/data','/usr/src/paperless/media','/usr/src/paperless/consume','/usr/src/paperless/export'}
     # Office editor: ONLYOFFICE only. Collabora was retired after the P42
     # production switch (19 November 2026).
@@ -253,8 +260,8 @@ def prepare(source, output, profile):
             raise ValueError('website_zone_color must be a #RRGGBB colour')
         classes = 'art-' + art + (' zone-badge' if style == 'badge' else '')
         page = site/'index.html'
-        page.write_text(page.read_text().replace('__SITE_TITLE__', text('website_title', 'Welcome'))
-                        .replace('__SITE_NAME__', text('website_name', 'Company')).replace('__EMPLOYEE_ZONE_URL__', zone)
+        page.write_text(page.read_text().replace('__SITE_TITLE__', text('website_title', BRAND['website_title']))
+                        .replace('__SITE_NAME__', text('website_name', BRAND['website_name'])).replace('__EMPLOYEE_ZONE_URL__', zone)
                         .replace('__SITE_TAGLINE__', tagline).replace('__ZONE_LABEL_HTML__', label_html)
                         .replace('__PAGE_CLASSES__', classes).replace('__PAGE_STYLE__', '--zone-bg:' + color))
         placeholders = build/'erpnext_drive_integrations/public'

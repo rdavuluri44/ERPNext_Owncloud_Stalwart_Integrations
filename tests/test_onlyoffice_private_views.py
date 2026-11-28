@@ -41,7 +41,7 @@ function fakeEditor(existing) {
   var api = {
     asc_getNamedSheetViews: function () { return views.slice(); },
     asc_isProtectedSheet: function () { return false; },
-    asc_addNamedSheetView: function () { views.forEach(function (v) { v.active = false; }); views.push(mk('Temporary View ' + (++n)));
+    asc_addNamedSheetView: function () { views.forEach(function (v) { v.active = false; }); views.push(mk('View' + (++n)));
       setTimeout(function () { listeners.forEach(function (f) { f(); }); }, 0); },
     asc_setActiveNamedSheetView: function (name) { views.forEach(function (v) { v.active = v.visible === name; }); },
     asc_registerCallback: function (e, f) { listeners.push(f); }
@@ -50,7 +50,7 @@ function fakeEditor(existing) {
   return { api: api, views: views };
 }
 function simulate(factory, existing) {
-  var ed = fakeEditor(existing), k = factory(ed.api, 'Private - Rajesh', window);
+  var ed = fakeEditor(existing), k = factory(ed.api, 'Private - Asha', window);
   ed.api.asc_registerCallback('asc_onActiveSheetChanged', k.schedule);
   k.run();
   return ed;
@@ -155,6 +155,15 @@ class RefusedViewChangeTests(unittest.TestCase):
         self.assertEqual(self.result["after_back"], ["Private - Test User*"])
         self.assertEqual(self.result["after_back_bar"], "")
 
+    def test_a_new_view_is_recognised_by_being_new_not_by_its_name(self):
+        # 28 November 2026: the editor named new views "ViewN"; the keeper only knew "Temporary View N",
+        # renamed nothing and made a view at every attempt. The first simulation's editor uses "ViewN".
+        block = re.search(r"/\* PRIVATE-VIEWS-BEGIN \*/(.*?)/\* PRIVATE-VIEWS-END \*/", EJS, re.S).group(1)
+        self.assertNotIn("Temporary View \\d", block)
+        self.assertIn("before.indexOf(v.asc_getName()) < 0", block)
+        self.assertIn("mk('View' + (++n))", HARNESS)
+        self.assertIn("mk('Temporary View ' + (++n))", LOCKED)
+
     def test_the_page_starts_the_notice(self):
         self.assertIn("var notice = makeViewNotice(api, keeper, doc);", EJS)
         self.assertIn("w.setInterval(notice.check, 1500);", EJS)
@@ -175,13 +184,13 @@ class PrivateSheetViewTests(unittest.TestCase):
     def test_old_logic_loops_and_new_logic_creates_exactly_one_named_view(self):
         result = self.run_simulation()
         self.assertGreater(result["old"], 3, "the simulation must reproduce the loop with the old algorithm")
-        self.assertEqual(result["fixed"], ["Private - Rajesh"])
+        self.assertEqual(result["fixed"], ["Private - Asha"])
 
     def test_a_sheet_with_many_views_gets_no_new_one(self):
         result = self.run_simulation()
         self.assertEqual(result["cap"], 20)
         self.assertEqual(result["full"], 20, "no view is added to a sheet that already has the cap")
-        self.assertEqual(result["below"], ["Private - Rajesh"], "below the cap the person still gets one")
+        self.assertEqual(result["below"], ["Private - Asha"], "below the cap the person still gets one")
 
     def test_the_block_is_what_the_editor_page_uses(self):
         self.assertIn("var keeper = makePrivateViewKeeper(api, name, w);", EJS)

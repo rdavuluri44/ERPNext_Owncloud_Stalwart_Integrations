@@ -16,7 +16,7 @@ Every step the system relies on a **person** to do or check, because no code enf
   SOPs in the same change, without waiting to be asked: the picture by role in
   [How we use the system](how-we-use-the-system.md), and the steps in the procedure concerned.
 
-**Start here:** [How we use the system](how-we-use-the-system.md) (sign-in, ERP Mobile and attendance, by role).
+**Start here:** [How we use the system](how-we-use-the-system.md) (sign-in, UNformat ERP and attendance, by role).
 
 ## Inventory (study of 26 November 2026)
 
@@ -37,7 +37,7 @@ private companion.
 | A6 | Admin impersonation (reason, logging) | admin | service account set-up | in use, not described | — | yes |
 | A7 | Joiner access app by app (ERP roles, site membership, mailbox, Drive and DMS first sign-in) | admin | joiner | partly | — | yes |
 | A8 | Sign-in and logout acceptance after a sign-in or ERP deploy | owner | every such deploy | in use | — | yes |
-| A9 | Onboarding in ERP Mobile: identity check, then admin approval (P82) | project manager, admin | "Request access" | designed | [onboarding](onboarding-identity-and-biometrics.md) | no |
+| A9 | Onboarding in UNformat ERP: identity check, then admin approval (P82) | project manager, admin | "Request access" | designed | [onboarding](onboarding-identity-and-biometrics.md) | no |
 | A10 | Only the person's own fingerprints and face on the phone; confirmation in the app (proposal) (P82) | project manager, employee | onboarding | designed | [onboarding](onboarding-identity-and-biometrics.md) | no |
 | A11 | Re-onboarding after a 5-miss erase, or a new, lost or replacement phone (P82) | employee, project manager, admin | lockout, phone change | designed | [onboarding](onboarding-identity-and-biometrics.md) | no |
 | A12 | Device and session review (phones and computers); unused-key grace days per group (P82) | admin | periodic, leavers | designed | — | no |

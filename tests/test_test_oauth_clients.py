@@ -59,11 +59,11 @@ class TestOAuthClients(unittest.TestCase):
                                                    'default_redirect_uri': 'evil://x'}])
 
     def test_creates_a_missing_native_client_with_its_fixed_id(self):
-        out = bootstrap.restore_test_oauth_clients([{'app_name': 'ERP Mobile', 'client_id': 'mobile0test1',
+        out = bootstrap.restore_test_oauth_clients([{'app_name': 'UNformat ERP', 'client_id': 'mobile0test1',
                                                      'redirect_uris': 'exp://10.0.0.5:8081/--/oauth/callback'}])
-        self.assertEqual(out, ['ERP Mobile'])
+        self.assertEqual(out, ['UNformat ERP'])
         made = STORE['mobile0test1']
-        self.assertEqual((made['app_name'], made['grant_type'], made['response_type']), ('ERP Mobile', 'Authorization Code', 'Code'))
+        self.assertEqual((made['app_name'], made['grant_type'], made['response_type']), ('UNformat ERP', 'Authorization Code', 'Code'))
         self.assertEqual(made['token_endpoint_auth_method'], 'None')
         self.assertEqual(made['skip_authorization'], 0)
         self.assertEqual(made['default_redirect_uri'], 'exp://10.0.0.5:8081/--/oauth/callback')
@@ -91,10 +91,10 @@ class TestOAuthClients(unittest.TestCase):
 
     def test_only_native_clients_with_fixed_ids_enable_native_sign_in(self):
         self.assertEqual(native_site_settings([{'app_name': 'Web', 'redirect_uris': 'https://x/cb'}]), {})
-        self.assertEqual(native_site_settings([{'app_name': 'ERP Mobile', 'client_id': 'mobile0test1', 'native': True}]),
+        self.assertEqual(native_site_settings([{'app_name': 'UNformat ERP', 'client_id': 'mobile0test1', 'native': True}]),
                          {'cloud_native_mobile_enabled': True, 'cloud_native_mobile_clients': ['mobile0test1']})
         with self.assertRaises(ValueError):
-            native_site_settings([{'app_name': 'ERP Mobile', 'native': True}])
+            native_site_settings([{'app_name': 'UNformat ERP', 'native': True}])
 
     def tearDown(self):
         os.environ.pop('CLOUD_DEPLOYMENT_TIER', None)
