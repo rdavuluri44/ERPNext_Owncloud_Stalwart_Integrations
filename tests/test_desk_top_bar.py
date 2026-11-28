@@ -24,6 +24,8 @@ MENU = re.search(r'<div id="ph-user-menu".*?</div><dialog', PAGE, re.S).group(0)
 ABOUT = re.search(r'<dialog id="ph-about".*?</dialog>', PAGE, re.S).group(0)
 SCRIPT = re.search(r"<script>\{% raw %\}\n\(\(\)=>\{'use strict';(.*?)\}\)\(\);\{% endraw %\}</script>", PAGE, re.S).group(1)
 DRIVE_DESK = DRIVE[DRIVE.index('window.__cloudDriveDesk'):]
+MAIL = (ROOT / 'integrations/mail/overlay/components/cloud-session-guard.tsx').read_text(encoding='utf-8')
+MAIL_DESK = MAIL[MAIL.index('// P116:'):]
 DMS_DESK = DMS[DMS.index('window.__cloudDmsDesk'):]
 
 
@@ -264,6 +266,32 @@ class InsideTheDesk(unittest.TestCase):
     def test_dms_keeps_a_way_to_its_left_menu_on_a_phone(self):
         self.assertIn("document.querySelector('pngx-app-frame .navbar-toggler')?.click()", DMS_DESK)
         self.assertIn('@media(max-width:767.98px){#uf-dms-menu{display:grid', DMS_DESK)
+
+    def test_mail_has_one_left_pane_on_wide_screens_only(self):       # P116
+        self.assertIn("if (window.self === window.top) return;", MAIL_DESK)
+        self.assertIn("css.textContent = '@media(min-width:1024px){' +", MAIL_DESK)
+        self.assertIn("'.uf-rail{width:0!important;min-width:0!important;", MAIL_DESK)
+
+    def test_mails_five_entries_sit_in_a_row_beneath_the_account_name(self):   # P116 (ii)
+        self.assertIn("""document.querySelector<HTMLElement>('[data-tour="nav-mail"]')""", MAIL_DESK)
+        self.assertIn("'.uf-rail-inner .uf-lane-settings{order:4}.uf-rail-inner .uf-lane-add{order:5}' +", MAIL_DESK)
+        self.assertIn("'.uf-pane-row{margin-bottom:44px!important}' +", MAIL_DESK)
+        self.assertIn("document.documentElement.style.setProperty('--uf-lane-top', Math.round(row.getBoundingClientRect().bottom) + 'px');", MAIL_DESK)
+
+    def test_mails_notification_shortcut_and_account_buttons_go_with_the_first_pane(self):   # P116 (i)
+        self.assertIn("lower?.querySelectorAll('a,button').forEach(el => { if (el !== settings) el.classList.add('uf-lane-hide'); });", MAIL_DESK)
+        self.assertIn("'.uf-rail-inner .uf-lane-hide{display:none!important}' +", MAIL_DESK)
+
+    def test_mails_folder_pane_cannot_be_folded_and_a_folded_one_is_opened_once(self):   # P116 (iii)
+        self.assertIn("'.uf-collapse{display:none!important}' +", MAIL_DESK)
+        self.assertIn("if (wide() && pane.getBoundingClientRect().width < 160 && !fold.dataset.ufOpened) { fold.dataset.ufOpened = '1'; fold.click(); }", MAIL_DESK)
+
+    def test_mail_pages_without_a_folder_pane_get_the_row_across_the_top(self):
+        self.assertIn("document.body.classList.toggle('uf-lane-top', !row);", MAIL_DESK)
+        self.assertIn("'body.uf-lane-top .uf-rail-parent{flex-direction:column!important}' +", MAIL_DESK)
+
+    def test_mail_follows_the_desks_font_size(self):
+        self.assertIn("e.data.type === 'look' && [0.9, 1, 1.15].includes(e.data.font)", MAIL)
 
     def test_the_business_system_hides_its_own_search_notification_and_help_rows(self):
         self.assertIn("'body .body-sidebar .standard-items-band,body .body-sidebar .uf-help,'", ERP)

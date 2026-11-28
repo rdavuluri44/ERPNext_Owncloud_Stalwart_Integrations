@@ -1241,6 +1241,18 @@ Made against: commit `933bc18` (1.21.2), `integrations/mail/upstream.json`.
   control appears. **Silent** if a label changes. No replaced file is added for this.
   Test: `tests/test_desk_signout.py` (static).
 
+- **Inside the Desk (P111, P116; made against Bulwark Webmail 1.21.2):** our own component
+  `components/cloud-session-guard.tsx` (not an upstream file) restyles upstream's layout from the
+  outside when the webmail is inside the Desk and the window is at least 1024 px wide. It finds the
+  navigation rail through `[data-tour="nav-mail"]` and `[data-tour="nav-settings"]`, the folder pane
+  through `[data-tour="sidebar"]`, marks them with classes of ours (`uf-rail`, `uf-rail-inner`,
+  `uf-pane-row`, `uf-collapse`, `uf-lane-hide`) and lays the rail out as a row beneath the account
+  name, or across the top on pages without a folder pane; the fold button is the header row's
+  button without a text. It also applies the Desk's font size as page zoom. **Upgrade: re-check**
+  the mail, calendar, contacts and settings pages inside the Desk after every webmail upgrade.
+  **Silent** if upstream renames the `data-tour` marks or restructures the rail (the two panes
+  would simply show as upstream draws them). Test: `tests/test_desk_top_bar.py` (static).
+
 ### WEBMAIL-2 Admin policy and blocked admin routes
 
 - **What:** `/app/data/admin/policy.json` with `filesEnabled: false`; public `/admin`,

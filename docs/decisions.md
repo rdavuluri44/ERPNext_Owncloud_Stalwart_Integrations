@@ -1645,7 +1645,7 @@ check themselves in keep their existing workflows.
   Claude Code.
 >>>>>>> origin/main
 
-### One always-visible top bar on the Desk; applications only inside the Desk (P111, P112, P114, P115)
+### One always-visible top bar on the Desk; applications only inside the Desk (P111, P112, P114, P115, P116)
 
 - **Decision (owner, 28 November 2026):** The Desk gets one always-visible top bar in place of the
   auto-hiding menu and of the small bar at the top right (P53 step 1). From the left: the brand icon
@@ -1676,14 +1676,20 @@ check themselves in keep their existing workflows.
   redirected; what programs and outsiders use keeps answering (sync clients, mail programs, the phone
   application, editor and sign-in callbacks, public share links, webmail's pop-out windows). A
   deployment can switch the rule off (`apps_only_inside_desk`).
-- **Not in this change:** Mail's single left pane (P116); the chat screen inside the Desk (it still
-  opens in its own tab, because its sign-in pages refuse frames); font size and mode inside Mail and
-  the editor, and the mode inside Drive; notifications from Mail. "Back to home" in the applications
+- **Mail inside the Desk has one left pane (P116):** the narrow first pane is not drawn as a pane; its
+  five entries (mail, calendar, contacts, settings, add) sit in one row beneath the account name, its
+  notification, keyboard-shortcut and account buttons are hidden (the shortcuts keep working), and the
+  folder pane cannot be folded. On the calendar, contacts and settings pages, which have no folder
+  pane, the row lies across the top. Wide screens only; on a phone the webmail keeps its own layout.
+- **Not in this change:** the chat screen inside the Desk (it still opens in its own tab, because its
+  sign-in pages refuse frames); the mode inside Mail, Drive and the editor, and font size inside the
+  editor; search and notifications from Mail. "Back to home" in the applications
   (P53) stays in the code for a deployment that switches the redirect off.
 - **Consequence:** The site settings for the Desk logo's height and position no longer change
   anything (the logo sits in the bar). The older tests of the two-column menu are replaced by
   `tests/test_desk_top_bar.py`. Font size uses the browser's page zoom inside each application.
 - **Where:** `erpnext_drive_integrations/www/place_holder.*`, `portal/desk.py`,
   `portal/components.json`, `public/session.js`, `integrations/drive/workspace.js`,
-  `integrations/dms/cloud_session/`, `tools/prepare_ingress.py`, `tools/about_components.py`,
-  register entries FRAPPE-5, FRAPPE-7, DRIVE-1, DMS-1 and PROXY-7. AI-assisted by Claude Code.
+  `integrations/dms/cloud_session/`, `integrations/mail/overlay/components/cloud-session-guard.tsx`,
+  `tools/prepare_ingress.py`, `tools/about_components.py`, register entries FRAPPE-5, FRAPPE-7,
+  DRIVE-1, DMS-1, WEBMAIL-1 and PROXY-7. AI-assisted by Claude Code.
