@@ -34,4 +34,5 @@ website_route_rules = [{"from_route": "/field-team", "to_route": "field_team"}]
 
 # Run on the server; no open browser or phone connection is required.
 scheduler_events = {"cron": {"* * * * *": ["erpnext_drive_integrations.custom_hr.checkout.close_due_entries"]},
-                    "daily": ["erpnext_drive_integrations.custom_hr.face_queue.purge_rejected"]}
+                    "daily": ["erpnext_drive_integrations.custom_hr.face_queue.purge_rejected",
+                              "erpnext_drive_integrations.custom_hr.request_log.purge"]}

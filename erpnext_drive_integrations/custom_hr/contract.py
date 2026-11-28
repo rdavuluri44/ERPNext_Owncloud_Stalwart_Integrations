@@ -25,7 +25,7 @@ MODULES = ('custom_hr/api.py', 'drive_store/api.py')
 RECORDS = ('custom_hr/doctype/field_attendance_entry/field_attendance_entry.json',
            'custom_hr/doctype/field_face_capture/field_face_capture.json',
            'drive_store/doctype/drive_photo/drive_photo.json')
-FINGERPRINT = '90675fcadb3a'
+FINGERPRINT = '4bc3f6c3b72c'
 VERSION = re.compile(r'\d{1,4}\.\d{1,4}\.\d{1,4}')
 NO_MINIMUM = '0.0.0'
 

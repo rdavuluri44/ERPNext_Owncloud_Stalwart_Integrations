@@ -34,8 +34,29 @@ Frappe's standard answers, by the kind of refusal:
 | 404 | The record named does not exist | an unknown entry name; an entry with no photo |
 | 417 | A rule refused the request | outside the fence; location too old; already submitted; record changed |
 
-The sentence is in the answer's `_server_messages` (and `exception`). There are no separate refusal codes yet: a
-client can tell the kinds apart by status only, and the cases within 417 only by their sentence.
+The sentence is in the answer's `_server_messages` (and `exception`). A client can tell the kinds apart by status.
+Within 417 one case has a name of its own: a decision on a record that changed since the person opened it answers
+with `exc_type` `TimestampMismatchError` (see "Request IDs and revisions"). The other cases within 417 can be told
+apart only by their sentence.
+
+### Request IDs and revisions (P103)
+
+**Every save answers with the request ID the client sent**, as `request_id`.
+
+- The calls that make an entry (`self_check_in`, `save_capture`) need one and keep it on the entry, as before.
+- The calls that only change an entry (`submit`, `self_check_out`, `verify`, `review`, `review_many`) take
+  `request_id` as an optional argument (`self_check_out`: inside `payload`). With it, the call is carried out
+  **once**: a repeat with the same ID changes nothing and answers the first answer again, with `repeated: true`.
+  An ID is 16 to 80 characters of `A-Z a-z 0-9 _ -`. It belongs to the person and the call that used it first;
+  used by someone else or for another call it is refused ("This request identifier is already used."). When a
+  call is refused, its ID is not used up: the same ID can be sent again after the correction. IDs are kept 90 days.
+- Without `request_id` these calls behave as before, and their answers are unchanged.
+
+**A decision is made on the revision the person saw.** `approvals`, `verifications`, `team` and `entry` give each
+entry's `revision`. `verify` and `review` take it back as `revision`; `review_many` takes each entry as
+`{"name": …, "revision": …}`. When the entry has changed since, nothing is decided and the call is refused (417,
+`TimestampMismatchError`, "This record changed after you opened it. Refresh before deciding."). Without a
+revision the decision is made on the entry as it is now, as before.
 
 ### Parts shared by several calls
 
@@ -117,8 +138,8 @@ same shift and day is refused.
 Takes `payload`: `name` (the check-in's entry), `latitude`, `longitude`, `accuracy_m`, `gps_captured_at`, and the
 offline fields when offline. No photograph.
 
-Answers `name`, `check_out_time`, `checkout_method` (`Self check-out` or `Self check-out (offline)`). A repeat
-answers the check-out already recorded. It is refused before the check-in time and after the automatic check-out
+Answers `name`, `check_out_time`, `checkout_method` (`Self check-out` or `Self check-out (offline)`), and
+`request_id` when `payload` had one. A repeat answers the check-out already recorded. It is refused before the check-in time and after the automatic check-out
 12 hours later.
 
 ### `my_attendance` (GET)
@@ -168,7 +189,7 @@ Answers `name`, `state` (`Draft`), `revision`.
 
 ### `submit` (POST)
 
-Takes `name`. Only the person who captured the entry; not for self check-ins.
+Takes `name`, and optionally `request_id`. Only the person who captured the entry; not for self check-ins.
 
 Answers `name`, `state`: `Pending Verification` (the supervisor has an engineer), `Verified` (the engineer captured
 it), `Submitted`, or `Approved` (a site that needs no approval, online). A repeat answers the current state.
@@ -202,17 +223,19 @@ none.
 ### `verifications` (any)
 
 Takes `site`. Who: a verifier at the site. Answers the entries waiting for this engineer, oldest first, at most 200:
-`name`, `employee_name`, `attendance_date`, `shift`, `attendance_status`, `captured_by`. An empty list when no
-supervisor is assigned to them.
+`name`, `employee_name`, `attendance_date`, `shift`, `attendance_status`, `captured_by`, `revision`. An empty list
+when no supervisor is assigned to them.
 
 ### `verify` (POST)
 
-Takes `name`, `decision` (`Verify` or `Return`), `remarks` (needed for `Return`; at most 2,000 characters).
+Takes `name`, `decision` (`Verify` or `Return`), `remarks` (needed for `Return`; at most 2,000 characters), and
+optionally `revision` and `request_id`.
 
 Who: the engineer assigned to the entry's supervisor; never the person who captured it, never the person whose
 attendance it is, never a self check-in.
 
-Answers `name`, `state` (`Verified` or `Returned`). A repeat of `Verify` by the same person answers the same.
+Answers `name`, `state` (`Verified` or `Returned`), `revision` (the new one). A repeat of `Verify` by the same
+person answers the same.
 
 ## Approval (the site's approvers)
 
@@ -223,18 +246,27 @@ Takes `site`, and optionally `shift` (then only that shift's current attendance 
 Answers the entries ready for approval, oldest first, at most 200: `name`, `site`, `employee`, `employee_name`,
 `attendance_date`, `shift`, `attendance_status`, `state`, `work_mode`, `asset`, `captured_by`, `submitted_at`,
 `entry_type` (`Self` for a self check-in), `captured_offline`, `check_in_time`, `accuracy_m`,
-`verification_required`, `verified_by`, `verification_method`, and `can_review` (false for the person's own
-submission, own attendance, or an entry they verified).
+`verification_required`, `verified_by`, `verification_method`, `revision`, and `can_review` (false for the
+person's own submission, own attendance, or an entry they verified).
 
 ### `review` and `review_many` (POST)
 
 `review` takes `name`, `decision` (`Approve` or `Return`), `remarks` (needed for `Return`; at most 2,000
-characters). It answers `name`, `state` (`Approved` or `Returned`), `attendance` (the HR Attendance made by the
-approval).
+characters), and optionally `revision` and `request_id`. It answers `name`, `state` (`Approved` or `Returned`),
+`attendance` (the HR Attendance made by the approval), `revision` (the new one).
 
-`review_many` takes `names` (a list of 1 to 200) with the same `decision` and `remarks` for all. Each entry is
-reviewed on its own; one refusal does not stop the rest. It answers a list, one per entry: `name`, `state`,
-`attendance`, `ok: true`; or `name`, `ok: false`, `error` (the sentence).
+`review_many` takes `names` (a list of 1 to 200) with the same `decision` and `remarks` for all, and optionally
+`request_id`. An entry in `names` is its name, or `{"name": …, "revision": …}`. Each entry is reviewed on its own;
+one refusal does not stop the rest. It answers a list, one per entry:
+
+- decided: `name`, `state`, `attendance`, `revision`, `ok: true`, `code: "done"`;
+- not decided: `name`, `ok: false`, `error` (the sentence) and `code`:
+  - `changed`: the entry is no longer what the person saw. Then also `state` and `revision` as they are now, and
+    `decided_by` (a user) and `decided_at` when someone has reviewed it;
+  - `not_allowed`: this person may not review it. Nothing about the entry is told;
+  - `refused`: a rule refused it (not ready for approval, HR attendance already exists, no remark for a return).
+
+With `request_id` the answer is `{"results": [the list], "request_id": …}`, since a list has no place for the ID.
 
 Who: an approver of the entry's site; never the person who captured it, the person whose attendance it is, or the
 person who verified it. A repeat of `Approve` on an approved entry answers the same. An approval is refused when HR
@@ -300,8 +332,21 @@ already decided is refused.
 
 Both answer the capture as `face_capture` does, with the state `Resolved` or `Rejected`.
 
+## What happened to my request
+
+### `request_status` (GET)
+
+Takes `request_id`. For the signed-in person's own IDs only. Answers `request_id` and `found[]`:
+
+- `what: "call"`: a call carried out with this ID: `method`, `at`, `entry`, `answer` (what the call answered), and
+  `state_now` (the entry's state now);
+- `what: "record"`: the entry this ID made (`self_check_in`, `save_capture`): `entry`, `at`, `state_now`,
+  `revision`, and `notices` (how many notices were written about it; a number, not their text or receivers).
+
+An ID that belongs to someone else and an ID that never arrived both answer an empty `found`.
+
 ## Not on this page
 
 Moving workers between supervisors (`move`) and the manager's setup calls (`setup_options`, `create_shifts`,
 `save_site`, `unassigned`, `enroll`) are in `api.py`. Other ERPNext approvals use Frappe's own
-`frappe.model.workflow.get_transitions` and `apply_workflow`.
+`frappe.model.workflow.get_transitions` and `apply_workflow`; those take no request ID and no revision from us yet.

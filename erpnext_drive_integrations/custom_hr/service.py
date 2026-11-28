@@ -313,11 +313,12 @@ def mark_verified(doc, user, method):
     doc.verification_method = method
 
 
-def verify_entry(name, decision, remarks=''):
+def verify_entry(name, decision, remarks='', revision=None):
     user = require_user()
     doc = lock_doc('Field Attendance Entry', name)
     if not can_verify(doc, user):
         frappe.throw('Only the assigned engineer can verify this record.', frappe.PermissionError)
+    check_revision(doc, revision)
     if doc.state == 'Verified' and doc.verified_by == user and decision == 'Verify':
         return {'name': doc.name, 'state': doc.state}
     if doc.state != 'Pending Verification':
@@ -338,7 +339,29 @@ def verify_entry(name, decision, remarks=''):
         notify_approvers(doc, user)
     else:
         notify(doc.captured_by, 'Attendance returned for correction', doc)
-    return {'name': doc.name, 'state': doc.state}
+    return {'name': doc.name, 'state': doc.state, 'revision': doc.revision}
+
+
+def check_revision(doc, revision):
+    """A decision is made on what the person saw (P103): when they send the revision they opened and the record
+    has changed since, it is not decided. A call without a revision is decided as before (older apps)."""
+    if revision is None or revision == '':
+        return
+    if cint(revision) != doc.revision:
+        frappe.throw('This record changed after you opened it. Refresh before deciding.', frappe.TimestampMismatchError)
+
+
+def refusal(name, exc):
+    """Why one entry of several was not decided, as a code a client can tell apart: `changed` (it is no longer what
+    the person saw; then also what it is now and who last decided it), `not_allowed`, or `refused` (a rule)."""
+    if isinstance(exc, frappe.PermissionError):
+        return {'code': 'not_allowed'}
+    if not isinstance(exc, frappe.TimestampMismatchError):
+        return {'code': 'refused'}
+    now = frappe.db.get_value('Field Attendance Entry', name, ['state', 'revision', 'reviewed_by', 'reviewed_at'],
+                              as_dict=True) or {}
+    return {'code': 'changed', 'state': now.get('state'), 'revision': now.get('revision'),
+            'decided_by': now.get('reviewed_by'), 'decided_at': now.get('reviewed_at') and str(now.get('reviewed_at'))}
 
 
 def ready_for_approval(doc):
@@ -413,18 +436,22 @@ def self_checkout(data):
 
 def review_many(names,decision,remarks=''):
     """Approve or return several entries; each is reviewed on its own (all rules apply), one failure does not stop
-    the rest, and the result says per entry what happened."""
+    the rest, and the result says per entry what happened. An entry is given by its name, or as `{name, revision}`
+    with the revision the person saw: then an entry that changed since is not decided (P103)."""
     require_user()
-    names=list(dict.fromkeys(names if isinstance(names,list) else []))
-    if not names or len(names)>200:frappe.throw('Select between 1 and 200 records.')
+    seen={}
+    for item in names if isinstance(names,list) else []:
+        given=item if isinstance(item,dict) else {'name':item}
+        if given.get('name'):seen.setdefault(str(given['name']),given.get('revision'))
+    if not seen or len(seen)>200:frappe.throw('Select between 1 and 200 records.')
     results=[]
-    for name in names:
+    for name,revision in seen.items():
         frappe.db.savepoint('review_many')
         try:
-            results.append(dict(review_entry(name,decision,remarks),ok=True))
+            results.append(dict(review_entry(name,decision,remarks,revision),ok=True,code='done'))
         except (frappe.ValidationError,frappe.PermissionError) as exc:
             frappe.db.rollback(save_point='review_many');frappe.clear_messages()
-            results.append(dict(name=name,ok=False,error=str(exc)))
+            results.append(dict(name=name,ok=False,error=str(exc),**refusal(name,exc)))
     return results
 
 
@@ -458,13 +485,14 @@ def approve_without_review(doc, own_site_approver=False):
     return True
 
 
-def review_entry(name,decision,remarks=''):
+def review_entry(name,decision,remarks='',revision=None):
     user = require_user()
     doc = lock_entry_for_submission(name)
     fail_rule(domain.validate_reviewer,user,doc.captured_by,frappe.db.get_value('Employee',doc.employee,'user_id'),approval_access(doc, user))
     if doc.verified_by == user:
         frappe.throw('A different approver must review this verified record.', frappe.PermissionError)
-    if doc.state=='Approved' and decision=='Approve':return {'name':doc.name,'state':'Approved','attendance':doc.attendance}
+    check_revision(doc, revision)
+    if doc.state=='Approved' and decision=='Approve':return {'name':doc.name,'state':'Approved','attendance':doc.attendance,'revision':doc.revision}
     if not ready_for_approval(doc):
         frappe.throw('This record is not ready for final approval.')
     if decision not in ('Approve','Return'):frappe.throw('Choose Approve or Return.')
@@ -476,4 +504,4 @@ def review_entry(name,decision,remarks=''):
     else:doc.state='Returned'
     doc.review_remarks=remarks;doc.reviewed_by=user;doc.reviewed_at=now_datetime();doc.revision+=1;save(doc)
     notify(doc.captured_by,f'Attendance {doc.state.lower()}',doc)
-    return {'name':doc.name,'state':doc.state,'attendance':doc.attendance}
+    return {'name':doc.name,'state':doc.state,'attendance':doc.attendance,'revision':doc.revision}
