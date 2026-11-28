@@ -159,8 +159,62 @@ class UniversalSearchAndNotifications(unittest.TestCase):
 class DeepLinks(unittest.TestCase):
     def test_an_address_may_name_an_application_and_a_path_inside_it(self):
         self.assertIn("const fromHash=()=>{const h=location.hash.slice(1),i=h.indexOf(':');", SCRIPT)
-        self.assertIn("else if(first.path){const href=inside(manifest.get(first.id),first.path);if(href)pendingOpen={id:first.id,path:href};}", SCRIPT)
+        self.assertIn("else if(first.path&&first.path!=='/'){const href=inside(manifest.get(first.id),first.path);if(href)pendingOpen={id:first.id,path:href};}", SCRIPT)
         self.assertIn("if(first.id==='open'){open=first.path;first.id='';}", SCRIPT)
+
+
+
+class OnlyInsideTheDesk(unittest.TestCase):
+    """P112: a person's page visit to an application's own address is sent to the Desk; programs are not."""
+    HOSTS = {'erp': 'erp.example.net', 'drive': 'drive.example.net', 'office': 'office.example.net',
+             'mail': 'mail.example.net', 'dms': 'dms.example.net', 'respond': 'respond.example.net',
+             'sso': 'sso.example.net'}
+
+    def routes(self, **extra):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest('needs PyYAML, as the ingress renderer does')
+        import sys
+        sys.path.insert(0, str(ROOT / 'tools'))
+        try:
+            from prepare_ingress import prepare
+        finally:
+            sys.path.pop(0)
+        return prepare(ROOT, dict({'hosts': self.HOSTS, 'ingress_prefix': 'isolated'}, **extra))['http']
+
+    def test_only_a_browsers_page_visit_is_redirected(self):
+        http = self.routes()
+        for name in ('drive', 'dms', 'mail', 'erp'):
+            router = http['routers']['isolated-desk-only-' + name]
+            self.assertIn('Method(`GET`) && Header(`Sec-Fetch-Dest`, `document`)', router['rule'])
+            self.assertEqual(router['service'], 'noop@internal')
+            self.assertEqual(router['middlewares'][0], 'isolated-desk-only-' + name)
+
+    def test_the_desk_opens_the_same_place(self):
+        http = self.routes()
+        drive = http['middlewares']['isolated-desk-only-drive']['redirectRegex']
+        self.assertEqual(drive['regex'], r'^https://drive\.example\.net(/.*)?$')
+        self.assertEqual(drive['replacement'], 'https://erp.example.net/#drive:${1}')
+        self.assertFalse(drive['permanent'])
+        self.assertEqual(http['middlewares']['isolated-desk-only-erp']['redirectRegex']['replacement'],
+                         'https://erp.example.net/#open:${1}')
+
+    def test_what_programs_and_outsiders_use_is_never_listed(self):
+        http = self.routes()
+        rules = {name: http['routers']['isolated-desk-only-' + name]['rule'] for name in ('drive', 'dms', 'mail', 'erp')}
+        for kept in ('/s/', '/files/link', 'oidc-callback', '/dav', '/remote.php', '/ocs', '/graph', '/app/'):
+            self.assertNotIn(kept, rules['drive'], kept)
+        for kept in ('/api', '/accounts', '/share/', '/admin', '/static'):
+            self.assertNotIn(kept, rules['dms'], kept)
+        for kept in ('/auth', '/api', '/jmap', '/popout', '/login', '/.well-known'):
+            self.assertNotIn(kept, rules['mail'], kept)
+        self.assertIn('PathRegexp(`^/(desk|insights)(/|$)`)', rules['erp'])
+        self.assertNotIn('/api', rules['erp'])
+
+    def test_a_deployment_may_switch_it_off(self):
+        http = self.routes(apps_only_inside_desk=False)
+        self.assertFalse([name for name in http['routers'] if 'desk-only' in name])
 
 
 class InsideTheDesk(unittest.TestCase):
