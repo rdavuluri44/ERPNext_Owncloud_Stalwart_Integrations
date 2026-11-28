@@ -32,19 +32,9 @@
       "repository": "https://github.com/element-hq/synapse"
     },
     {
-      "name": "Element Web",
-      "version": "1.12.36",
-      "repository": "https://github.com/element-hq/element-web"
-    },
-    {
       "name": "Matrix Authentication Service",
       "version": "1.30.0",
       "repository": "https://github.com/element-hq/matrix-authentication-service"
-    },
-    {
-      "name": "Sygnal",
-      "version": "0.17.0",
-      "repository": "https://github.com/element-hq/sygnal"
     },
     {
       "name": "Apache Tika",
