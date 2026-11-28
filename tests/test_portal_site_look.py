@@ -32,9 +32,11 @@ class SiteLook(unittest.TestCase):
 
     def test_without_settings_the_page_is_productions(self):
         view = production_view(PAGE)
-        self.assertIn('<img src="{{ entity_logo | e }}" alt=""></button><span>{{ entity_name | e }}</span></div>', view)
-        self.assertIn(".ph-brand img{width:60px;height:60px;object-fit:contain}", view)
-        self.assertIn(".ph-brand{position:fixed;top:16px;left:18px;", view)
+        # P111: the logo sits in the top bar (its height and position settings no longer change anything);
+        # the company name is on the Desk's home.
+        self.assertIn('<img src="{{ entity_logo | e }}" alt=""></button><nav id="ph-apps"', view)
+        self.assertIn('<section id="ph-homeview" aria-label="Home"><span>{{ entity_name | e }}</span></section>', view)
+        self.assertIn("#ph-fullscreen img{height:30px;width:auto;max-width:96px;object-fit:contain;display:block}", view)
         self.assertNotIn("portal_logo_height", view)
         self.assertNotIn("history.replaceState(history.state,'','/'", view)
 

@@ -22,19 +22,21 @@ FINISH = "/api/method/erpnext_drive_integrations.portal.sso.finish_logout"
 
 
 class DeskSide(unittest.TestCase):
-    def test_the_desk_has_one_sign_out_control_at_the_top_right(self):
+    def test_the_desk_has_one_sign_out_control_in_the_persons_menu(self):
+        # P111 (28 November 2026): the always-visible top bar replaced the small bar at the top right;
+        # Sign out is in the menu of the person's button.
         self.assertEqual(DESK.count('id="ph-signout"'), 1)
-        self.assertIn('<div id="ph-bar" role="toolbar"', DESK)
-        self.assertRegex(DESK, r"#ph-bar\{position:fixed;top:\d+px;right:\d+px")
+        self.assertIn('<header id="ph-top" role="toolbar"', DESK)
+        self.assertIn('aria-controls="ph-user-menu"', DESK)
 
-    def test_the_bar_shows_on_the_desk_home_only_never_over_an_open_application(self):
-        # Owner, 27 November 2026: the bar belongs to the Desk; over an application it hid that
-        # application's own controls.
-        self.assertIn(".ph-active #ph-bar{display:none}", DESK)
+    def test_the_bar_never_covers_an_application(self):
+        # Owner, 27 November 2026: over an application the old bar hid that application's own controls.
+        # The new bar has its own row; the applications start below it.
+        self.assertIn("#ph-frames{display:none;position:fixed;inset:var(--ph-bar) 0 0 0;", DESK)
 
-    def test_sign_out_is_the_last_item_of_the_bar(self):
-        bar = re.search(r'<div id="ph-bar".*?</div>', DESK, re.S).group(0)
-        last = re.findall(r'<(?:button|a) id="([a-z-]+)"', bar)[-1]
+    def test_sign_out_is_the_last_item_of_the_menu(self):
+        menu = re.search(r'<div id="ph-user-menu".*?</div><dialog', DESK, re.S).group(0)
+        last = re.findall(r'<button class="ph-row" id="([a-z-]+)"', menu)[-1]
         self.assertEqual(last, "ph-signout")
 
     def test_it_asks_for_unsaved_work_before_it_signs_out(self):
@@ -53,7 +55,7 @@ class DeskSide(unittest.TestCase):
 
     def test_it_only_talks_to_its_own_application_frames(self):
         self.assertIn("if((!trusted.has(o)&&o!==location.origin)||!f.contentWindow)return false;", DESK)
-        self.assertIn("f.contentWindow.postMessage({source:'cloud-desk',type},o)", DESK)
+        self.assertIn("f.contentWindow.postMessage(Object.assign({source:'cloud-desk',type},extra||{}),o)", DESK)
         self.assertNotIn("postMessage({source:'cloud-desk',type},'*')", DESK)
 
     def test_an_application_that_signs_out_by_itself_still_ends_everything(self):
@@ -92,7 +94,7 @@ class ApplicationSide(unittest.TestCase):
         self.assertEqual(DMS.count("if(window.self!==window.top)void leave(true);else location.assign('https://erp.example.com/');"), 2)
         self.assertIn("pngx-document-detail form.ng-dirty", DMS)
         middleware = (ROOT / "integrations/dms/cloud_session/middleware.py").read_text(encoding="utf-8")
-        self.assertIn("/cloud-session.js?v=20261127-desk", middleware)
+        self.assertIn("/cloud-session.js?v=20261128-bar", middleware)
 
     def test_mail_hides_its_controls_inside_the_desk_and_keeps_the_timeout_button(self):
         self.assertIn("/^(sign out( of .+)?|log ?out)$/i", MAIL)
