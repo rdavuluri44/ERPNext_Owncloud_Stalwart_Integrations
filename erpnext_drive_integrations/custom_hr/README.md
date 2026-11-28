@@ -6,6 +6,8 @@ by the site's approvers (the project manager), checkout, the field team web page
 uses for HR. Frappe HR's own features (leave, expenses, payslips, requests) are used as they are; whatever they lack
 is built here. Formerly the field-attendance part (`field/`, module "Cloud Field"; renamed 22 November 2026).
 
+What each call takes and answers, for people building a client: [API.md](API.md).
+
 ## Purpose
 
 Attendance for people who work under a supervisor and have no ERP login. Their supervisor or assigned engineer captures
