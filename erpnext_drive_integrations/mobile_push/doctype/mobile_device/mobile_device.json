@@ -1,0 +1,74 @@
+{
+  "doctype": "DocType",
+  "name": "Mobile Device",
+  "module": "Mobile Push",
+  "engine": "InnoDB",
+  "autoname": "hash",
+  "title_field": "user",
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "track_changes": 1,
+  "field_order": [
+    "user",
+    "platform",
+    "enabled",
+    "last_seen",
+    "token",
+    "token_hash"
+  ],
+  "fields": [
+    {
+      "fieldname": "user",
+      "label": "User",
+      "fieldtype": "Link",
+      "options": "User",
+      "reqd": 1,
+      "read_only": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1
+    },
+    {
+      "fieldname": "platform",
+      "label": "Platform",
+      "fieldtype": "Select",
+      "options": "Android\niOS",
+      "reqd": 1,
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "enabled",
+      "label": "Alerts on",
+      "fieldtype": "Check",
+      "default": "1",
+      "in_list_view": 1,
+      "description": "Untick to stop alerts to this phone. Signing out of the app, or a new phone for the same person, removes the record."
+    },
+    {
+      "fieldname": "last_seen",
+      "label": "Registered",
+      "fieldtype": "Datetime",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "token",
+      "label": "Push address",
+      "fieldtype": "Small Text",
+      "reqd": 1,
+      "read_only": 1,
+      "hidden": 1
+    },
+    {
+      "fieldname": "token_hash",
+      "label": "Push address hash",
+      "fieldtype": "Data",
+      "unique": 1,
+      "read_only": 1,
+      "hidden": 1
+    }
+  ],
+  "permissions": [
+    {"role": "System Manager", "read": 1, "write": 1, "delete": 1, "report": 1}
+  ]
+}
