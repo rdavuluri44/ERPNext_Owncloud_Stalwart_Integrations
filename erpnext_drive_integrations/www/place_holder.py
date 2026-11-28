@@ -50,7 +50,7 @@ def get_context(context):
             route += ('&' if '?' in route else '?') + 'uf_entry=1'
         apps.append({'id': name, 'name': app.get('app_title') or name, 'url': route, 'logo': logo})
     apps.extend([
-        {'id': 'drive', 'name': 'Drive', 'url': 'https://drive.example.com/', 'logo': '/assets/erpnext_drive_integrations/app-logos/external-office.svg'},
+        {'id': 'drive', 'name': 'Drive', 'url': 'https://drive.example.com/files/spaces/projects', 'logo': '/assets/erpnext_drive_integrations/app-logos/external-office.svg'},
         {'id': 'mail', 'name': 'Mail', 'url': 'https://mail.example.com/mail/folder/inbox', 'logo': '/assets/erpnext_drive_integrations/app-logos/external-mail.svg'},
         {'id': 'dms', 'name': 'DMS', 'url': 'https://dms.example.com/', 'logo': '/assets/erpnext_drive_integrations/app-logos/external-dms.svg'},
     ])
@@ -61,5 +61,9 @@ def get_context(context):
         apps.append({'id': 'chat', 'name': 'Chat', 'url': chat, 'external': True,
                      'logo': '/assets/erpnext_drive_integrations/app-logos/external-chat.svg'})
     context.portal_apps = apps
+    # About (P111): our application under the name the business system installs it, with the version it carries.
+    from erpnext_drive_integrations import __version__
+    from erpnext_drive_integrations.portal.desk import OURS, REPOSITORY
+    context.app_name, context.app_version, context.app_repository = OURS, __version__, REPOSITORY
     context.logout_url = '/api/method/erpnext_drive_integrations.portal.sso.finish_logout'
     return context
