@@ -1,7 +1,7 @@
 import frappe
 from frappe.utils import now_datetime, nowdate, cint
 from erpnext_drive_integrations.custom_hr.access import require_user, require_site, require_manager, site_ids, site_access, is_manager, entry_access, self_sites, supervised_users, can_verify, approval_access
-from erpnext_drive_integrations.custom_hr import service
+from erpnext_drive_integrations.custom_hr import request_log, service
 
 
 def data(value):
@@ -116,7 +116,7 @@ def approvals(site,shift=None):
     query = frappe.qb.from_(entry_table).select(
         'name', 'site', 'employee', 'employee_name', 'attendance_date', 'shift', 'attendance_status', 'state',
         'work_mode', 'asset', 'captured_by', 'submitted_at', 'entry_type', 'captured_offline',
-        'check_in_time', 'accuracy_m', 'verification_required', 'verified_by', 'verification_method',
+        'check_in_time', 'accuracy_m', 'verification_required', 'verified_by', 'verification_method', 'revision',
     ).where(eligible)
     for field, value in filters.items():
         query = query.where(entry_table[field] == value)
@@ -135,38 +135,62 @@ def verifications(site):
         return []
     records = frappe.get_all('Field Attendance Entry', filters={
         'site': site, 'state': 'Pending Verification', 'responsible_supervisor': ['in', supervisors],
-    }, fields=['name', 'employee_name', 'attendance_date', 'shift', 'attendance_status', 'captured_by'],
+    }, fields=['name', 'employee_name', 'attendance_date', 'shift', 'attendance_status', 'captured_by', 'revision'],
         order_by='submitted_at asc', limit=200)
     return records
 
 
-@frappe.whitelist(methods=['POST'])
-def verify(name, decision, remarks=''):
-    return service.verify_entry(name, decision, remarks)
+# Request IDs (P103): every save answers with the ID the app sent. The calls that make an entry keep it on the entry;
+# the calls that only change one are carried out once per ID (request_log.once). `revision` is the revision the
+# person saw: a record that changed since is not decided.
+def with_id(result, payload):
+    return dict(result, request_id=payload.get('request_id'))
 
 
 @frappe.whitelist(methods=['POST'])
-def save_capture(payload):return service.capture(data(payload))
+def verify(name, decision, remarks='', revision=None, request_id=None):
+    return request_log.once('verify', request_id, lambda: service.verify_entry(name, decision, remarks, revision), name)
 
 
 @frappe.whitelist(methods=['POST'])
-def submit(name):return service.submit_entry(name)
+def save_capture(payload):
+    payload = data(payload)
+    return with_id(service.capture(payload), payload)
 
 
 @frappe.whitelist(methods=['POST'])
-def review(name,decision,remarks=''):return service.review_entry(name,decision,remarks)
+def submit(name, request_id=None):
+    return request_log.once('submit', request_id, lambda: service.submit_entry(name), name)
 
 
 @frappe.whitelist(methods=['POST'])
-def review_many(names,decision,remarks=''):return service.review_many(data(names),decision,remarks)
+def review(name, decision, remarks='', revision=None, request_id=None):
+    return request_log.once('review', request_id, lambda: service.review_entry(name, decision, remarks, revision), name)
 
 
 @frappe.whitelist(methods=['POST'])
-def self_check_in(payload):return service.self_capture(data(payload))
+def review_many(names, decision, remarks='', request_id=None):
+    return request_log.once('review_many', request_id, lambda: service.review_many(data(names), decision, remarks))
 
 
 @frappe.whitelist(methods=['POST'])
-def self_check_out(payload):return service.self_checkout(data(payload))
+def self_check_in(payload):
+    payload = data(payload)
+    return with_id(service.self_capture(payload), payload)
+
+
+@frappe.whitelist(methods=['POST'])
+def self_check_out(payload):
+    payload = data(payload)
+    return request_log.once('self_check_out', payload.get('request_id'), lambda: service.self_checkout(payload),
+                            payload.get('name'))
+
+
+@frappe.whitelist(methods=['GET'])
+def request_status(request_id):
+    """What happened to one of my own request IDs (P103): the calls made with it and the entry it made."""
+    require_user()
+    return request_log.status(request_id)
 
 
 @frappe.whitelist(methods=['GET'])

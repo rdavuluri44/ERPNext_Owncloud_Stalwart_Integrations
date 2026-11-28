@@ -98,6 +98,12 @@ engineer assignment changes.
   `entry`, `entry_photo`, `review`, `review_many`. Writes are POST only. `entry_photo` returns an entry's photo to
   anyone `entry` allows: the private file URL itself applies ERPNext's Employee user permissions, which would stop a
   project manager from seeing another employee's photo.
+- **Request IDs and revisions (P103):** every save answers with the request ID the app sent. `submit`,
+  `self_check_out`, `verify`, `review` and `review_many` are carried out once per ID (`request_log.py`, the read-only
+  record `App Request`, kept 90 days); `request_status` tells a person what happened to their own ID. `verify`,
+  `review` and `review_many` take the revision the person saw and refuse a decision on an entry that changed
+  since. All of it is optional for the caller: the web page and older apps work as before. Details: `API.md`.
+  A site gets the new record with `bench migrate`.
 
 **Upgrading a site from the former name:** `bench migrate` runs `custom_hr/patches/rename_module.py` before the
 DocTypes are synced; it renames "Cloud Field" to "Custom HR". When Frappe has already registered
@@ -168,6 +174,8 @@ workers that supervisor may record on that site and shift. Decided by the owner 
 - `tests/test_custom_hr_face_queue.py` (offline: who the queue acts for, who decides, photographs, the web screen)
 - `tests/test_custom_hr_face_switch.py` (offline: the off switch, where it applies and where it never does)
 - `tests/test_custom_hr_face_enrolers.py` (offline: who may enrol or remove a face)
+- `tests/test_request_ids.py` (offline: a save sent twice is carried out once; an ID shows nobody what someone else
+  did; a decision is made on the revision the person saw)
 - `erpnext_drive_integrations/custom_hr/face_queue_integration_tests.py` (needs a live test site; rollback only)
 - `tests/test_custom_hr_face_engine.py` (model pins and fetch; the live engine part runs in the ERP image)
 - `erpnext_drive_integrations/custom_hr/test_checkout.py`

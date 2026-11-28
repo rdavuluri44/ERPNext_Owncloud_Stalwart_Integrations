@@ -6,6 +6,27 @@ discussion that led to a decision is not repeated here.
 
 ## 2026-11-28
 
+### Request IDs on every save, and decisions made on the revision the person saw (P103)
+
+- **Decision:**
+  - Every attendance save answers with the request ID the app sent. The calls that only change an entry
+    (`submit`, `self_check_out`, `verify`, `review`, `review_many`) are carried out once per ID: a repeat changes
+    nothing and gets the first answer. The ID is written down in the same transaction as the change, so a refused
+    save does not use its ID up. IDs are kept 90 days in a read-only record (`App Request`).
+  - `request_status` tells a person what happened to their own request ID. Someone else's ID and an unknown ID
+    answer the same: nothing.
+  - `verify`, `review` and `review_many` take the revision the person saw. An entry that changed since is not
+    decided; `review_many` says per entry `done`, `changed` (with who decided and when), `not_allowed` or
+    `refused` (owner, 28 November 2026, on the native app's list on public PR #114).
+  - All of it is optional for the caller, so the web page and older apps are not turned away.
+- **Why:** owner, 27 November 2026: a failed save should be pinned to one point without reading server logs, and a
+  save sent twice over a poor connection must not be carried out twice. A person must never decide something that
+  changed while their screen was open.
+- **Not in it:** ERPNext's own `apply_workflow` (other approvals) takes neither yet; that comes with the server's
+  list of waiting approvals.
+- **Where:** `erpnext_drive_integrations/custom_hr/request_log.py`, `service.py` (`check_revision`, `refusal`),
+  `api.py`, `API.md`, `tests/test_request_ids.py`.
+
 ### A chat screen for browsers: Element Web, under its own name, from the Desk menu (P73)
 
 - **Decision (owner, 28 November 2026):** chat gets a screen for browsers now, with a "Chat" entry in the Desk's
