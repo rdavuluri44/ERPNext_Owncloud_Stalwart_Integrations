@@ -130,7 +130,8 @@
         "erpnext_drive_integrations/www/place_holder.*",
         "erpnext_drive_integrations/www/__init__.py",
         "tests/portal/**",
-        "tests/test_portal_menu_columns.py",
+        "tests/test_desk_top_bar.py",
+        "tools/about_components.py",
         "tests/test_portal_site_look.py"
       ],
       "exclude": [
@@ -146,7 +147,7 @@
         "tests/test_desk_signout.py",
         "tests/test_portal_deep_link.py",
         "tests/portal/test_mobile.py",
-        "tests/test_portal_menu_columns.py",
+        "tests/test_desk_top_bar.py",
         "tests/test_portal_site_look.py"
       ],
       "upstream": [

@@ -64,8 +64,9 @@ class BrandAssets(unittest.TestCase):
         # Owner: same logo in the menu.
         self.assertIn("<title>Cloud</title>", page)
         self.assertIn("else (company or 'Applications')", code)
-        self.assertIn(".ph-brand img{width:60px;height:60px;object-fit:contain}", page)
-        self.assertIn('id="ph-home" title="Home" aria-label="Home"><img src="{{ entity_logo | e }}"', page)
+        # P111: the logo is the first item of the always-visible top bar.
+        self.assertIn('<button id="ph-fullscreen" type="button" aria-label="Enter fullscreen" title="Enter fullscreen">'
+                      '<img src="{{ entity_logo | e }}" alt=""></button>', page)
         self.assertNotIn("Desk</title>", page)
         self.assertNotIn("entity_icon", page + code)
 
