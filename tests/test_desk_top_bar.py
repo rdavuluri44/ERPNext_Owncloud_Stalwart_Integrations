@@ -91,8 +91,11 @@ class About(unittest.TestCase):
 
     def test_it_names_our_application_as_the_business_system_installs_it(self):
         self.assertIn("OURS = 'erpnext_drive_integrations'", DESK_API)
-        self.assertIn("REPOSITORY = 'https://github.com/rdavuluri44/erpnext_drive_integrations'", DESK_API)
-        self.assertIn('context.app_name, context.app_version, context.app_repository = OURS, __version__, REPOSITORY', CODE)
+        package = (ROOT / 'erpnext_drive_integrations/__init__.py').read_text(encoding='utf-8')
+        self.assertIn('__repository__ = "https://github.com/rdavuluri44/erpnext_drive_integrations"', package)
+        self.assertIn('from erpnext_drive_integrations import __repository__ as REPOSITORY', DESK_API)
+        self.assertIn("context.app_name = 'erpnext_drive_integrations'", CODE)
+        self.assertIn("context.app_repository = getattr(ours, '__repository__', '')", CODE)
         self.assertIn('<strong id="ph-about-name">{{ app_name | e }}</strong>', ABOUT)
         self.assertIn('href="{{ app_repository | e }}" target="_blank" rel="noopener noreferrer"', ABOUT)
         self.assertIn('Source on GitHub', ABOUT)
