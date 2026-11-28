@@ -680,8 +680,8 @@ The screen, from top to bottom:
 2. **Four numbers:** open, due this week, overdue, and "needs me" (unassigned, waiting for my confirmation,
    escalated to me). With them, the share done on time in the last 30 days.
 3. **The grid:** projects down, departments across; each cell shows open tasks and, in red, the overdue ones. The CEO
-   sees the whole grid; a project manager one row; a department head one column. A click on a cell filters
-   everything below.
+   sees the whole grid; a project manager sees their project's row; a department head sees their own department,
+   with the projects down and their people across. A click on a cell filters everything below.
 4. **By person (the crux):** one bar per person: open, due soon, overdue; the unassigned tasks first. Sorted by
    overdue. A click shows that person's tasks.
 5. **The list:** the tasks behind the choice, overdue first: title, where it came from, project, department, person,
@@ -751,6 +751,10 @@ The screen, from top to bottom:
 6. **Escalation days** (the proposal: department head 2 days after the due date, the next level after 7).
 7. **May team members see each other's tasks?** The proposal: no; own tasks and the ones they gave.
 8. **The name** people see: "Tasks".
+
+**Mock-up (28 November 2026):** the board at three levels (top management, department head, project manager) and
+the phone's "My tasks", with made-up figures, on a design canvas shared with the owner (private record). It shows
+the layout only; nothing in it is built.
 
 **Depends on:** the notification service (P108, public #151) for alerts and reminders; the Desk top bar (P111,
 public #166) for the counter; the app's Inbox calls (P118 to P120), request IDs (P103) and the version handshake
