@@ -64,9 +64,28 @@ Every logout ends on the company website: `sso.LANDING`, rendered from the priva
 Signed-out hand-over (P56 follow-up): `/login?logged_out=1` and `/signed-out` forward to the landing page for top-level navigations only. A request made from an iframe (`Sec-Fetch-Dest: iframe`, for example a portal app frame that discovers the sign-out) gets the ERP's own frameable sign-out page, whose Sign in button opens in the whole tab, because the landing page refuses to be framed.
 
 
+### The Desk's top bar (P111, P112)
+
+The Desk has one always-visible bar. From the left: the brand icon (full screen), the applications (a strip that
+scrolls inside its own space; Home first), on the test site the refresh button, search, notifications, and the
+person's button with About, font size, mode and Sign out.
+
+- **Search and notifications are universal.** The Desk asks the business system itself
+  (`frappe.utils.global_search.search`, `portal.desk.notifications`) and sends every other application a
+  message (`{source:'cloud-desk', type:'search', text, round}` or `type:'notifications?'`); the application
+  answers from its own page with `{source:'cloud-session', type:'search-results'|'notifications', items}`,
+  where an item is a title, a detail and a path. The Desk opens a path only inside the application that named
+  it (`type:'open'`). Other messages: `look` (font size and mode), and the sign-out ones below.
+- **About** (`portal.desk.about`): our application's name, version and repository; the installed Frappe
+  applications; the other applications from `portal/components.json`, written by `tools/about_components.py`.
+  Run that tool after a pinned image changes; a test fails otherwise.
+- **Addresses:** `/place_holder#drive` shows an application, `/place_holder#drive:/files/...` a place inside it,
+  `/place_holder#open:/desk/...` a page of the business system. The proxy sends a person's page visit to an
+  application's own address there (P112, register PROXY-7).
+
 ### Sign-out on the Desk (P53)
 
-The portal page (the Desk) has one bar at the top right; its last item is **Sign out**. The bar shows on the Desk
+Sign out is the last item of the menu of the person's button in the top bar. The bar shows on the Desk
 home only and is hidden while an application is open. It asks every open
 application for unsaved work (`{source:'cloud-desk', type:'unsaved?'}`), warns the person, tells each application to
 end its own session (`type:'signout'`), waits at most 2.5 seconds for their `{source:'cloud-session', type:'logout'}`

@@ -309,6 +309,11 @@ Made against: v16.60.2 (`2df0425`).
   duplicated header.
 - **Tests:** `tests/test_app_menu_link.py` (static text checks only).
 
+- **Inside the Desk (P111):** `session.js` hides the sidebar's own search, notification and help
+  rows (`.standard-items-band`, `.navbar-modal-search-mobile`, `.sidebar-notification`, `.uf-help`)
+  and applies the Desk's font size (page zoom) and mode (`data-theme`, `data-theme-mode`).
+  **Upgrade: re-check** that the three rows are hidden inside the Desk and present outside it.
+
 ### FRAPPE-6 Boot information rewritten (menus, dock, apps by role)
 
 - **What:** relabels `bootinfo.module_sidebars[*].app` for our modules; filters
@@ -331,6 +336,12 @@ Made against: v16.60.2 (`2df0425`).
   fallback routes `/desk/setup/home`, `/desk/hr-setup`, `/desk/build`.
 - **How:** `erpnext_drive_integrations/www/place_holder.py`.
 - **Upgrade:** **re-check** every tile opens. **Silent** (missing tiles, 404s).
+
+- **The Desk's top bar (P111):** the page asks two framework calls with the person's session:
+  `frappe.utils.global_search.search` (search) and our `portal.desk.notifications`, which reads
+  `Notification Log` (unread, for the person). About lists `frappe.get_installed_apps()` with each
+  application's `__version__` and its `app_title` hook. **Upgrade: re-check** a search, the bell and
+  About. **Silent** if global search is renamed (search would only show the other applications).
 
 ### FRAPPE-8 Items added to upstream sidebars at migrate
 
@@ -960,6 +971,22 @@ Made against: oCIS 8.2.3, ownCloud Web 12.5.0.
   **Upgrade: re-check** both views and the text editor answer. **Silent** if either id changes.
   Test: `tests/test_desk_signout.py` (static).
 
+- **Inside the Desk (P111, P115; made against ownCloud Web 12.5.0):** a second block of the same
+  script, which does nothing when Drive is not inside the Desk. It hides `#web-content-header`
+  (the blue band) except in the editors; adds a Preferences row (`#uf-nav-preferences`, a copy of
+  the "Deleted files" row of `#web-nav-sidebar nav ul`, going to `/account`); adds
+  `#uf-toggle-sidebar` before `.viewmode-switch-buttons`, which presses Drive's own
+  `#files-toggle-sidebar`; hides `.space-header` and places its `#space-context-btn` beside
+  `#files-breadcrumb li:last-child`; answers the Desk's search (WebDAV `REPORT /remote.php/dav/spaces/`
+  with `oc:search-files`, results opened as `/f/<file id>`) and notifications (OCS
+  `apps/notifications/api/v1/notifications`) with the token ownCloud Web keeps under
+  `oc_oAuth.user:*`; changes the page by `history.pushState` plus a `popstate` event. The Desk opens
+  Drive at `/files/spaces/projects`. The script's file name carries a date
+  (`workspace-20261128-bar.js` in `web-with-picker.json`); change it whenever the script changes, or
+  browsers keep the old one. **Upgrade: re-check** each of the five points on a space's top level, a
+  folder and the account page, and a search from the Desk. **Silent** if an ID or class above changes
+  (the band would show again, a button would be missing). Test: `tests/test_desk_top_bar.py` (static).
+
 ### DRIVE-2 Mail attachment picker
 
 - **What:** `integrations/drive/mail-picker.js` ("for ownCloud Web 12.5.0"): Web's embed
@@ -1249,6 +1276,18 @@ Made against: 3.4.2.
   **Upgrade: re-check** both views and the edited-document answer. **Silent** if the logout
   address or the component name changes. Test: `tests/test_desk_signout.py` (static).
 
+- **Inside the Desk (P111, P114; made against Paperless-ngx 3.4.2):** a second block of
+  `session.js`, which does nothing when the DMS is not inside the Desk. It hides
+  `pngx-app-frame>nav.navbar` (the green band with the logo, search, Upload, the bell and the user
+  menu), removes the 64 px the left pane and the page keep free for it, hides the left pane's link
+  to `docs.paperless-ngx.com`, adds a small menu button on narrow screens that presses the hidden
+  `.navbar-toggler`, answers the Desk's search with `GET /api/documents/?query=` (API version 9,
+  the person's session) and opens `/documents/<id>/details`; sets `data-bs-theme` for the mode. The
+  name "Paperless-ngx" with its version stays in the left pane's footer and is in the Desk's About.
+  The script address carries a date (`/cloud-session.js?v=...` in `middleware.py`). **Upgrade:
+  re-check** the dashboard, a document and the phone width. **Silent** if the element names change.
+  Test: `tests/test_desk_top_bar.py` (static).
+
 ### DMS-2 Set-up through the Django shell
 
 - **What:** `integrations/dms/bootstrap.py` uses permission codenames of the `documents`
@@ -1501,3 +1540,22 @@ Found on 26 November 2026 and reported to the owner; none of them is changed by 
   (comment), shridarpatil/frappe_whatsapp#257 (comment on the open signature-check
   fix), goauthentik/authentik#16049 and #14304 (comments), #28187 and #28188 (new
   requests), and a private report to frappe_docker (Origin overwrite).
+
+### PROXY-7 A person's page visit to an application's own address goes to the Desk (P112)
+
+- **What and why:** applications are used inside the Desk only. For Drive, the DMS, Mail and the
+  business system's own pages, a router with a higher priority than the application's matches
+  `Method(GET) && Header(Sec-Fetch-Dest, document)` on a list of page addresses and answers with a
+  redirect to `https://<desk>/place_holder#<application>:<path>` (`redirectRegex`,
+  `noop@internal`). Inside the Desk a browser sends `Sec-Fetch-Dest: iframe`, so the frames are not
+  touched; programs send no such header.
+- **How:** `tools/prepare_ingress.py` (`desk_only`), profile key `apps_only_inside_desk`
+  (default on).
+- **Relies on:** Traefik v3's `Header` and `PathRegexp` matchers; browsers sending
+  `Sec-Fetch-Dest` (all current ones do); each application's page addresses as listed there
+  (ownCloud Web 12.5.0, Paperless-ngx 3.4.2, Bulwark Webmail 1.21.2, Frappe 16).
+- **Upgrade:** **re-check** after an upgrade of any of the four applications: a new page address
+  that is not listed opens on its own (the rule fails open); an address that became an interface
+  for programs must be taken off the list. Check a public share link, a sync client and webmail's
+  pop-out window.
+- **Tests:** `tests/test_desk_top_bar.py` (`OnlyInsideTheDesk`).

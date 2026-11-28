@@ -1644,3 +1644,46 @@ check themselves in keep their existing workflows.
   `integrations/onlyoffice/README.md`, register entry OFFICE-1. AI-assisted by
   Claude Code.
 >>>>>>> origin/main
+
+### One always-visible top bar on the Desk; applications only inside the Desk (P111, P112, P114, P115)
+
+- **Decision (owner, 28 November 2026):** The Desk gets one always-visible top bar in place of the
+  auto-hiding menu and of the small bar at the top right (P53 step 1). From the left: the brand icon
+  (full screen), the applications in a strip that scrolls inside its own space, on the test site the
+  refresh button, then search, notifications and the person's button (a squarish button with the
+  initial) whose menu holds About, font size, mode (light, dark, automatic) and Sign out.
+- **Universal search and notifications:** one of each for all applications. The Desk asks the business
+  system directly and every other application through that application's own page, with the person's
+  own session there; an application answers with titles and paths only, and the Desk opens a path only
+  inside the application that named it. Applications not opened yet are loaded hidden at the first
+  search. A hidden application can never take the person to a sign-in page (found on the test site).
+- **About** shows our application under the name the business system installs it
+  (`erpnext_drive_integrations`, P113) with its version and the link to this repository, the installed
+  Frappe applications with versions, and the other applications with the versions we pin
+  (`tools/about_components.py` writes that list from `deployment/upstream-watch.json`; a test fails
+  when they differ). The Unformat mark in About is written into the page and not read from the assets
+  folder, so it stays whatever branding a deployment sets.
+- **Inside the Desk the applications give up their own header band** (the bar takes its place):
+  Drive's blue band (P115), the DMS's green band and logo (P114; Paperless-ngx stays named with its
+  version in its own left pane and in About; the band's Upload button is not replaced). Drive also:
+  Preferences beneath Deleted files, the "open side bar" button left of the view buttons, Spaces as
+  the first screen, and a space's top level shown like a folder (the large tile hidden, its
+  three-dots menu beside the name). The business system hides its own search, notification and help
+  rows. A help entry that is only a link to online documentation is removed.
+- **Applications are not opened on their own (P112):** the proxy sends a person's page visit to an
+  application's own address (a GET with `Sec-Fetch-Dest: document`) to the Desk, which opens the
+  application at the same place (`/place_holder#drive:/files/...`). Only listed page addresses are
+  redirected; what programs and outsiders use keeps answering (sync clients, mail programs, the phone
+  application, editor and sign-in callbacks, public share links, webmail's pop-out windows). A
+  deployment can switch the rule off (`apps_only_inside_desk`).
+- **Not in this change:** Mail's single left pane (P116); the chat screen inside the Desk (it still
+  opens in its own tab, because its sign-in pages refuse frames); font size and mode inside Mail and
+  the editor, and the mode inside Drive; notifications from Mail. "Back to home" in the applications
+  (P53) stays in the code for a deployment that switches the redirect off.
+- **Consequence:** The site settings for the Desk logo's height and position no longer change
+  anything (the logo sits in the bar). The older tests of the two-column menu are replaced by
+  `tests/test_desk_top_bar.py`. Font size uses the browser's page zoom inside each application.
+- **Where:** `erpnext_drive_integrations/www/place_holder.*`, `portal/desk.py`,
+  `portal/components.json`, `public/session.js`, `integrations/drive/workspace.js`,
+  `integrations/dms/cloud_session/`, `tools/prepare_ingress.py`, `tools/about_components.py`,
+  register entries FRAPPE-5, FRAPPE-7, DRIVE-1, DMS-1 and PROXY-7. AI-assisted by Claude Code.
