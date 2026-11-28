@@ -36,7 +36,7 @@ Render the example domain and deploy these public files through the native oCIS 
 | config/app-registry.yaml | Office MIME registry (default app ONLYOFFICE); DOCX/XLSX/PPTX creation enabled, ODF creation disabled |
 | config/csp.yaml | Native Web CSP; only the retained portal origin is included in the example |
 | config/apps.yaml | Native external-app registry |
-| workspace.js | Serve as `/assets/apps/cloud-workspace/workspace-20261115-editor3.js` |
+| workspace.js | Serve as `/assets/apps/cloud-workspace/workspace-20261128-bar.js` |
 | mail-picker.js | Serve as `/assets/apps/office-mail-picker/bridge.js` |
 
 The native oCIS Web config and app-registry environment variables must point to these mounted files. Preserve upstream CSP directives when adapting hosts; frame ancestors, WOPI hosts and cross-window message origins must match the intended installation.
