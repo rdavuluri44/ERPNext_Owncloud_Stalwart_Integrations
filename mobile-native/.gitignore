@@ -1,0 +1,11 @@
+.gradle/
+build/
+local.properties
+gradlew
+gradlew.bat
+gradle/wrapper/
+.kotlin/
+# deployment identity and keys stay private
+*.jks
+*.keystore
+google-services.json

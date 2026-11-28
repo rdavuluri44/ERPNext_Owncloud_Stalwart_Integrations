@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app's mark: the key from the Welcome screens, drawn for this app. It sits inside the middle two thirds of
+     the canvas, so no phone's icon shape cuts it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <group android:scaleX="3.2" android:scaleY="3.2" android:translateX="13.2" android:translateY="15.6">
+        <path android:fillColor="#00000000" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.2" android:strokeLineCap="round" android:strokeLineJoin="round" android:pathData="M8,7.5a4.5,4.5 0,1 0,0 9a4.5,4.5 0,1 0,0 -9M12.5,12H21M17.5,12v3.5M20.5,12v2.5" />
+    </group>
+</vector>

@@ -142,7 +142,7 @@
     },
     {
       "name": "Mobile app",
-      "paths": ["mobile/**"],
+      "paths": ["mobile/**", "mobile-native/**"],
       "stacks": ["mobile"],
       "steps": ["build and distribute the app (no server stack)"]
     },

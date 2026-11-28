@@ -826,6 +826,32 @@
           "url": "https://github.com/facebook/react"
         }
       ]
+    },
+    {
+      "id": "mobile-native",
+      "title": "Native Android app (in progress)",
+      "summary": "The Android app rebuilt in Kotlin with Jetpack Compose. Phase 0 foundation: rules module (exact money, the data-flow tracker, read-back comparison), the sunlight look, a frame for phones and tablets, and the Data trace and This phone screens.",
+      "readme": "mobile-native/README.md",
+      "paths": [
+        "mobile-native/**",
+        "tests/test_mobile_native.py"
+      ],
+      "depends_on": [],
+      "tests": [
+        "tests/test_mobile_native.py"
+      ],
+      "upstream": [
+        {
+          "name": "Jetpack Compose and AndroidX",
+          "license": "Apache-2.0",
+          "url": "https://github.com/androidx/androidx"
+        },
+        {
+          "name": "Kotlin",
+          "license": "Apache-2.0",
+          "url": "https://github.com/JetBrains/kotlin"
+        }
+      ]
     }
   ]
 }

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- The full page over a locked screen when an approval rings. Android 14 and newer: the person allows it
+         once in the phone's settings; the Alerts screen leads there. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- The same full page while the phone is in use (in another app, on the home screen). The phone only lets an
+         app open a page over other apps when the person switched this on for it in the phone's settings; the
+         Alerts screen leads there. Used for nothing else: the app draws no windows over other apps. Where a phone
+         lacks the setting, or the person leaves it off, an approval comes as a banner. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- "Remind me in 2 hours" is kept by the phone's alarm service, which forgets it at a restart: the app is told
+         that the phone restarted and sets the reminder again. Nothing else happens then. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+
+    <application
+        android:name=".ErpApp"
+        android:allowBackup="false"
+        android:usesCleartextTraffic="false"
+        android:dataExtractionRules="@xml/no_backup"
+        android:fullBackupContent="@xml/no_backup_old"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppStart">
+        <!-- The screen redraws itself on these changes and is not rebuilt, so the answer to a fingerprint question
+             always reaches the screen that asked. -->
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard|navigation|uiMode|density|fontScale|locale|layoutDirection|fontWeightAdjustment|colorMode|grammaticalGender"
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- The full page when an approval rings: its own task, not in the list of recent apps, shown over the
+             locked screen. It shows only the alert's fixed words and decides nothing. Not open to other apps. -->
+        <activity
+            android:name=".RingActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard|navigation|uiMode|density|fontScale|locale|layoutDirection|fontWeightAdjustment|colorMode|grammaticalGender"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:showWhenLocked="true"
+            android:taskAffinity=""
+            android:turnScreenOn="true" />
+        <!-- A scheduled test signal arriving, the buttons of a ringing alert, the 2-hour reminder coming due, and the
+             phone having restarted. Not open to other apps: only this app and the phone itself reach it. -->
+        <receiver android:name=".AlertReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+        <!-- Receives alert signals from Google, also while the app is closed. Not open to other apps. -->
+        <service android:name=".AlertService" android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <!-- The phone asks Google for a delivery address only when the app asks for one, never by itself. -->
+        <meta-data android:name="firebase_messaging_auto_init_enabled" android:value="false" />
+    </application>
+</manifest>

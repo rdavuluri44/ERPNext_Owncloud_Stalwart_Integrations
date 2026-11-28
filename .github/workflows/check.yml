@@ -33,3 +33,21 @@ jobs:
         working-directory: integrations/authentik/invite-recovery
       - run: node --test integrations/authentik/invite-recovery/test_invitations.mjs
       - run: find erpnext_drive_integrations/public integrations -name '*.js' -print0 | xargs -0 -n1 node --check
+
+  # The native Android app's own checks (P50; P100: the mobile app is checked in CI): logic tests, Android lint with
+  # warnings as errors, the screen tests with the link robot and a debug build, with every library's checksum checked.
+  native-app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: JDK 17 (installed on the runner)
+        run: echo "JAVA_HOME=$JAVA_HOME_17_X64" >> "$GITHUB_ENV"
+      - name: Gradle 9.9.2, checksum checked (9.9.2 fixes the Gradle advisories published up to 19 November 2026)
+        run: |
+          curl -sSfL -o "$RUNNER_TEMP/gradle.zip" https://services.gradle.org/distributions/gradle-9.9.2-bin.zip
+          echo "971fcd7150ca4ba04852c0b2ca0d2d0ab9468e14b03473eab19528809914c76b  $RUNNER_TEMP/gradle.zip" | sha256sum -c -
+          unzip -q "$RUNNER_TEMP/gradle.zip" -d "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/gradle-9.9.2/bin" >> "$GITHUB_PATH"
+      - name: gradle checkAll
+        working-directory: mobile-native
+        run: gradle checkAll --no-daemon --stacktrace

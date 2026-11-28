@@ -318,6 +318,41 @@ discussion that led to a decision is not repeated here.
   `deployment/drift-check.service.example`, `deployment/README.md`, `docs/sop/production-release.md`,
   `tests/test_drift_mounts.py`.
 
+### The Android app is rebuilt natively; Phase 0 lays the foundation (P50)
+
+- **Decision:** the Android app is rebuilt in Kotlin with Jetpack Compose in `mobile-native/`, beside the Expo app,
+  which stays the app in use until the native one does everything it does and passes the same checks; the iPhone
+  app follows after Android. The rules live in a pure Kotlin module without Android, so they can be shared with an
+  iPhone app later without choosing a cross-platform framework now. Built in from the first day: a data-flow
+  tracker (one tracking number per action, a mark at each of eight points, a read-back comparison after every
+  save), building blocks that cannot show an action word without an action, no backup or screenshot of app data,
+  one command that runs every check, and a pinned checksum for every library.
+- **Why:** developer's decision with the owner's agreement, 26 November 2026 (confirmed by the owner on 27 November), after the P82 trial showed the
+  sign-in key, the fingerprint lock and the computer sign-in must be native code anyway. Testing the Expo app
+  showed taps that led nowhere and failures without a reason; the tracker and the building blocks make those two
+  faults visible or impossible. Crash reports will use Google's free service (developer's choice, not added yet).
+- **Dependency review:** on 26 November 2026, Kotlin 2.2.10, the Android Gradle plugin 9.2.1, Compose BOM
+  2026.09.00 (UI, Material 3, adaptive navigation suite), AndroidX Activity 1.12.4 and Biometric 1.1.0
+  (Apache-2.0) and JUnit 4.13.2 (EPL-1.0, tests) were checked in OSV: none open (the two Kotlin standard-library
+  entries were fixed before 1.6; JUnit's was fixed in 4.13.1). detekt is not added yet: its stable release does not
+  support this Kotlin version; Android lint runs with warnings as errors meanwhile. Added for the screen tests
+  (tests only, not in the app): Robolectric 4.18 (MIT, active, released 13 November 2026) and Compose's UI test
+  library; OSV, 26 November 2026: none open.
+- **Checked in CI (owner's go after review, 27 November 2026; P100):** `gradle checkAll` runs in the `native-app`
+  job of `.github/workflows/check.yml` on every push and pull request, so the app's tests, lint and checksum check
+  no longer run only on the developer's computer. Gradle is downloaded at 9.9.2 and checked against its published
+  SHA-256. GitHub Security Advisories for Gradle, checked 27 November 2026: one critical (GHSA-3cfg-jpcr-gfp3) and
+  seven high (GHSA-7f7r-77ff-fr6f, GHSA-99wf-vhq9-wm2x, GHSA-4mf6-7pm2-6wm8, GHSA-35pj-rg5r-8rpv, GHSA-gqrr-4j89-5267,
+  GHSA-pcp8-98xm-c6pr, GHSA-j5m7-59rp-24f5) affect versions before 9.9.2 (released 19 November 2026), which fixes them all; the README now asks for 9.9.2 or newer.
+  The checksum list gains the Linux and Mac copies of the Android build tool aapt2 (from Google Maven; the Windows
+  copy matched the existing entry), which a list made on Windows lacks.
+- **Review fixes (27 November 2026):** the calling layer treats a redirect as signed out (the sign-in service in
+  front sends an expired session to its login page), shows the server's refusal sentence only when it is readable
+  text (no error dump, code or page; the original stays in the test-build detail), and no longer crashes when
+  sign-out clears the tracker while a save waits.
+- **Where:** `mobile-native/` (README), `tests/test_mobile_native.py`. AI-assisted by Claude Code.
+
+
 ### One build loop for every screen of the mobile app (P100)
 
 - **Decision:** every screen of ERP Mobile goes through one loop: a tap and state list (loading, empty, offline,
@@ -1551,3 +1586,62 @@ check themselves in keep their existing workflows.
 - **Where:** `deployment/config/proxy/office-acme.yml`, `tools/prepare_test_relay.py`,
   `tools/coolify_proxy_hosts.py`, `tools/coolify_proxy_tls_resolver.py`,
   `tests/test_rebuild_templates.py`, register entry PROXY-6. AI-assisted by Claude Code.
+
+### Alerts in the native app: Google's messaging library, and every word written by the app (P50, P108)
+
+- **Decision:** The native Android app receives alerts through Firebase Cloud Messaging
+  (`firebase-messaging` 26.0.2), the messaging part only: no analytics, no crash reports,
+  no advertising ID. There is no settings file in the project and no build plug-in for it;
+  the four values the library needs are private build properties, as the server address
+  is. A signal carries a kind and short fields only. Every word an alert shows is a fixed
+  sentence in the app (`core/Alerts.kt`); nothing the app shows is ever taken from a signal, and
+  an unknown kind is dropped. The server must send data-only signals: one that carries a
+  ready-made notification text is shown by Google's library itself while the app is in
+  the background, without asking the app. The phone remembers a short fingerprint of each
+  waiting reference (at most 500) so it can count and remove, never the reference. A
+  phone without its key shows no alert. An alert decides nothing: a
+  tap opens the app, which asks for the fingerprint first. A lost key removes every alert.
+  The phone asks Google for a delivery address only when the app asks for one.
+- **Why:** An Android app that is closed can only be reached through this service; the
+  earlier app used the same service through a packaged library. Writing the words in the
+  app means a wrong or forged signal cannot put a name or an amount on a locked phone.
+  Leaving out the settings file keeps a deployment's identity out of this repository and
+  removes one build tool.
+- **Consequence:** The library makes its own connection to Google, the one exception to
+  "the app talks to one server". Google learns that the app is installed on a phone,
+  when a signal is delivered, and the signal's short fields: its kind and, for an
+  approval, a rejection or a removal, the document type and name the server puts in so the phone can count and
+  remove. Open with the owner: the server sends a keyed fingerprint instead of the name.
+  A "decided elsewhere" signal that gets lost leaves a count too high until the real
+  Inbox sets it right (not built yet). The fingerprint match is known to the phone only;
+  the server gets no proof of it (open with the owner). Phones without Google services
+  get no alerts this way. The merged app also
+  carries the library's own permissions (network state, wake lock, receiving messages).
+- **Checked:** version published 11 November 2026 (older than two weeks); all 63 resolved
+  library versions asked in OSV on 28 November 2026, none used by the app has an open
+  advisory; every one has its checksum in `gradle/verification-metadata.xml`, recorded by Gradle at
+  the first download and not compared with a second source.
+- **Where:** `mobile-native/core/.../Alerts.kt`, `mobile-native/app/.../AlertCenter.kt`,
+  `AlertsScreen.kt`, `tests/test_mobile_native.py`. AI-assisted by Claude Code.
+
+### Native app: the approval's full page also while the phone is in use, by the person's own switch (P50, P108)
+
+- **Decision:** The native Android app asks for `SYSTEM_ALERT_WINDOW` ("display over other
+  apps"). It is used for one thing: when an approval rings while the phone is unlocked and
+  in use, the app opens its own full page (`RingActivity`), the same page a locked phone
+  shows. Only where the person switched it on in the phone's settings; the Alerts screen
+  says what happens without it and leads to the switch. The app draws no window over any
+  other app. Decided by the developer on 28 November 2026: both, according to the phone.
+- **Why:** Android shows an app's full page by itself only on a locked or dark phone; on a
+  phone in use it shows a banner. People who decide approvals asked for the full page in
+  both cases. On current Android an app may open a page from the background only in a few
+  cases; this switch is the one a person can give an app.
+- **Consequence:** Phones without the setting (phones with little memory) and people who
+  leave it off get the banner, which rings and carries Approve, Reject and Remind. The
+  page shows fixed words only and decides nothing. It opens only for an approval the phone
+  did not know yet or a reminder the person asked for, never during a call, at most once
+  a minute, and its buttons answer only after a moment. The store may ask for a reason
+  for this permission at release. A repository test holds that nothing is drawn over other apps.
+- **Where:** `mobile-native/app/.../AlertCenter.kt` (`onTop`, `inUse`, `show`),
+  `AlertsScreen.kt`, `AndroidManifest.xml`, `tests/test_mobile_native.py`. AI-assisted by
+  Claude Code.
