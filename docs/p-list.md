@@ -159,7 +159,7 @@ its app's list (copy the `**App:**` line from a neighbour), then run `python3 to
 | DMS | [pending/dms.md](p-list/dms.md) | 2 | 2 |
 | Drive | [pending/drive.md](p-list/drive.md) | 2 | 2 |
 | Editor | [pending/editor.md](p-list/editor.md) | 4 | 4 |
-| ERP | [pending/erp.md](p-list/erp.md) | 15 | 15 |
+| ERP | [pending/erp.md](p-list/erp.md) | 19 | 19 |
 | Mail | [pending/mail.md](p-list/mail.md) | 7 | 7 |
 | Mobile | [pending/mobile.md](p-list/mobile.md) | 10 | 10 |
 | Portal (eZone) | [pending/portal.md](p-list/portal.md) | 6 | 6 |
@@ -263,4 +263,8 @@ its app's list (copy the `**App:**` line from a neighbour), then run `python3 to
 | P115 | Drive inside the Desk: header band removed, Spaces first, one look for folders | [Drive](p-list/drive.md) | portal · **State:** open | open |
 | P116 | Mail inside the Desk: one fixed left pane | [Mail](p-list/mail.md) | portal · **State:** open | open |
 | P117 | Office editor: the header changes of spreadsheets also in text documents and presentations | [Editor](p-list/editor.md) | drive · **State:** open | open |
+| P118 | Waiting approvals with their details, in one call; request ID and version check for ERPNext approvals | [ERP](p-list/erp.md) | mobile · **State:** open | open |
+| P119 | The trail of an item: who did what, when, with reasons | [ERP](p-list/erp.md) | mobile · **State:** open | open |
+| P120 | "Decided by me" and "sent by me" | [ERP](p-list/erp.md) | mobile · **State:** open | open |
+| P121 | Team tasks: pick up, assign and track work to completion, with one board for every level | [ERP](p-list/erp.md) | portal, mobile, dms, general · **State:** open | open |
 <!-- APP-INDEX-END -->

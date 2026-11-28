@@ -440,7 +440,14 @@ Field Attendance Entry). A failed save cannot be pinned to one point without som
 **Acceptance (test site):** every app save carries an ID that is returned and found on the record; the lookup answers
 for one's own IDs and refuses others'; repeating a call with the same ID returns the first result.
 
-**Related:** P50 (native app), P104 (version handshake), P105 (five-phone test round).
+**Progress (28 November 2026):** built for the attendance calls in public draft PR #161 and on the test site since
+28 November (combined test branch, receipt `p108-p104-p103-test-erp-e1afcdf`): request IDs on `submit`,
+`self_check_out`, `verify`, `review`, `review_many`; `request_status`; and, added by the owner on 28 November, the
+check of the revision the person saw on verify, approve and return. Not merged, not on production.
+**Still open here:** nothing for attendance. The request ID and the version check for other ERPNext approvals
+(`apply_workflow`) moved to P118, because they need a call of our own in front of ERPNext's.
+
+**Related:** P50 (native app), P104 (version handshake), P105 (five-phone test round), P118.
 
 ### P104 — Version handshake between the server and the mobile apps
 
@@ -456,4 +463,318 @@ version the server accepts. The apps compare at sign-in and on resume.
 **Acceptance:** a test fails when a mobile-facing function or field changes without the fingerprint changing; an app
 below the minimum shows "update needed" on the test site.
 
+**Progress (28 November 2026):** built in public draft PR #156 (`contract` and `minimum_app_version` in
+`bootstrap`, a test that fails when a mobile-facing function or field changes without the fingerprint) and on the
+test site since 28 November (same receipt as P103). Not merged, not on production. Whichever of #151, #156 and #161
+merges later renews the fingerprint and adds the two new modules the apps call.
+
 **Related:** P50, P103, P105.
+
+### P118 — Waiting approvals with their details, in one call; request ID and version check for ERPNext approvals
+
+**App:** erp · **Also touches:** mobile · **State:** open
+
+**Owner, 28 November 2026: "p items, go"** on the agent's proposal of three work items for the server side of the
+native app's Inbox (the app developer's list on public PR #114, points 4.2, 4.4, 4.7 to 4.9, 4.12, 7.5 and 8.4).
+Opened on the owner's word the same day. **Nothing is designed or built; the owner reads this item before any
+building.**
+
+**Why:** the app's Inbox shows each waiting item with who sent it, since when, the amount and the deadline, and sends
+the version back with the decision. Today the server gives numbers ("what waits for me") and, since public #151, the
+bare items (`items[]`: mark, reason, sort, document, site, since when). The details exist only for attendance, in
+two calls of their own. For other ERPNext approvals (purchase, payment, leave and the rest) the app would have to
+read each document itself, and a decision there carries no request ID and no check of the version the person saw.
+
+**What (proposal, to be confirmed by the owner):**
+1. **One call, "the items waiting for me, with what the screen shows":** per item the mark, the sort of thing, the
+   title, who sent it (the user, with name and role; the user is the one identifier, owner's decision of 28 November
+   under P110), since when, the amount as a decimal text with its currency where the document has one, the deadline
+   if any, and the version (`revision` for attendance, `modified` for other documents). Only for the signed-in
+   person, and only items they may read.
+2. **A call of our own in front of ERPNext's workflow action** for other approvals: it takes the action, the version
+   the person saw and a request ID; refuses a decision on a document that changed since; is carried out once per
+   request ID (the request log of P103); and answers in codes the app can tell apart: done; someone else decided
+   first (who, when, what); changed since opened; not allowed; refused with the sentence.
+3. **Who else may decide an item** (a site's approvers; the holders of a workflow's role), given only to a person who
+   may decide it themselves.
+4. The numbers of "what waits for me" and this list come from the same records, so they cannot disagree.
+
+**Questions to settle at planning:**
+- Where the call lives: in the notification service (it already holds the waiting records) or in a module of its
+  own for approvals.
+- Which document types get a title and an amount, and from which fields; what is shown for a type nobody listed.
+- Whether the amount may be shown to every person who may decide the item (it is the person's own approval, so
+  probably yes; to confirm).
+- Whether standing in front of ERPNext's workflow action changes or relies on upstream behaviour in a new way; if it
+  does, an entry in the register of our changes in the same pull request.
+- Whether the web Desk keeps using ERPNext's own action unchanged (the proposal: yes).
+
+**Depends on:** the notification service on main (P108, public #151); the request log (P103, public #161).
+
+**How it is tested (outline):** offline tests of each answer code and of "only my items"; on the test site with two
+approvers of one purchase: both see it, one decides, the other gets "someone else decided first"; a document
+changed after opening is refused; a repeat with the same request ID decides once.
+
+**Related:** P50, P103, P108, P110, P119, P120.
+
+### P119 — The trail of an item: who did what, when, with reasons
+
+**App:** erp · **Also touches:** mobile · **State:** open
+
+**Owner, 28 November 2026: "p items, go"** (see P118). **Nothing is designed or built; the owner reads this item
+before any building.**
+
+**Why:** every item in the app shows its trail (the app developer's list on public PR #114, points 4.3, 4.10 and
+4.11), and "approve only after the evidence was seen" needs it. Today an attendance entry holds who captured,
+verified and reviewed it and when, but only the last remark. For other ERPNext approvals the document's own history
+exists, but ERPNext stores no reason with a workflow action, and nothing gives the app one list.
+
+**What (proposal, to be confirmed by the owner):**
+1. **One call, "the trail of this item":** the steps in order: who (the user, with name and role), what (sent,
+   verified, approved, returned or rejected, corrected and sent again), when, and the reason where one was given.
+   For a person who may read the item only.
+2. **Every reason kept, not only the last:** attendance keeps each return's remark in its trail. A reason on a
+   rejection of another ERPNext approval is stored with the decision (through the call of P118) and shown to the
+   sender.
+3. **The sender is told when their request was decided** (approved or rejected), as a notice. Whether that notice
+   rings or goes to the Notices room is the owner's choice (today: a returned attendance entry rings, an approved
+   one sends nothing).
+4. Later, with P110: the trail also says who delegated to whom and why, and who approved for whom.
+
+**Questions to settle at planning:**
+- Whether the trail is built from what ERPNext already records (versions, workflow actions, comments) or written by
+  our own calls as they happen. The second is exact but only covers decisions made through our calls.
+- How long a trail is kept (the proposal: as long as the document).
+- Whether a decision made on the web Desk, outside our call, appears in the trail (it should, at least as "who,
+  what, when" without a reason).
+
+**Depends on:** P118 (the call that takes a reason for other approvals).
+
+**How it is tested (outline):** offline tests of the order and of "only for people who may read the item"; on the
+test site: an attendance entry returned twice shows both reasons; a purchase rejected in the app shows its reason to
+the sender; a decision made on the web shows without one.
+
+**Related:** P50, P108, P110, P118, P120.
+
+### P120 — "Decided by me" and "sent by me"
+
+**App:** erp · **Also touches:** mobile · **State:** open
+
+**Owner, 28 November 2026: "p items, go"** (see P118). **Nothing is designed or built; the owner reads this item
+before any building.**
+
+**Why:** the app's Inbox has two more lists (the app developer's list on public PR #114, points 4.5 and 4.6): what
+the person decided, and what they sent with who has it now. Neither exists on the server. The notification
+service's records are removed 90 days after a decision, so they cannot be the history.
+
+**What (proposal, to be confirmed by the owner):**
+1. **"Decided by me":** what the signed-in person decided: the sort of thing, the item, the decision, when, and its
+   state now. The latest 50 first, and a filter by dates, sort, site and decision. No day limit.
+2. **"Sent by me":** what the person sent for a decision: the item, its state, who has it now and since when.
+3. Both only for the signed-in person's own decisions and items. Nobody reads someone else's lists through these
+   calls.
+
+**Questions to settle at planning:**
+- The source: the trail of P119 (then these two lists are two views of it), or ERPNext's own records per document
+  type. The proposal: the trail, so the three agree.
+- Whether decisions made before the trail exists are shown (attendance has `reviewed_by` and `verified_by` and could
+  be filled in; other documents only as far as ERPNext's history reaches).
+- Whether "who has it now" names people or roles when several people may decide.
+
+**Depends on:** P119; P118 for the item's title and sort.
+
+**How it is tested (outline):** offline tests of the filters and of "only my own"; on the test site: decide three
+items as one person and send two as another, then read both lists as each and as a third person (who sees nothing).
+
+**Related:** P50, P118, P119.
+
+### P121 — Team tasks: pick up, assign and track work to completion, with one board for every level
+
+**App:** erp · **Also touches:** portal, mobile, dms, general · **State:** open
+
+**Owner, 28 November 2026:** "lets go with 'inside ERPNext' with a dashboard tracking tool for quick glance", "include
+the full scope in the P item", "lets start working on this now". Opened the same day. **This item is the plan; nothing
+is built yet.** The design below is the agent's proposal on the owner's requirements; the points under "For the owner
+at planning" are the owner's to settle.
+
+**Why (owner):**
+- The system already knows about recurring jobs, tax filings, preventive maintenance of machinery and documents that
+  need renewing, and it sends alerts. What is missing is that each of these gets a person, and that someone can follow
+  it until it is done.
+- A manager must also be able to give the team tasks that come from outside the ERP.
+- The crux: see a department's pending tasks spread over the people of the team.
+- It must be visible where people already look: on the Desk beside the notifications, and in the phone app we are
+  building. A separate application would not be seen.
+
+**Chosen (owner, 28 November 2026): built inside ERPNext, as a module of our own add-on.** Vikunja and Frappe's
+Gameplan were considered and set aside for now; the check of all candidates is in the public decision log
+(28 November 2026). The reason in short: our Frappe version (16.60.2) already has the parts that hand out and repeat
+work (Assignment Rules, Auto Repeat, maintenance schedules, to-dos per person), the sign-in is the one we have, and
+no new server, sync or security exposure is added. What we build is what is missing: the task record with its trail,
+the pick-up of work from other records and tools, reminders and escalation, and the board.
+
+#### What is built
+
+**1. The task record** (working name "Team Task"; a record of our own, not ERPNext's project Task, see the first
+question below)
+- What: title, description, the kind (maintenance, filing, renewal, recurring job, request, alert), priority, due
+  date.
+- Where it belongs: the **project** (or none, for head-office work) and the **department**. These are the two
+  dimensions of the board.
+- Who: one responsible person, who assigned it, and optionally people who help.
+- Where it came from: by hand, or the record or tool that caused it (with a link back), so a thing is picked up once
+  and never twice.
+- States: open, in progress, waiting (with the reason), done, cancelled (with the reason). "Overdue" is worked out
+  from the due date, not stored.
+- Done means shown: per kind, completing asks for a note, a file or photo (kept in the project's Drive through the
+  ERP, as work photos are, P74), or the source record reaching its own finished state (a maintenance log marked
+  completed closes its task by itself).
+- Checked by a second person where the kind asks for it: the person who assigned it, or the department head, confirms.
+- The trail: who did what, when and why (assigned, reassigned, due date moved, waiting, done, confirmed, reopened).
+  A due date is moved only by a manager, with a reason. The trail uses the same form as P119.
+
+**2. Where tasks come from**
+- **From ERPNext records, by pick-up rules** that the admin sets (no code per case): a record type, a condition, a
+  date field and "how many days before". First rules:
+  - machinery and asset preventive maintenance (ERPNext's maintenance schedule and its logs);
+  - documents that run out: vehicle insurance and fitness, asset insurance, employee documents, contracts and
+    licences;
+  - recurring jobs (ERPNext's Auto Repeat).
+- **A compliance calendar** (a small form of our own): each filing or payment with how often it falls, its due day
+  and how many days before the task appears (GST, TDS, PF, ESI, professional tax and the like). It makes the task
+  for each period.
+- **From the other tools, through one call:** monitoring and backup alerts (the admin alert inbox, P72), documents
+  in the DMS with an expiry date, and later others. Each source has its own key and sends each thing once.
+- **By hand:** a manager (or anyone, for their own list) adds a task, also for work that has nothing to do with the
+  ERP. From the Desk bar ("+ Task") and from the phone.
+- **Who gets it:** the rule or the calendar entry names a person, or uses Frappe's Assignment Rules (in turn, to the
+  person with the fewest open tasks, by a field such as department or site). With no rule, the task lands
+  **unassigned** with the department head, and the board shows it until someone has it.
+
+**3. Reminders and escalation** (through the notification service, P108; no sender of its own)
+- A new task tells its person, as "needs a decision" does today; it counts in "what waits for me".
+- Before the due date and on it: a reminder to the person, within the service's hours (07:00 to 21:00).
+- Overdue: after a set number of days the department head is told; after more, the next level. An escalated task is
+  marked on every board above it.
+- A daily summary for each manager: new, due this week, overdue, unassigned. By mail, or in the app.
+- When the person is on leave, the task follows the deputy (with P110, delegation).
+
+**4. The board on the Desk: one screen, the same parts, cut to the person**
+
+The board has three dimensions (owner, 28 November 2026): **projects**, the **departments** that touch each project,
+and the **level** of the person looking. The server decides what each person may see; the screen only shows it.
+
+| Level | Sees | Opens on |
+|---|---|---|
+| Team member | their own tasks, in every project; the tasks they gave to others | My tasks |
+| Site supervisor or engineer | the above, and the tasks of their site's team | My tasks |
+| Project manager | every department's tasks in their own project(s) | their project: departments, then people |
+| Department head (functional manager) | their own department in all projects | their department: people, then projects |
+| CEO, CFO (top management) | all projects and all departments | the grid of projects by departments |
+
+A person who holds two levels (a project manager who also heads a department) sees both together.
+
+The screen, from top to bottom:
+1. **Filters:** project, department, person, period. A filter is shown only when the person's level has more than
+   one choice in it.
+2. **Four numbers:** open, due this week, overdue, and "needs me" (unassigned, waiting for my confirmation,
+   escalated to me). With them, the share done on time in the last 30 days.
+3. **The grid:** projects down, departments across; each cell shows open tasks and, in red, the overdue ones. The CEO
+   sees the whole grid; a project manager sees their project's row; a department head sees their own department,
+   with the projects down and their people across. A click on a cell filters everything below.
+4. **By person (the crux):** one bar per person: open, due soon, overdue; the unassigned tasks first. Sorted by
+   overdue. A click shows that person's tasks.
+5. **The list:** the tasks behind the choice, overdue first: title, where it came from, project, department, person,
+   due date, state. From the list: assign, reassign, open, mark done.
+6. **Coming up:** the next 30 days of renewals and filings on a calendar strip.
+
+"My tasks" (everyone's first tab): today, this week, later, done; and "given by me".
+
+**5. Where it sits on the Desk**
+- **A Tasks counter beside the notification bell** in the Desk's top bar (P111): my open tasks, overdue in red. A
+  click shows my next few tasks and "Open the board"; "+ Task" adds one.
+- **The board is a screen of its own.** It is not one of the nine dashboards (P53, 28 November 2026): those nine are
+  one per area of the business (Acts and Taxes; Fin, AP, AR; HR, PR; Assets; Proc, Inv; Production; Prod, Sales;
+  Budget, Proj; IT Admin), and tasks run across all of them.
+- **Each of the nine gets a Tasks tile** when they are built: that area's slice of the same figures, with a link
+  into the board already filtered. One source, so the tile and the board cannot disagree.
+- The proposal is that the board's "department" is the same nine areas, so a department finds its files (Drive),
+  its figures (dashboard) and its tasks under one name.
+
+**6. The Tasks screen in the phone app** (native Android app, P50; the Expo app is being replaced and gets nothing)
+- My tasks: the same four groups, usable when the phone is offline for a while (within the app's offline window).
+- A task: details, the trail, the link to its source; start, wait (with a reason), done with a note or a photo taken
+  on the spot.
+- For managers: add and assign a task; reassign; confirm a finished one; the team at a glance (by person; by
+  project and department according to the level, as on the Desk).
+- Alerts and reminders come through the notification service; a task is one more sort in the app's Inbox (P118 to
+  P120) and in "what waits for me".
+- Every save carries a request ID (P103) and the version the person saw; the new calls are in the version
+  fingerprint (P104).
+- The calls are one set for the Desk and the phone, so both show the same numbers.
+
+**7. Records and procedures that come with it**
+- Module README, decision-log entries for each design choice, entries in the register of our changes for every
+  Frappe behaviour the module relies on (Assignment Rules, Auto Repeat, to-dos, maintenance logs), with "re-check"
+  at an upgrade.
+- SOPs (`docs/sop/`): giving and taking over tasks; keeping the compliance calendar right (who, how often, against
+  which source); who holds which level and how that is changed; what a department head does with unassigned and
+  escalated tasks; leavers (their open tasks are reassigned before the account is closed).
+- No new server: monitoring, backups, the test site and the sign-in are the ERP's own.
+
+#### Build order (each step tested on the test site; released in batches)
+
+1. **The core:** the task record, its states and trail, who may see and do what at each level, assign and reassign,
+   the calls ("my tasks", "the board's numbers", "the list", "act on a task"). Offline tests for every rule.
+2. **The Desk:** the counter in the bar and the board (My tasks, then the grid, by person and the list).
+3. **Pick-up:** the rules, the compliance calendar, the call for other tools, automatic assignment.
+4. **Reminders, escalation and the daily summary**, through the notification service.
+5. **The phone screens.**
+6. **Tiles on the nine dashboards**, when P53 builds them.
+
+#### For the owner at planning
+
+1. **A record of our own, or ERPNext's project Task?** The proposal is our own. ERPNext's Task is the project's
+   schedule: tasks added to a project change its percentage complete and its costing, and it is open only to the
+   Projects roles. Whether project Tasks that are assigned to a person should also show on the board is a second
+   question (the proposal: later, as one more pick-up rule).
+2. **How a person's level is decided.** ERPNext has no "project manager" or "department head" field we can trust.
+   The proposal: one small table kept by the admin (person, level, which projects or departments), filled the first
+   time from what exists (a site's approvers, the reporting line).
+3. **The departments:** are they the nine areas of the dashboards? And how is head-office work shown that belongs
+   to no project (the proposal: a row "Head office").
+4. **Which kinds need proof, and which need a second person's check.** The proposal: filings and renewals need a
+   file; maintenance closes with its log; a second check only where the person who assigned asks for it.
+5. **The compliance calendar:** does the company enter its own list, or do we ship a starter list of the usual
+   Indian filings as an example to correct? Due dates change by notification, so a shipped list is never the
+   authority; the SOP names who keeps it right.
+6. **Escalation days** (the proposal: department head 2 days after the due date, the next level after 7).
+7. **May team members see each other's tasks?** The proposal: no; own tasks and the ones they gave.
+8. **The name** people see: "Tasks".
+
+**Mock-up (28 November 2026):** the board at three levels (top management, department head, project manager) and
+the phone's "My tasks", with made-up figures, on a design canvas shared with the owner (private record). It shows
+the layout only; nothing in it is built.
+
+**Depends on:** the notification service (P108, public #151) for alerts and reminders; the Desk top bar (P111,
+public #166) for the counter; the app's Inbox calls (P118 to P120), request IDs (P103) and the version handshake
+(P104) for the phone; the native app (P50); delegation (P110) for leave; the nine dashboards (P53) for the tiles.
+Step 1 depends on none of them.
+
+**How it is tested (outline):**
+- Offline: every state change and who may make it; each level sees exactly its slice and nothing else, also when a
+  person holds two levels; a source picked up twice makes one task; overdue and escalation by dates; the numbers of
+  the board equal the count of the list.
+- On the test site, with the made-up accounts of P105 (two projects, six roles): a maintenance log and a document
+  near its expiry become tasks with the right person; a manager adds a task by hand and reassigns it; a task done
+  with a photo is confirmed; an overdue one reaches the department head; the project manager sees one project, the
+  department head one department in both projects, the top level everything, and a person with no role only their
+  own; the Desk counter and the phone show the same numbers.
+- Not coverable on test: real alerts to real people (mail is muted there); checked on production after release.
+
+**Acceptance:** every pick-up source in step 3 makes its task once, with a person or shown as unassigned; no task
+can be finished without what its kind asks for; each of the five levels sees its slice, proved by a test per level;
+the Desk counter, the board and the phone agree; an overdue task is escalated on the set day; the SOPs and the
+register entries are in the same pull requests as the behaviour.
+
+**Related:** P53, P111, P108, P118, P119, P120, P110, P50, P72, P74, P103, P104, P105.
