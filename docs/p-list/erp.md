@@ -440,7 +440,14 @@ Field Attendance Entry). A failed save cannot be pinned to one point without som
 **Acceptance (test site):** every app save carries an ID that is returned and found on the record; the lookup answers
 for one's own IDs and refuses others'; repeating a call with the same ID returns the first result.
 
-**Related:** P50 (native app), P104 (version handshake), P105 (five-phone test round).
+**Progress (28 November 2026):** built for the attendance calls in public draft PR #161 and on the test site since
+28 November (combined test branch, receipt `p108-p104-p103-test-erp-e1afcdf`): request IDs on `submit`,
+`self_check_out`, `verify`, `review`, `review_many`; `request_status`; and, added by the owner on 28 November, the
+check of the revision the person saw on verify, approve and return. Not merged, not on production.
+**Still open here:** nothing for attendance. The request ID and the version check for other ERPNext approvals
+(`apply_workflow`) moved to P118, because they need a call of our own in front of ERPNext's.
+
+**Related:** P50 (native app), P104 (version handshake), P105 (five-phone test round), P118.
 
 ### P104 — Version handshake between the server and the mobile apps
 
@@ -456,4 +463,127 @@ version the server accepts. The apps compare at sign-in and on resume.
 **Acceptance:** a test fails when a mobile-facing function or field changes without the fingerprint changing; an app
 below the minimum shows "update needed" on the test site.
 
+**Progress (28 November 2026):** built in public draft PR #156 (`contract` and `minimum_app_version` in
+`bootstrap`, a test that fails when a mobile-facing function or field changes without the fingerprint) and on the
+test site since 28 November (same receipt as P103). Not merged, not on production. Whichever of #151, #156 and #161
+merges later renews the fingerprint and adds the two new modules the apps call.
+
 **Related:** P50, P103, P105.
+
+### P118 — Waiting approvals with their details, in one call; request ID and version check for ERPNext approvals
+
+**App:** erp · **Also touches:** mobile · **State:** open
+
+**Owner, 28 November 2026: "p items, go"** on the agent's proposal of three work items for the server side of the
+native app's Inbox (the app developer's list on public PR #114, points 4.2, 4.4, 4.7 to 4.9, 4.12, 7.5 and 8.4).
+Opened on the owner's word the same day. **Nothing is designed or built; the owner reads this item before any
+building.**
+
+**Why:** the app's Inbox shows each waiting item with who sent it, since when, the amount and the deadline, and sends
+the version back with the decision. Today the server gives numbers ("what waits for me") and, since public #151, the
+bare items (`items[]`: mark, reason, sort, document, site, since when). The details exist only for attendance, in
+two calls of their own. For other ERPNext approvals (purchase, payment, leave and the rest) the app would have to
+read each document itself, and a decision there carries no request ID and no check of the version the person saw.
+
+**What (proposal, to be confirmed by the owner):**
+1. **One call, "the items waiting for me, with what the screen shows":** per item the mark, the sort of thing, the
+   title, who sent it (the user, with name and role; the user is the one identifier, owner's decision of 28 November
+   under P110), since when, the amount as a decimal text with its currency where the document has one, the deadline
+   if any, and the version (`revision` for attendance, `modified` for other documents). Only for the signed-in
+   person, and only items they may read.
+2. **A call of our own in front of ERPNext's workflow action** for other approvals: it takes the action, the version
+   the person saw and a request ID; refuses a decision on a document that changed since; is carried out once per
+   request ID (the request log of P103); and answers in codes the app can tell apart: done; someone else decided
+   first (who, when, what); changed since opened; not allowed; refused with the sentence.
+3. **Who else may decide an item** (a site's approvers; the holders of a workflow's role), given only to a person who
+   may decide it themselves.
+4. The numbers of "what waits for me" and this list come from the same records, so they cannot disagree.
+
+**Questions to settle at planning:**
+- Where the call lives: in the notification service (it already holds the waiting records) or in a module of its
+  own for approvals.
+- Which document types get a title and an amount, and from which fields; what is shown for a type nobody listed.
+- Whether the amount may be shown to every person who may decide the item (it is the person's own approval, so
+  probably yes; to confirm).
+- Whether standing in front of ERPNext's workflow action changes or relies on upstream behaviour in a new way; if it
+  does, an entry in the register of our changes in the same pull request.
+- Whether the web Desk keeps using ERPNext's own action unchanged (the proposal: yes).
+
+**Depends on:** the notification service on main (P108, public #151); the request log (P103, public #161).
+
+**How it is tested (outline):** offline tests of each answer code and of "only my items"; on the test site with two
+approvers of one purchase: both see it, one decides, the other gets "someone else decided first"; a document
+changed after opening is refused; a repeat with the same request ID decides once.
+
+**Related:** P50, P103, P108, P110, P119, P120.
+
+### P119 — The trail of an item: who did what, when, with reasons
+
+**App:** erp · **Also touches:** mobile · **State:** open
+
+**Owner, 28 November 2026: "p items, go"** (see P118). **Nothing is designed or built; the owner reads this item
+before any building.**
+
+**Why:** every item in the app shows its trail (the app developer's list on public PR #114, points 4.3, 4.10 and
+4.11), and "approve only after the evidence was seen" needs it. Today an attendance entry holds who captured,
+verified and reviewed it and when, but only the last remark. For other ERPNext approvals the document's own history
+exists, but ERPNext stores no reason with a workflow action, and nothing gives the app one list.
+
+**What (proposal, to be confirmed by the owner):**
+1. **One call, "the trail of this item":** the steps in order: who (the user, with name and role), what (sent,
+   verified, approved, returned or rejected, corrected and sent again), when, and the reason where one was given.
+   For a person who may read the item only.
+2. **Every reason kept, not only the last:** attendance keeps each return's remark in its trail. A reason on a
+   rejection of another ERPNext approval is stored with the decision (through the call of P118) and shown to the
+   sender.
+3. **The sender is told when their request was decided** (approved or rejected), as a notice. Whether that notice
+   rings or goes to the Notices room is the owner's choice (today: a returned attendance entry rings, an approved
+   one sends nothing).
+4. Later, with P110: the trail also says who delegated to whom and why, and who approved for whom.
+
+**Questions to settle at planning:**
+- Whether the trail is built from what ERPNext already records (versions, workflow actions, comments) or written by
+  our own calls as they happen. The second is exact but only covers decisions made through our calls.
+- How long a trail is kept (the proposal: as long as the document).
+- Whether a decision made on the web Desk, outside our call, appears in the trail (it should, at least as "who,
+  what, when" without a reason).
+
+**Depends on:** P118 (the call that takes a reason for other approvals).
+
+**How it is tested (outline):** offline tests of the order and of "only for people who may read the item"; on the
+test site: an attendance entry returned twice shows both reasons; a purchase rejected in the app shows its reason to
+the sender; a decision made on the web shows without one.
+
+**Related:** P50, P108, P110, P118, P120.
+
+### P120 — "Decided by me" and "sent by me"
+
+**App:** erp · **Also touches:** mobile · **State:** open
+
+**Owner, 28 November 2026: "p items, go"** (see P118). **Nothing is designed or built; the owner reads this item
+before any building.**
+
+**Why:** the app's Inbox has two more lists (the app developer's list on public PR #114, points 4.5 and 4.6): what
+the person decided, and what they sent with who has it now. Neither exists on the server. The notification
+service's records are removed 90 days after a decision, so they cannot be the history.
+
+**What (proposal, to be confirmed by the owner):**
+1. **"Decided by me":** what the signed-in person decided: the sort of thing, the item, the decision, when, and its
+   state now. The latest 50 first, and a filter by dates, sort, site and decision. No day limit.
+2. **"Sent by me":** what the person sent for a decision: the item, its state, who has it now and since when.
+3. Both only for the signed-in person's own decisions and items. Nobody reads someone else's lists through these
+   calls.
+
+**Questions to settle at planning:**
+- The source: the trail of P119 (then these two lists are two views of it), or ERPNext's own records per document
+  type. The proposal: the trail, so the three agree.
+- Whether decisions made before the trail exists are shown (attendance has `reviewed_by` and `verified_by` and could
+  be filled in; other documents only as far as ERPNext's history reaches).
+- Whether "who has it now" names people or roles when several people may decide.
+
+**Depends on:** P119; P118 for the item's title and sort.
+
+**How it is tested (outline):** offline tests of the filters and of "only my own"; on the test site: decide three
+items as one person and send two as another, then read both lists as each and as a third person (who sees nothing).
+
+**Related:** P50, P118, P119.
