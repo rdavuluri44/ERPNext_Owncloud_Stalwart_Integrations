@@ -3,3 +3,5 @@ Custom HR
 Onboarding
 Drive Store
 Admin Alerts
+Mobile Push
+Notifications

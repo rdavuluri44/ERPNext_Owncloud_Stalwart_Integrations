@@ -863,6 +863,17 @@
       ],
       "status": "evaluating",
       "note": "Matrix push gateway for chat alerts on phones; adoption check passed 27 November 2026 (v0.17.0; the matrix-org repository is archived)"
+    },
+    {
+      "name": "Firebase Cloud Messaging (Google service)",
+      "repo": "https://firebase.google.com/docs/cloud-messaging",
+      "licence": "Google APIs Terms of Service (a service, not open source)",
+      "used_in": [
+        "mobile-push"
+      ],
+      "status": "adopted",
+      "not_watched": "an outside service with no version we pin; the server only calls its HTTP v1 interface with the project's service-account key",
+      "note": "carries phone alerts to the app; no Google code is included in this repository"
     }
   ]
 }

@@ -4,6 +4,114 @@ What we decided and why, for anyone building a similar setup from scratch.
 Newest first. Each entry: **decision**, **why**, and where it lives. The
 discussion that led to a decision is not repeated here.
 
+## 2026-11-28
+
+### Phone alerts carry a sort and a mark, never the document or the site (P108)
+
+- **Decision (owner, 28 November 2026, on the native app's list on public PR #114):**
+  - A phone alert carries its reason, whether it needs a decision, a short code for the sort of thing (`about`:
+    `attendance`, `payment`, `purchase`, `leave`, `petty_cash`, `store`) and a **mark**. It no longer carries the
+    document type, the document ID, the site or the site's name. The removal carries the mark alone.
+  - The mark is keyed with the site's own encryption key and is different for every person, so whoever carries the
+    message cannot tell what waits, nor that two people wait for the same thing.
+  - On a locked phone the app may say the sort ("Payment waiting"), never a name or an amount.
+  - "What waits for me" also gives the things themselves, each with its mark, to the signed-in person. The phone
+    opens the right thing from that, and sets its own list right when a removal was lost.
+- **Why:** the earlier shape let Google see which document waited for whom, and a site's name. The phone needs
+  neither from the message: it asks the server as the signed-in person.
+- **Where:** `erpnext_drive_integrations/notifications/` (`rules.about`, `rules.mark`, `api.waiting`),
+  `erpnext_drive_integrations/mobile_push/rules.py` (`message`).
+
+### The owner's answers to the native app's list of server needs (P50)
+
+- **Decision (owner, 28 November 2026, public PR #114):**
+  - The app offers two decisions, Approve and Reject, and shows a returned attendance entry as "Rejected". The
+    server's own words and rules stay (`Return`, with a remark always required). For other ERPNext approvals the
+    app shows the actions each workflow has.
+  - Delegation of approvals is agreed in principle. It becomes a work item of its own, after sign-in works.
+  - Proof that a fingerprint was used is agreed for every decision, built with the phone's key (P82).
+  - The server does not pause its 4-hour reminder for a phone that runs a reminder of its own.
+  - Who sends mail alerts is decided after mail sign-in works on the test site.
+  - "Save to phone" for mail attachments can be switched on only by an admin.
+  - The site reminder on a locked phone says "your site", not the site's name.
+  - The consent text for the site reminder is written with the face agreement and reviewed with it.
+- **Why:** so the app and the server are built on the same rules while both are in progress.
+- **Where:** nothing is built by this entry; each point is built under its own work item.
+
+### The notification service: one trigger, one record per person and thing (P108)
+
+- **Decision:**
+  - Every message the business system sends to a person goes through `notifications.service.notify`. A message is
+    either **decide** (it waits for the person: the phone alerts round the clock, with a reminder every 4 hours
+    between 07:00 and 21:00) or **inform** (the read-only Notices room in chat; it never rings). Mail is the
+    fallback.
+  - One record per person and thing (`Notification Record`), without any text, kept 90 days after it is closed.
+    The database refuses a second open record, so a repeated event is sent once.
+  - When a thing leaves the state its records were made for, they are closed and the phones get a content-free
+    "remove" message. An hourly run closes what the events missed.
+  - "What waits for me" (`notifications.api.waiting`) gives numbers only: in total, per kind of thing and per site.
+  - The phone channel (`mobile_push`) keeps the phone list and the sending. Its triggers moved into the service, so
+    an event has one trigger.
+- **Why:** owner, 27 November 2026 (P108, and the answers on the app's plan): one place decides who is told what
+  and how, alerts carry no content, and the numbers the app shows come from the server.
+- **Choices (owner, 28 November 2026):** a returned attendance entry counts as "decide"; a person without a phone
+  gets one mail and no reminders; no second mail where a workflow already mails its approvers; nothing sends
+  "inform" yet (admin alerts and document notices will); the portal's older opt-in browser alerts keep their own
+  triggers for now.
+- **Where:** `erpnext_drive_integrations/notifications/`, `erpnext_drive_integrations/mobile_push/`.
+
+### A chat screen for browsers: Element Web, under its own name, from the Desk menu (P73)
+
+- **Decision (owner, 28 November 2026):** chat gets a screen for browsers now, with a "Chat" entry in the Desk's
+  menu. The phone app's chat continues separately. The screen is Element Web, unchanged, with our configuration.
+  - It has a host name of its own (`chat-web`), not the chat server's, as its makers advise: uploaded files are
+    served from the server's name.
+  - It names only our server and switches off what would call an outside service.
+  - The menu entry opens it in its own tab. The sign-in pages refuse to be shown inside another page, so it is
+    not put into the Desk's frame. Signing out of the Desk does not sign out of it yet.
+- **Adoption check (28 November 2026; GitHub repository and its Security Advisories):** element-hq/element-web,
+  AGPL-3.0 (also offered under GPL-3.0 and a commercial licence). A release about every two weeks (v1.12.36 on
+  24 November 2026). 5 advisories in the last 12 months (1 high, of 16 October 2026), each published with its fixed
+  version; the newest fix is in 1.12.32, so none is open at 1.12.36. Verdict: adopt, pinned by version and digest,
+  in the daily upstream watch (exposure: public).
+- **Alternatives on record:** Cinny and FluffyChat (other Matrix web clients; not checked in detail); no browser
+  screen at all (chat only in the phone app).
+- **Where:** `integrations/chat/element-config.json`, `deployment/stacks/chat.compose.json`,
+  `tools/prepare_ingress.py`, `erpnext_drive_integrations/www/place_holder.*`; register entry CHAT-7.
+
+### The phone app is named "UNformat ERP" (P85, P50)
+
+- **Decision:** the phone app's name is **UNformat ERP**, replacing "ERP Mobile". It is the default brand's app name
+  (`branding/unformat/brand.json`, `mobile_app.name`), with the app ID `in.unformat.erp`, which test builds use
+  from now on as well. A deployment that ships the app as its own product replaces both through its brand settings.
+- **Why:** owner, 28 November 2026. The earlier rule (22 November) was one universal, neutral app name; since P85 our
+  own brand is the public default and is replaceable, so the app carries the brand's name like the rest.
+- **Not changed:** earlier entries of this log and of the work list keep "ERP Mobile", the name in use when they
+  were written. The Expo app's tests keep their sample name: that app is being replaced by the native one, and
+  three open pull requests touch those files. The native app's own texts are changed in its pull request (#114).
+- **Where:** `branding/unformat/brand.json`, `docs/sop/` (five procedures), `mobile/BUILD-GUIDE.md`,
+  `mobile/README.md`, `deployment/test-runtime.example.json`, `tests/test_test_oauth_clients.py`.
+
+### Chat alerts: the gateway runs inside the chat stack, optional and private (P73)
+
+- **Decision:**
+  - The alert gateway (Sygnal v0.17.0) is a service of the chat stack. It starts only where an operator has
+    placed Google's service-account key and asked for the `alerts` profile.
+  - It has no port on the host and no public route. Synapse reaches it inside the stack's own network, which has
+    a fixed range that Synapse is told it may call.
+  - It is the only service on a second network of the stack, `outbound`, its way to Google. It is not on the
+    workspace network, so a test site's block on outbound connections from that network stays whole.
+  - The key lives in a root-only folder on the host. The one-time `configure` service copies it into the
+    gateway's own volume and writes the gateway's configuration for one app ID.
+  - The app asks for alerts that carry only the event's ID.
+- **Why:**
+  - Owner, 27 and 28 November 2026: alerts carry no content, and the Firebase project `unformat-erp` with the app
+    `in.unformat.erp` exists.
+  - A public gateway address would let anyone who learned a phone's address send it alerts; an address inside the
+    stack cannot be reached from outside.
+  - Without the key nothing is written and nothing starts, so a site without phone alerts is unaffected.
+- **Where:** `integrations/chat/configure.py`, `deployment/stacks/chat.compose.json`, register CHAT-5, the chat README.
+
 ## 2026-11-27
 
 ### Chat rooms follow the sites, and the business system stores nothing about them (P73)
@@ -634,6 +742,19 @@ against the upstream release tag. The security fix comes before the mail archive
 
 Release notes: [authentik 2026.8.7](https://docs.goauthentik.io/releases/2026.8#fixed-in-202687);
 [advisories](https://github.com/goauthentik/authentik/security/advisories).
+
+### Mobile alerts go directly to Google FCM, data only (owner)
+
+- **Decision:** alerts to the closed app are sent by ERPNext **directly to Google's Firebase Cloud Messaging**
+  (HTTP v1), as high-priority **data-only** messages; the app writes the visible text and shows the full-page
+  ringing alert for **every approval** (owner), a normal alert when an entry is returned. Alerts only for what
+  waits for the person and what was returned to them. iPhone later, directly to Apple (APNs). This replaces the
+  earlier plan to relay through Expo's push service.
+- **Why:** the way large apps do it, one company less between ERPNext and the phone; the message carries no
+  text, names or amounts, so Google sees only a kind, a document type and ID, and a site. FCM costs nothing.
+- **How:** the service-account key is a file on each server (`mobile_push_fcm_key_file`), never in the
+  repository; one phone per person; dead push addresses are switched off on Google's 404 / `UNREGISTERED`.
+- **Where:** `erpnext_drive_integrations/mobile_push/` (server), `mobile/` (app).
 
 ## 2026-11-25
 

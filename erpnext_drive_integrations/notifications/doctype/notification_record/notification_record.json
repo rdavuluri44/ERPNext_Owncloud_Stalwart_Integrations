@@ -1,0 +1,161 @@
+{
+  "doctype": "DocType",
+  "name": "Notification Record",
+  "module": "Notifications",
+  "engine": "InnoDB",
+  "autoname": "hash",
+  "title_field": "user",
+  "sort_field": "creation",
+  "sort_order": "DESC",
+  "in_create": 1,
+  "field_order": [
+    "user",
+    "kind",
+    "reason",
+    "reference_doctype",
+    "reference_name",
+    "state",
+    "site",
+    "waiting_since",
+    "deadline",
+    "channel",
+    "sent_at",
+    "last_reminder",
+    "reminders",
+    "resolved_at",
+    "record_key",
+    "open_key"
+  ],
+  "fields": [
+    {
+      "fieldname": "user",
+      "label": "For",
+      "fieldtype": "Link",
+      "options": "User",
+      "reqd": 1,
+      "read_only": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "search_index": 1
+    },
+    {
+      "fieldname": "kind",
+      "label": "Kind",
+      "fieldtype": "Select",
+      "options": "decide\ninform",
+      "reqd": 1,
+      "read_only": 1,
+      "in_list_view": 1,
+      "in_standard_filter": 1,
+      "description": "decide: it waits for this person's decision. inform: the person only needs to know."
+    },
+    {
+      "fieldname": "reason",
+      "label": "Why",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "reference_doctype",
+      "label": "About (type)",
+      "fieldtype": "Link",
+      "options": "DocType",
+      "reqd": 1,
+      "read_only": 1,
+      "in_standard_filter": 1,
+      "search_index": 1
+    },
+    {
+      "fieldname": "reference_name",
+      "label": "About",
+      "fieldtype": "Dynamic Link",
+      "options": "reference_doctype",
+      "reqd": 1,
+      "read_only": 1,
+      "in_list_view": 1,
+      "search_index": 1
+    },
+    {
+      "fieldname": "state",
+      "label": "Its state then",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "description": "The state the document was in when this record was made. When the document leaves that state, the record is closed and the alert is removed from the phone."
+    },
+    {
+      "fieldname": "site",
+      "label": "Site",
+      "fieldtype": "Data",
+      "read_only": 1
+    },
+    {
+      "fieldname": "waiting_since",
+      "label": "Since",
+      "fieldtype": "Datetime",
+      "reqd": 1,
+      "read_only": 1,
+      "in_list_view": 1
+    },
+    {
+      "fieldname": "deadline",
+      "label": "Deadline",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "channel",
+      "label": "Sent by",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "in_list_view": 1,
+      "description": "phone, chat, mail, or the workflow's own mail. Empty: not sent yet, or it could not be sent."
+    },
+    {
+      "fieldname": "sent_at",
+      "label": "Sent",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "last_reminder",
+      "label": "Last reminder",
+      "fieldtype": "Datetime",
+      "read_only": 1
+    },
+    {
+      "fieldname": "reminders",
+      "label": "Reminders",
+      "fieldtype": "Int",
+      "read_only": 1
+    },
+    {
+      "fieldname": "resolved_at",
+      "label": "Closed",
+      "fieldtype": "Datetime",
+      "read_only": 1,
+      "search_index": 1,
+      "description": "When it was decided; for information, when it was recorded. Closed records are removed after 90 days."
+    },
+    {
+      "fieldname": "record_key",
+      "label": "Record key",
+      "fieldtype": "Data",
+      "read_only": 1,
+      "hidden": 1,
+      "search_index": 1
+    },
+    {
+      "fieldname": "open_key",
+      "label": "Open record key",
+      "fieldtype": "Data",
+      "unique": 1,
+      "read_only": 1,
+      "hidden": 1,
+      "description": "The record key while the record is open, empty once closed: the database refuses a second open record for the same person and thing."
+    }
+  ],
+  "permissions": [
+    {"role": "System Manager", "read": 1, "delete": 1, "report": 1}
+  ]
+}

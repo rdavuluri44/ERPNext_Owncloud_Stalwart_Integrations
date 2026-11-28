@@ -58,6 +58,7 @@
 | [OpenCV Zoo: SFace and YuNet](https://github.com/opencv/opencv_zoo) | Apache-2.0 (SFace), MIT (YuNet) | custom-hr (P95) | daily watch: `opencv_zoo` | model files pinned by commit and SHA-256 (deployment/face-models.json); SFace training data unverified, asked upstream (opencv/opencv_zoo#313) |
 | [Synapse](https://github.com/element-hq/synapse) | AGPL-3.0 | chat | daily watch: `ghcr.io/element-hq/synapse` |  |
 | [Matrix Authentication Service](https://github.com/element-hq/matrix-authentication-service) | AGPL-3.0 | chat | daily watch: `ghcr.io/element-hq/matrix-authentication-service` |  |
+| [Firebase Cloud Messaging (Google service)](https://firebase.google.com/docs/cloud-messaging) | Google APIs Terms of Service (a service, not open source) | mobile-push | an outside service with no version we pin; the server only calls its HTTP v1 interface with the project's service-account key | carries phone alerts to the app; no Google code is included in this repository |
 
 ## Being evaluated or chosen, not in the code yet
 
