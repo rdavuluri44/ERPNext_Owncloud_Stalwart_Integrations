@@ -1588,3 +1588,27 @@ check themselves in keep their existing workflows.
   (`app_title`) and the version shown in About follow with the Desk's top bar
   (P111).
 - **Where:** GitHub repository settings; this entry. AI-assisted by Claude Code.
+
+### One header row in every office editor; new sheet views recognised by being new (P117)
+
+- **Decision (owner, 28 November 2026):** Text documents and presentations get the
+  header that spreadsheets have: the editor's logo at the far right, the file name
+  to its left, the tabs first in line for the space on narrow screens. The
+  "Editing" mode button of text documents is hidden.
+- **Why it was missing:** The layout addressed the tabs row as `section.box-tabs`.
+  That is its markup in spreadsheets and presentations; in text documents (and the
+  PDF and diagram editors) it is a `div` with the same class, so none of the rules
+  applied there. The rules now name the class only.
+- **Private sheet views:** The keeper recognised the view it had just created by
+  the name "Temporary View N". The editor now names a new view "ViewN", so nothing
+  was renamed and each attempt left another view (seven in one new file on the test
+  site). The keeper now takes the active view whose name was not in the list before
+  it asked for one; no name is assumed.
+- **Consequence:** With the "Editing" button hidden, the Viewing and Reviewing modes
+  cannot be chosen from the header; Track changes stays on the Collaboration tab.
+  Views already left behind as "ViewN" stay in their files; they are not removed
+  automatically, because a person may have made a view with such a name.
+- **Where:** `integrations/onlyoffice/editor-wopi.ejs`,
+  `tests/test_onlyoffice_editor.py`, `tests/test_onlyoffice_private_views.py`,
+  `integrations/onlyoffice/README.md`, register entry OFFICE-1. AI-assisted by
+  Claude Code.

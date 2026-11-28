@@ -41,7 +41,7 @@ function fakeEditor(existing) {
   var api = {
     asc_getNamedSheetViews: function () { return views.slice(); },
     asc_isProtectedSheet: function () { return false; },
-    asc_addNamedSheetView: function () { views.forEach(function (v) { v.active = false; }); views.push(mk('Temporary View ' + (++n)));
+    asc_addNamedSheetView: function () { views.forEach(function (v) { v.active = false; }); views.push(mk('View' + (++n)));
       setTimeout(function () { listeners.forEach(function (f) { f(); }); }, 0); },
     asc_setActiveNamedSheetView: function (name) { views.forEach(function (v) { v.active = v.visible === name; }); },
     asc_registerCallback: function (e, f) { listeners.push(f); }
@@ -154,6 +154,15 @@ class RefusedViewChangeTests(unittest.TestCase):
         self.assertIn("shared Default view", self.result["default_bar"])
         self.assertEqual(self.result["after_back"], ["Private - Test User*"])
         self.assertEqual(self.result["after_back_bar"], "")
+
+    def test_a_new_view_is_recognised_by_being_new_not_by_its_name(self):
+        # 28 November 2026: the editor named new views "ViewN"; the keeper only knew "Temporary View N",
+        # renamed nothing and made a view at every attempt. The first simulation's editor uses "ViewN".
+        block = re.search(r"/\* PRIVATE-VIEWS-BEGIN \*/(.*?)/\* PRIVATE-VIEWS-END \*/", EJS, re.S).group(1)
+        self.assertNotIn("Temporary View \\d", block)
+        self.assertIn("before.indexOf(v.asc_getName()) < 0", block)
+        self.assertIn("mk('View' + (++n))", HARNESS)
+        self.assertIn("mk('Temporary View ' + (++n))", LOCKED)
 
     def test_the_page_starts_the_notice(self):
         self.assertIn("var notice = makeViewNotice(api, keeper, doc);", EJS)
