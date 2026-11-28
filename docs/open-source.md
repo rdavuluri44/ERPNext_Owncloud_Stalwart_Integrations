@@ -86,6 +86,8 @@
 | [Pebble](https://github.com/letsencrypt/pebble) | MPL-2.0 | P11 | — | Let's Encrypt's ACME test server, for a local rehearsal of the certificate switch (P11) only; not shipped. v2.10.3 (11 Nov 2026), release checksums verified. |
 | [matrix-rust-sdk](https://github.com/matrix-org/matrix-rust-sdk) | Apache-2.0 | P73, P50 | — | Matrix client library for the phone app, through its Kotlin bindings; adoption check passed 27 November 2026 (use 0.20.0 or later) |
 | [Ltt.rs](https://codeberg.org/iNPUTmice/lttrs-android) | Apache-2.0 | P109 | — | Android JMAP client; its JMAP library code may be borrowed for the light mail client. Little upkeep (library last changed April 2025), so we maintain our copy |
+| [Vikunja](https://github.com/go-vikunja/vikunja) | AGPL-3.0 | P121 | — | considered for team tasks and set aside for now (owner, 28 November 2026): tasks are built inside ERPNext. The alternative on record: sign-in through authentik in the free edition, v2.8.0 of 5 November 2026; one main developer and 131 advisories in 12 months. Not installed |
+| [Frappe Gameplan](https://github.com/frappe/gameplan) | AGPL-3.0 | P121 | — | considered for team tasks and set aside for now (owner, 28 November 2026): young (v0.1.38), mostly one developer, built around discussions. Not installed |
 
 ## Used before
 

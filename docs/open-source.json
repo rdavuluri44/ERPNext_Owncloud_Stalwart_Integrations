@@ -877,6 +877,26 @@
       "watch": [
         "ghcr.io/element-hq/element-web"
       ]
+    },
+    {
+      "name": "Vikunja",
+      "repo": "https://github.com/go-vikunja/vikunja",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "P121"
+      ],
+      "status": "evaluating",
+      "note": "considered for team tasks and set aside for now (owner, 28 November 2026): tasks are built inside ERPNext. The alternative on record: sign-in through authentik in the free edition, v2.8.0 of 5 November 2026; one main developer and 131 advisories in 12 months. Not installed"
+    },
+    {
+      "name": "Frappe Gameplan",
+      "repo": "https://github.com/frappe/gameplan",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "P121"
+      ],
+      "status": "evaluating",
+      "note": "considered for team tasks and set aside for now (owner, 28 November 2026): young (v0.1.38), mostly one developer, built around discussions. Not installed"
     }
   ]
 }
