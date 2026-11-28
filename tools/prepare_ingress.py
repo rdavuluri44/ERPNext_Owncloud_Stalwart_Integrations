@@ -112,6 +112,38 @@ def prepare(source, profile):
         route('chat-delegated',hosts['chat'],'chat-auth',300,
               'PathRegexp(`^/_matrix/client/[^/]+/(login|logout|refresh)$`)')
         route('chat-auth',hosts['chat-auth'],'chat-auth')
+    # The browser's chat screen (Element Web) has a name of its own, never the chat server's: files people
+    # upload are served from the server's name and must not share an origin with the screen. It opens in its
+    # own tab and may not be shown inside another page.
+    if 'chat-web' in hosts and 'chat' in hosts:
+        service('chat-web','http://chat-web:8080')
+        middlewares['chat-web']={'headers':{'customResponseHeaders':{'X-Frame-Options':'SAMEORIGIN',
+            'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer',
+            'Content-Security-Policy':"frame-ancestors 'self'"}}}
+        route('chat-web',hosts['chat-web'],'chat-web',middleware=['chat-web'])
+    # P112: an application is not opened on its own. A person's page visit to an application's own address
+    # (a browser says so: a GET with "Sec-Fetch-Dest: document"; inside the Desk it says "iframe") goes to the
+    # Desk, which opens that application at the same place ("#drive:/files/..."). Only the listed page
+    # addresses are redirected. Everything a program uses keeps answering as before: sync clients, mail
+    # programs, the phone application, the editor's callbacks, sign-in callbacks, public share links, webmail's
+    # pop-out windows, and the applications' own files.
+    if profile.get('apps_only_inside_desk',True):
+        visit='Method(`GET`) && Header(`Sec-Fetch-Dest`, `document`)'
+        def desk_only(name,host,label,pages):
+            middlewares['desk-only-'+name]={'redirectRegex':{'regex':'^https://'+re.escape(host)+'(/.*)?$',
+                'replacement':'https://'+hosts['erp']+'/#'+label+':${1}','permanent':False}}
+            route('desk-only-'+name,host,'noop@internal',350,'('+visit+' && ('+' || '.join(pages)+'))',
+                  middleware=['desk-only-'+name])
+        desk_only('drive',hosts['drive'],'drive',['Path(`/`)','PathPrefix(`/files/spaces`)','PathPrefix(`/files/shares`)',
+            'PathPrefix(`/files/trash`)','PathPrefix(`/files/search`)','PathPrefix(`/files/favorites`)','PathPrefix(`/f/`)',
+            'Path(`/account`)','PathPrefix(`/external-onlyoffice/`)','PathPrefix(`/text-editor/`)'])
+        desk_only('dms',hosts['dms'],'dms',['Path(`/`)','PathRegexp(`^/(dashboard|documents|view|tags|correspondents|'
+            'documenttypes|storagepaths|customfields|savedviews|sharelinks|workflows|mail|trash|settings|config|'
+            'usersgroups|tasks|logs)(/|$)`)'])
+        desk_only('mail',hosts['mail'],'mail',['Path(`/`)','PathRegexp(`^(/[a-z]{2}(-[A-Za-z]{2,4})?)?/(mail|calendar|'
+            'contacts|settings)(/|$)`)'])
+        # The business system's own pages, opened on their own, open inside the Desk too ("#open:/desk/...").
+        desk_only('erp',hosts['erp'],'open',['PathRegexp(`^/(desk|insights)(/|$)`)'])
     middlewares['office-home']={'redirectRegex':{'regex':'^https://'+re.escape(hosts['office'])+'/?$',
         'replacement':'https://'+hosts['drive']+'/files/spaces/personal','permanent':False}}
     route('office-home',hosts['office'],'noop@internal',1000,'Path(`/`)',middleware=['office-home'])
