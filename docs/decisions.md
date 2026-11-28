@@ -6,6 +6,67 @@ discussion that led to a decision is not repeated here.
 
 ## 2026-11-28
 
+### One header row in every office editor; new sheet views recognised by being new (P117)
+
+- **Decision (owner, 28 November 2026):** Text documents and presentations get the
+  header that spreadsheets have: the editor's logo at the far right, the file name
+  to its left, the tabs first in line for the space on narrow screens. The
+  "Editing" mode button of text documents is hidden.
+- **Why it was missing:** The layout addressed the tabs row as `section.box-tabs`.
+  That is its markup in spreadsheets and presentations; in text documents (and the
+  PDF and diagram editors) it is a `div` with the same class, so none of the rules
+  applied there. The rules now name the class only.
+- **Private sheet views:** The keeper recognised the view it had just created by
+  the name "Temporary View N". The editor now names a new view "ViewN", so nothing
+  was renamed and each attempt left another view (seven in one new file on the test
+  site). The keeper now takes the active view whose name was not in the list before
+  it asked for one; no name is assumed.
+- **Consequence:** With the "Editing" button hidden, the Viewing and Reviewing modes
+  cannot be chosen from the header; Track changes stays on the Collaboration tab.
+  Views already left behind as "ViewN" stay in their files; they are not removed
+  automatically, because a person may have made a view with such a name.
+- **Where:** `integrations/onlyoffice/editor-wopi.ejs`,
+  `tests/test_onlyoffice_editor.py`, `tests/test_onlyoffice_private_views.py`,
+  `integrations/onlyoffice/README.md`, register entry OFFICE-1. AI-assisted by
+  Claude Code.
+
+### The repository carries the application's internal name (P113)
+
+- **Decision (owner, 28 November 2026):** The public repository is renamed from
+  `ERPNext_Owncloud_Stalwart_Integrations` to `erpnext_drive_integrations`, the
+  name under which the ERP installs the application, so one name is used
+  everywhere: on GitHub, in the ERP's list of installed applications and in the
+  About popup of the Desk.
+- **Why:** The other way round (renaming the installed application to the
+  repository's name) would need a migration on every site and would touch nearly
+  every file and address; renaming the repository touches no running code.
+- **Consequence:** GitHub redirects the old address, so existing links, clones
+  and posts on other projects keep working; the redirect ends only if a
+  repository is ever created under the old name, so none will be. Working copies
+  on our computers and servers use the new address. Earlier entries in this log
+  and dated records keep the old name. The display title of the application
+  (`app_title`) and the version shown in About follow with the Desk's top bar
+  (P111).
+- **Where:** GitHub repository settings; this entry. AI-assisted by Claude Code.
+
+### A person is named by the user in approvals and delegation (P110)
+
+- **Decision (owner, 28 November 2026):** The user (the sign-in ID) is the one
+  identifier for a person who acts on an approval: the sender of an item, the
+  person who decides it, and each person in the list of who may receive a
+  delegation. The Employee ID stays the name of the person whose attendance or
+  leave it is. Lists of waiting items and the delegation calls, when they are
+  built, give the sender and the possible receivers as users.
+- **Why:** The phone app keeps "never delegate to the sender" by comparing the
+  sender with the receivers, so both must use the same identifier (asked by the
+  app's developer on #114). ERPNext records who sent and who approved by user,
+  and the attendance calls already name the sender by user (`captured_by`).
+- **Consequence:** Nothing changes in the code today. The list of waiting items
+  in the notification service (P108) carries no sender yet; it comes with the
+  detailed list and with delegation (P110).
+- **Where:** `erpnext_drive_integrations/custom_hr/API.md` ("Who a person is, in
+  these calls"), work item P110. AI-assisted by Claude Code.
+
 ### A chat screen for browsers: Element Web, under its own name, from the Desk menu (P73)
 
 - **Decision (owner, 28 November 2026):** chat gets a screen for browsers now, with a "Chat" entry in the Desk's
@@ -1551,64 +1612,3 @@ check themselves in keep their existing workflows.
 - **Where:** `deployment/config/proxy/office-acme.yml`, `tools/prepare_test_relay.py`,
   `tools/coolify_proxy_hosts.py`, `tools/coolify_proxy_tls_resolver.py`,
   `tests/test_rebuild_templates.py`, register entry PROXY-6. AI-assisted by Claude Code.
-
-### A person is named by the user in approvals and delegation (P110)
-
-- **Decision (owner, 28 November 2026):** The user (the sign-in ID) is the one
-  identifier for a person who acts on an approval: the sender of an item, the
-  person who decides it, and each person in the list of who may receive a
-  delegation. The Employee ID stays the name of the person whose attendance or
-  leave it is. Lists of waiting items and the delegation calls, when they are
-  built, give the sender and the possible receivers as users.
-- **Why:** The phone app keeps "never delegate to the sender" by comparing the
-  sender with the receivers, so both must use the same identifier (asked by the
-  app's developer on #114). ERPNext records who sent and who approved by user,
-  and the attendance calls already name the sender by user (`captured_by`).
-- **Consequence:** Nothing changes in the code today. The list of waiting items
-  in the notification service (P108) carries no sender yet; it comes with the
-  detailed list and with delegation (P110).
-- **Where:** `erpnext_drive_integrations/custom_hr/API.md` ("Who a person is, in
-  these calls"), work item P110. AI-assisted by Claude Code.
-
-### The repository carries the application's internal name (P113)
-
-- **Decision (owner, 28 November 2026):** The public repository is renamed from
-  `ERPNext_Owncloud_Stalwart_Integrations` to `erpnext_drive_integrations`, the
-  name under which the ERP installs the application, so one name is used
-  everywhere: on GitHub, in the ERP's list of installed applications and in the
-  About popup of the Desk.
-- **Why:** The other way round (renaming the installed application to the
-  repository's name) would need a migration on every site and would touch nearly
-  every file and address; renaming the repository touches no running code.
-- **Consequence:** GitHub redirects the old address, so existing links, clones
-  and posts on other projects keep working; the redirect ends only if a
-  repository is ever created under the old name, so none will be. Working copies
-  on our computers and servers use the new address. Earlier entries in this log
-  and dated records keep the old name. The display title of the application
-  (`app_title`) and the version shown in About follow with the Desk's top bar
-  (P111).
-- **Where:** GitHub repository settings; this entry. AI-assisted by Claude Code.
-
-### One header row in every office editor; new sheet views recognised by being new (P117)
-
-- **Decision (owner, 28 November 2026):** Text documents and presentations get the
-  header that spreadsheets have: the editor's logo at the far right, the file name
-  to its left, the tabs first in line for the space on narrow screens. The
-  "Editing" mode button of text documents is hidden.
-- **Why it was missing:** The layout addressed the tabs row as `section.box-tabs`.
-  That is its markup in spreadsheets and presentations; in text documents (and the
-  PDF and diagram editors) it is a `div` with the same class, so none of the rules
-  applied there. The rules now name the class only.
-- **Private sheet views:** The keeper recognised the view it had just created by
-  the name "Temporary View N". The editor now names a new view "ViewN", so nothing
-  was renamed and each attempt left another view (seven in one new file on the test
-  site). The keeper now takes the active view whose name was not in the list before
-  it asked for one; no name is assumed.
-- **Consequence:** With the "Editing" button hidden, the Viewing and Reviewing modes
-  cannot be chosen from the header; Track changes stays on the Collaboration tab.
-  Views already left behind as "ViewN" stay in their files; they are not removed
-  automatically, because a person may have made a view with such a name.
-- **Where:** `integrations/onlyoffice/editor-wopi.ejs`,
-  `tests/test_onlyoffice_editor.py`, `tests/test_onlyoffice_private_views.py`,
-  `integrations/onlyoffice/README.md`, register entry OFFICE-1. AI-assisted by
-  Claude Code.
