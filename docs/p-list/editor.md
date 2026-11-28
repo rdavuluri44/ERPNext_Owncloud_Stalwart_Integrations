@@ -148,3 +148,24 @@ editor check's service and timer, `backup.py` in the backup checkout, `editor-se
   promotion README and the P59 plan template.
 - **F (when convenient):** check oCIS issues for the registration behaviour and report
   it upstream if it is not known.
+
+### P117 — Office editor: the header changes of spreadsheets also in text documents and presentations
+
+**App:** editor · **Also touches:** drive · **State:** open
+
+**Status:** reported by the owner on 28 November 2026 with two screenshots from production; **not reproduced, not
+fixed**. Waits for the owner's go and a look at a live document.
+
+**What the owner asked for:** in a text document the header lacks what spreadsheets have:
+1. the editor's logo at the far right;
+2. the file name to the left of the logo's new place;
+3. the "Editing" button removed or hidden;
+4. on phones and tablets, the rule that gives the main horizontal menu the most space.
+
+**Found so far (read only):** the layout code in `integrations/onlyoffice/editor-wopi.ejs` is written for all
+three editors, and the parts it targets exist in all three, so the files alone do not explain why documents
+ignore it. The "Editing" button is only asked for through a setting the Community edition ignores; its name was
+not found in the shipped files.
+
+**Acceptance:** all four points in text documents and presentations on the test site; a test that keeps the
+three editors in step; the register entry updated.

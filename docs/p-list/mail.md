@@ -280,3 +280,22 @@ together with #142 (P53), which changes the same image.
 **On test (28 November 2026):** the combined test build `70636f4` (with #142 and #134) carries #69. Retention status on
 the test mail server: no problems; the running webmail has all 16 replaced texts. The only open point before #69
 leaves draft is a real-user look at those texts (receipt `p53-p72-p69-test-combined-70636f4`).
+
+### P116 — Mail inside the Desk: one fixed left pane
+
+**App:** mail · **Also touches:** portal · **State:** open
+
+**Status:** recorded 28 November 2026 (owner, with a screenshot of the test site); **nothing built**. Not ranked yet.
+
+**What the owner asked for**
+1. The narrow first pane goes, and with it the keyboard-shortcuts and notifications buttons.
+2. Five icons (mail, calendar, contacts, settings, +) move into the second pane, as one horizontal row beneath
+   the account name.
+3. The second pane's collapse button goes; that pane stays fixed as the only left pane.
+
+**To settle in the design:** the round account button at the bottom of the first pane goes too (sign-out is in
+the Desk's user button; the account name at the top of the second pane stays). Notifications come from the
+universal bell (P111). The keyboard shortcuts keep working; only the button that lists them goes. On phones a
+fixed pane cannot stay open: its behaviour there is designed with P111's narrow-screen layout.
+
+**Records:** register entry for the overlay on the webmail's screens, in the same pull request (see P111).

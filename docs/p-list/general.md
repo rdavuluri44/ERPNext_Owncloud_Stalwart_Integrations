@@ -93,7 +93,7 @@ Reference: https://technitium.com/dns/help.html
 **App:** general · **Also touches:** none · **State:** in progress
 
 **Status:** **published 19 November 2026.** Public repository
-`rdavuluri44/ERPNext_Owncloud_Stalwart_Integrations` (AGPL-3.0-or-later,
+`rdavuluri44/erpnext_drive_integrations` (AGPL-3.0-or-later,
 copyright "Unformat and contributors", fresh history: one commit `eb887b7`,
 authored with the owner's GitHub no-reply address; tree identical to the
 tested private release `bd78277`). `main` protected (pull requests, no force
@@ -1365,3 +1365,19 @@ question in P64; P22's "Raven inside the company" channel.
 
 **Related:** P73 (Matrix), P04 (WhatsApp), P109 (mail in the app), P22, P72, P107, P50.
 
+
+### P113 — The public repository takes the application's internal name
+
+**App:** general · **Also touches:** erp, portal · **State:** in progress
+
+**Status:** decided by the owner on 28 November 2026 ("rename repo to the internal app name"). The public
+repository `ERPNext_Owncloud_Stalwart_Integrations` becomes `erpnext_drive_integrations`, the name the ERP installs
+the application under, so one name is used everywhere. The internal name itself does not change (no migration).
+
+**Scope, done together:** the GitHub rename (the old address keeps redirecting); the remote address and folder
+name on both laptops; the checkouts on the test host and on production; the private workflow that records merged
+public pull requests; links and names in the current documents and in the working agreements. Past handovers and
+release records keep the old name. Links posted on other projects redirect.
+
+**Follows in P111:** About shows this name with the version we carry, in place of the display title
+`ERPNext_drive_integrations` and `0.1.0`.
