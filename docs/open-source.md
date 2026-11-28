@@ -60,6 +60,7 @@
 | [Matrix Authentication Service](https://github.com/element-hq/matrix-authentication-service) | AGPL-3.0 | chat | daily watch: `ghcr.io/element-hq/matrix-authentication-service` |  |
 | [Sygnal](https://github.com/element-hq/sygnal) | AGPL-3.0 | chat | daily watch: `matrixdotorg/sygnal` |  |
 | [Firebase Cloud Messaging (Google service)](https://firebase.google.com/docs/cloud-messaging) | Google APIs Terms of Service (a service, not open source) | mobile-push, chat | an outside service with no version we pin; the server only calls its HTTP v1 interface with the project's service-account key | carries phone alerts to the app (approvals through mobile-push, chat through the chat stack's gateway); no Google code is included in this repository |
+| [Element Web](https://github.com/element-hq/element-web) | AGPL-3.0 | chat | daily watch: `ghcr.io/element-hq/element-web` |  |
 
 ## Being evaluated or chosen, not in the code yet
 

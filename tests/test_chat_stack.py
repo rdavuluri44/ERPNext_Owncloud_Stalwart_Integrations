@@ -226,6 +226,10 @@ class Stack(unittest.TestCase):
         self.assertEqual(gateway['profiles'], ['alerts'], 'it starts only where an operator asks for it')
         self.assertEqual(gateway['ports'], [], 'no port on the host: only Synapse calls it')
         self.assertEqual(gateway['volumes'], ['alerts-config:/config:ro'])
+        check = gateway['healthcheck']['test']
+        self.assertEqual(check[:3], ['CMD', 'python', '-c'], 'the image has no curl: its own check always fails')
+        self.assertIn('http://localhost:5000/health', check[3])
+        self.assertNotIn('curl', ' '.join(check))
         self.assertEqual(gateway['depends_on'], {'configure': {'condition': 'service_completed_successfully'}})
         self.assertEqual(gateway['networks'], {'default': {'aliases': ['alerts-gateway']}, 'outbound': {}},
                          'its own way out to Google, and not on the shared network of the other applications')
@@ -245,6 +249,93 @@ class Stack(unittest.TestCase):
 class Rendering(unittest.TestCase):
     HOSTS = {name: ('test.example.net' if name == 'erp' else 'test-' + name + '.example.net')
              for name in ('erp', 'sso', 'drive', 'office', 'mail', 'dms', 'respond')}
+
+    def test_the_chat_screen_is_pinned_private_and_only_reads_its_configuration(self):
+        web = STACK['services']['web']
+        self.assertRegex(web['image'], r'^ghcr\.io/element-hq/element-web@sha256:[0-9a-f]{64}$')
+        self.assertEqual(web['ports'], [], 'no port on the host: only the proxy reaches it')
+        self.assertEqual(web['volumes'], ['${RUNTIME_ROOT:?Set RUNTIME_ROOT}/mounts/chat_web_0:/app/config.json:ro'])
+        self.assertEqual(web['networks'], {'workspace': {'aliases': ['chat-web']}},
+                         'static pages: not on the stack\'s own network, so it cannot reach the databases')
+        self.assertEqual(web['environment'], {'ELEMENT_WEB_PORT': '8080'}, 'no secret and no setting but its port')
+        mounts = json.loads((ROOT / 'deployment/stacks/mounts.json').read_text(encoding='utf-8'))
+        self.assertIn({'stack': 'chat', 'service': 'web', 'path': 'chat_web_0', 'target': '/app/config.json',
+                       'source_kind': 'file'}, mounts)
+        sys.path.insert(0, str(ROOT / 'tools'))
+        try:
+            import runtime_mounts
+        finally:
+            sys.path.pop(0)
+        self.assertEqual(runtime_mounts.copy_files['/app/config.json'], 'integrations/chat/element-config.json')
+
+    def test_the_chat_screen_talks_only_to_our_own_chat_server(self):
+        text = (ROOT / 'integrations/chat/element-config.json').read_text(encoding='utf-8')
+        config = json.loads(text)
+        self.assertEqual(config['default_server_config'], {'m.homeserver': {'base_url': 'https://chat.example.com'}},
+                         'our server only, and no identity server')
+        self.assertTrue(config['disable_custom_urls'], 'nobody picks another server')
+        self.assertTrue(config['disable_guests'] and config['disable_3pid_login'])
+        self.assertEqual(config['sso_redirect_options'], {'immediate': True}, 'straight to the sign-in service')
+        self.assertEqual(config['oidc_metadata'], {'client_uri': 'https://chat-web.example.com/'})
+        self.assertFalse(config['default_federate'])
+        self.assertEqual((config['integrations_ui_url'], config['integrations_rest_url'],
+                          config['integrations_widgets_urls']), ('', '', []), 'no outside integration manager')
+        self.assertTrue(config['element_call']['disable'])
+        for feature in ('voip', 'widgets', 'feedback', 'identityServer', 'thirdPartyId', 'registration',
+                        'passwordReset', 'deactivate', 'shareSocial', 'locationSharing', 'urlPreviews'):
+            self.assertIs(config['setting_defaults']['UIFeature.' + feature], False, feature)
+        for outside in ('matrix.org', 'element.io', 'vector.im', 'jitsi', 'posthog', 'maptiler', 'bug_report'):
+            self.assertNotIn(outside, text, 'nothing is sent to ' + outside)
+        addresses = set(re.findall(r'https://[^"/]+', text))
+        self.assertEqual(addresses, {'https://chat.example.com', 'https://chat-web.example.com'})
+
+    def test_the_chat_screen_has_its_own_name_and_may_not_be_framed(self):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest('needs PyYAML, as the ingress renderer does')
+        chat = {**self.HOSTS, 'chat': 'test-chat.example.net', 'chat-auth': 'test-chat-auth.example.net'}
+        self.assertFalse([name for name in self.routes(chat)['routers'] if 'chat-web' in name])
+        http = self.routes({**chat, 'chat-web': 'test-chat-web.example.net'})
+        router = http['routers']['isolated-chat-web']
+        self.assertEqual(router['rule'], 'Host(`test-chat-web.example.net`)')
+        self.assertNotEqual(router['rule'], http['routers']['isolated-chat']['rule'].split(' && ')[0],
+                            'never the chat server\'s own name: uploaded files are served from that one')
+        self.assertEqual(http['services']['isolated-chat-web']['loadBalancer']['servers'][0]['url'], 'http://chat-web:8080')
+        headers = http['middlewares'][router['middlewares'][0]]['headers']['customResponseHeaders']
+        self.assertEqual(headers['X-Frame-Options'], 'SAMEORIGIN')
+        self.assertEqual(headers['Content-Security-Policy'], "frame-ancestors 'self'")
+        self.assertEqual(headers['X-Content-Type-Options'], 'nosniff')
+        self.assertFalse([name for name in self.routes({**self.HOSTS, 'chat-web': 'test-chat-web.example.net'})['routers']
+                          if 'chat' in name], 'no screen without a chat server')
+
+    def test_the_menu_entry_opens_its_own_tab_and_only_where_the_site_names_the_address(self):
+        page = (ROOT / 'erpnext_drive_integrations/www/place_holder.html').read_text(encoding='utf-8')
+        source = (ROOT / 'erpnext_drive_integrations/www/place_holder.py').read_text(encoding='utf-8')
+        self.assertIn("chat = frappe.conf.get('cloud_chat_web_url')", source)
+        self.assertIn("re.fullmatch(r'https://[a-z0-9.-]+/', chat)", source, 'an https address and nothing else')
+        self.assertIn("'external': True", source)
+        self.assertIn('{% if app.external %}data-external target="_blank" rel="noopener noreferrer"{% else %}'
+                      'data-app-id="{{ app.id | e }}"{% endif %}', page)
+        self.assertIn(".filter(a=>!a.external)", page, 'never put into a frame: its sign-in pages refuse one')
+        logo = (ROOT / 'erpnext_drive_integrations/public/app-logos/external-chat.svg').read_text(encoding='utf-8')
+        self.assertTrue(logo.startswith('<svg ') and 'script' not in logo and 'href' not in logo)
+
+    def test_the_relay_carries_the_chat_screen_s_name_only_when_the_profile_has_it(self):
+        try:
+            import yaml  # noqa: F401
+        except ImportError:
+            self.skipTest('needs PyYAML, as the relay renderer does')
+        sys.path.insert(0, str(ROOT / 'tools'))
+        try:
+            from prepare_test_relay import prepare as relay
+        finally:
+            sys.path.pop(0)
+        hosts = dict(self.HOSTS, **{'chat': 'test-chat.example.net', 'chat-auth': 'test-chat-auth.example.net'})
+        base = {'tier': 'test', 'instance': 'trial', 'relay_target': '100.64.0.20', 'hosts': hosts}
+        self.assertFalse([name for name in relay(base)['http']['routers'] if 'chat-web' in name])
+        routers = relay(dict(base, hosts=dict(hosts, **{'chat-web': 'test-chat-web.example.net'})))['http']['routers']
+        self.assertEqual(routers['cloud-test-relay-test-chat-web']['rule'], 'Host(`test-chat-web.example.net`)')
 
     def routes(self, hosts):
         sys.path.insert(0, str(ROOT / 'tools'))

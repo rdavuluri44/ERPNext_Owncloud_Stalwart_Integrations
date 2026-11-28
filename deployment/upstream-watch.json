@@ -4,6 +4,7 @@
     "ghcr.io/goauthentik/server@sha256:1675a017c46ba7f4f15333aeafeeb64538c581673bcbcd36af872cdf7de4e7f7": "2026.8.7",
     "ghcr.io/paperless-ngx/paperless-ngx@sha256:d704e84f88300eb6ab001ab15720a2330ff99169cf9f94d6b8fcc44b63a84c84": "3.4.2",
     "ghcr.io/element-hq/synapse@sha256:2cdc84f1de4687af89e4b7b1fe7b5f93e0ee7913243b63f79b05319cb6a8f525": "1.166.0",
+    "ghcr.io/element-hq/element-web@sha256:8812792403c7b9f94c0cd433bd2eb8dd9f1eb8a7908261aece71c1d5e2540561": "1.12.36",
     "ghcr.io/element-hq/matrix-authentication-service@sha256:9252ed4ae66a172864c73550eedb1e805ad52586cf1949d8172b9e6f0db44918": "1.30.0",
     "matrixdotorg/sygnal@sha256:141f5e72fdf99a28e29ca87f3a46c19ed1cf21d5074aa3ef9df7c067e0c1c46a": "0.17.0",
     "onlyoffice/documentserver@sha256:ca17889f10b11141cc6441836aebdd2835cf3e1b49681b2fd6e155c94b7850b3": "10.0.0",
@@ -111,6 +112,11 @@
       "github": "element-hq/synapse",
       "exposure": "public"
     },
+    "ghcr.io/element-hq/element-web": {
+      "name": "Element Web",
+      "github": "element-hq/element-web",
+      "exposure": "public"
+    },
     "ghcr.io/element-hq/matrix-authentication-service": {
       "name": "Matrix Authentication Service",
       "github": "element-hq/matrix-authentication-service",
@@ -119,7 +125,8 @@
     "matrixdotorg/sygnal": {
       "name": "Sygnal",
       "github": "element-hq/sygnal",
-      "exposure": "internal"
+      "exposure": "internal",
+      "workaround": "docs/upstream-customizations.md CHAT-6 (our own health check: the image's check calls curl, which the image lacks)"
     },
     "gotenberg/gotenberg": {
       "name": "Gotenberg",

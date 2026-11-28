@@ -416,6 +416,11 @@
           "name": "Sygnal",
           "license": "AGPL-3.0",
           "url": "https://github.com/element-hq/sygnal"
+        },
+        {
+          "name": "Element Web",
+          "license": "AGPL-3.0",
+          "url": "https://github.com/element-hq/element-web"
         }
       ]
     },

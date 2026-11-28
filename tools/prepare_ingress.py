@@ -112,6 +112,15 @@ def prepare(source, profile):
         route('chat-delegated',hosts['chat'],'chat-auth',300,
               'PathRegexp(`^/_matrix/client/[^/]+/(login|logout|refresh)$`)')
         route('chat-auth',hosts['chat-auth'],'chat-auth')
+    # The browser's chat screen (Element Web) has a name of its own, never the chat server's: files people
+    # upload are served from the server's name and must not share an origin with the screen. It opens in its
+    # own tab and may not be shown inside another page.
+    if 'chat-web' in hosts and 'chat' in hosts:
+        service('chat-web','http://chat-web:8080')
+        middlewares['chat-web']={'headers':{'customResponseHeaders':{'X-Frame-Options':'SAMEORIGIN',
+            'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer',
+            'Content-Security-Policy':"frame-ancestors 'self'"}}}
+        route('chat-web',hosts['chat-web'],'chat-web',middleware=['chat-web'])
     middlewares['office-home']={'redirectRegex':{'regex':'^https://'+re.escape(hosts['office'])+'/?$',
         'replacement':'https://'+hosts['drive']+'/files/spaces/personal','permanent':False}}
     route('office-home',hosts['office'],'noop@internal',1000,'Path(`/`)',middleware=['office-home'])

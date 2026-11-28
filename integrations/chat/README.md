@@ -27,6 +27,7 @@ Services of the stack:
 | `configure` | runs once before the others; writes both configuration files and, the first time, MAS's signing key | no |
 | `synapse` | the chat server | `chat-synapse:8008` on the workspace network |
 | `mas` | the sign-in service for chat | `chat-mas:8080` on the workspace network |
+| `web` | the chat screen for browsers (Element Web): static pages and one configuration file | `chat-web:8080` on the workspace network |
 | `alerts` | optional: the alert gateway (Sygnal), which passes chat alerts to Google for the phone app | `alerts-gateway:5000` inside the stack only |
 | `database-synapse`, `database-mas` | one PostgreSQL each (Synapse needs the `C` locale) | inside the stack only |
 
@@ -35,6 +36,8 @@ Services of the stack:
 Modules: `authentik-identity`.
 
 Two host names (`chat` and `chat-auth` in the profile's `hosts`), and an OAuth2/OpenID provider in the sign-in service for MAS: confidential client, redirect address `https://<chat-auth host>/upstream/callback/<UPSTREAM_ID>`, scopes `openid profile email chat`. The `chat` scope is a scope mapping that returns the person's `chat_name` attribute (`deployment/scope-mappings.example.json`).
+
+**The chat screen for browsers (optional name).** Give the profile a third host, `chat-web`, and the proxy serves Element Web there. It must be a name of its own, never the chat server's: files people upload are served from the server's name and must not share an origin with the screen. Its configuration (`element-config.json`) names only our chat server: no other server can be picked, no guests, no identity server, no integration manager, no calls, no link previews, no location sharing, nothing sent to its makers. It signs in through the sign-in service for chat (it registers itself there as a client the first time a browser opens it) and goes there at once. It may not be shown inside another page. For the Desk menu, set the site setting `cloud_chat_web_url` to `https://<chat-web host>/`: a "Chat" entry then opens it in its own tab. Signing out of the Desk does not sign out of the chat screen; it has its own sign-out.
 
 ## Reuse
 
@@ -55,7 +58,7 @@ The `configure` service rewrites both files at every deployment and keeps the si
 
 After the `configure` service has rewritten the files, restart `synapse` and `mas` so they read them. When a client or provider is removed from the authentication service's configuration, run its `config sync --prune` once.
 
-**Phone alerts (optional).** Put Google's service-account key for the app's Firebase project into the stack's key folder as `fcm-key.json` (`<runtime>/mounts/chat_configure_1/`, readable by root only), deploy, and start the stack with the `alerts` profile (`COMPOSE_PROFILES=alerts`). The `configure` service then writes the gateway's configuration for the app `CI_CHAT_CONFIGURE_ALERTS_APP_ID` and copies the key next to it; without a key it writes nothing and removes what was there. The app registers `http://alerts-gateway:5000/_matrix/push/v1/notify` as its push address with the format `event_id_only`, so an alert carries no name and no text. Synapse may call only this stack's own network (`CI_CHAT_CONFIGURE_NETWORK_SUBNET`, default `172.30.250.0/24`; change it where that range is taken). The gateway has no port on the host and no public route. It is the only service on the stack's `outbound` network, its way to Google; it is not on the workspace network, so a site that blocks outbound connections from that network (a test site) keeps doing so.
+**Phone alerts (optional).** Put Google's service-account key for the app's Firebase project into the stack's key folder as `fcm-key.json` (`<runtime>/mounts/chat_configure_1/`, readable by root only), deploy, and start the stack with the `alerts` profile (`COMPOSE_PROFILES=alerts`). The `configure` service then writes the gateway's configuration for the app `CI_CHAT_CONFIGURE_ALERTS_APP_ID` and copies the key next to it; without a key it writes nothing and removes what was there. The app registers `http://alerts-gateway:5000/_matrix/push/v1/notify` as its push address with the format `event_id_only`, so an alert carries no name and no text. Synapse may call only this stack's own network (`CI_CHAT_CONFIGURE_NETWORK_SUBNET`, default `172.30.250.0/24`; change it where that range is taken). The stack gives the gateway its own health check, because the one built into the image calls a program the image does not contain. The gateway has no port on the host and no public route. It is the only service on the stack's `outbound` network, its way to Google; it is not on the workspace network, so a site that blocks outbound connections from that network (a test site) keeps doing so.
 
 Backups: both databases (`pg_dumpall` in each database container) and the volumes `synapse-data` (media and Synapse's signing key) and `mas-config` (MAS's signing key).
 
@@ -68,6 +71,7 @@ Run all suites offline with `python tools/run_unit_tests.py` in the matching ERP
 ## Licenses
 
 - Synapse — AGPL-3.0 — https://github.com/element-hq/synapse
+- Element Web — AGPL-3.0 — https://github.com/element-hq/element-web
 - Matrix Authentication Service — AGPL-3.0 — https://github.com/element-hq/matrix-authentication-service
 
 Upstream licenses are as published by each project; verify them at the pinned version before redistributing (LICENSES.md).

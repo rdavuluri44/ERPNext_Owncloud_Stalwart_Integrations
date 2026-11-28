@@ -227,3 +227,26 @@ serves the new code (receipt `p53-p72-p69-test-combined-70636f4`). The bar shows
 correction). Open: the owner's browser check. On test the Desk's sign-out cannot prove Drive, Mail and DMS are signed
 out, because they use the production sign-in service; that is checked on production after promotion. Drive content
 search (owner: turn it on) is not started.
+
+**Additional scope (owner, 28 November 2026): the dashboards are organised into nine.** Parked with the rest of the
+day-planning widgets; not started, nothing designed yet.
+- The dashboards are grouped into **nine dashboards**, and **each one is visible to a person according to that
+  person's access**: someone without access to an area does not see its dashboard.
+- The nine, in the owner's order and with the owner's names:
+  1. Acts, Taxes
+  2. Fin, AP, AR
+  3. HR, PR
+  4. Assets
+  5. Proc, Inv
+  6. Production
+  7. Prod, Sales
+  8. Budget, Proj
+  9. IT Admin
+- Six of the names are the same as the head-office spaces in Drive since 28 November 2026 ("Acts, Taxes",
+  "Fin, AP, AR", "HR, PR", "Assets", "Proc, Inv", "Prod, Sales"), so a department finds its files and its
+  figures under one name. "Production", "Budget, Proj" and "IT Admin" have no Drive space of that name.
+- **To settle with the owner at planning:** what each of the nine shows; what "access" is decided by (ERP roles, Drive
+  space membership, or groups in the sign-in service); what "Prod" stands for in "Prod, Sales" next to the separate
+  "Production"; whether "IT Admin" is the admin alerts widget and links panel already taken up above, or a
+  dashboard beside them; and how this fits the existing rule that each widget asks the app with the person's own
+  session.

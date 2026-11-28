@@ -22,6 +22,10 @@ Recheck native Raven login/chat/refresh and revoked-token refusal, and coordinat
 
 ### P50 — Native mobile app for phones and tablets (modules `mobile-app` and `mobile-native`)
 
+**Name (owner, 28 November 2026): the app is "UNformat ERP"**, app ID `in.unformat.erp` (also for test builds); it
+was "ERP Mobile" until then, and older notes below keep that name. Public PR #149; the native app's own texts change
+in #114.
+
 **App:** mobile · **Also touches:** none · **State:** open
 
 **Status:** opened 19 November 2026. The Expo app (module `mobile-app`) is the app in use on test. The native
@@ -127,6 +131,17 @@ issuecomment-7220894102):**
   a per-site summary for people who look after sites. Chat and mail unread are asked from their own servers, not
   through ERPNext.
 - **Open for the owner, later:** who decides while someone is on leave.
+
+**Site reminder (owner, 28 November 2026: agreed):** when a person with own check-in enters or leaves their site's
+area, the phone reminds them to check in or out.
+- The app gives the site's place and radius (already in `custom_hr.api.bootstrap`, `check_in_sites`) to Android's
+  own area watching; the phone raises its own reminder; **no position leaves the phone** and the server is not
+  involved.
+- **A reminder only, never an automatic check-in:** check-in keeps the fingerprint.
+- Needs the "location all the time" permission (some will refuse; the Play Store asks for a justification); best
+  effort only (delays, phone makers that stop background apps); the consent text must say that the app notices the
+  site area in the background.
+- App work for the colleague, with the attendance phase. Server side: nothing new.
 
 **The developer's screen plan and the owner's answers (27 November 2026; public #114, issuecomment-7219041831 and
 issuecomment-7219386949):**
@@ -292,6 +307,16 @@ the trial. This item builds on the trial's result.
 despite camera limits; CVE-2026-75608 (a viewer reaching the internal go2rtc API) is fixed in 0.18.0. Keep Frigate
 behind the gateway, the viewer roles camera-limited, and Frigate in the daily upstream watch.
 
+**Where it goes (owner, 28 November 2026: agreed):**
+- **On the Desk:** a Cameras application in the auto-hiding menu, like the other applications; people see only the
+  cameras of their own sites.
+- **In the phone app:** under **More**, as **Cameras**, shown only to people with camera access; not a place in the
+  bottom bar (Today, Inbox, Chat, Mail, More stay). A Today card with a count only for those people. A camera alert
+  opens its clip directly, after the fingerprint.
+- **Split of work (owner):** the owner's agent takes the server side (who sees which camera from site membership,
+  the gateway to Frigate, the Desk application, alerts through the notification service); the colleague takes the
+  app's screens.
+
 **To decide:** who sees which cameras (by site, by role); mobile data use (live in low resolution, recordings on
 request); how long alerts and clips stay available; whether the app may download clips (evidence) or only play them.
 
@@ -396,3 +421,57 @@ accepts that risk.
 
 **Related:** P108, P73, P18, P50, P82.
 
+
+### P110 — Delegation of approvals (deputy, peers, the higher official)
+
+**App:** mobile · **Also touches:** erp, signin · **State:** open
+
+**Owner, 28 November 2026:** delegation is agreed in principle and gets its own work item; it is designed and built
+after sign-in works in the native app. Opened on the owner's word the same day. Nothing is designed or built yet.
+
+**Why:** an approval must not wait because the person who decides is on leave or away. The app's developer has built
+the app side (screens and calls against a stand-in) and listed what the server has to provide (public #114, the
+list of 28 November 2026, section 6).
+
+**Decided (owner, 28 November 2026): one identifier for a person, the user (the sign-in ID).** The same user names an
+item's sender and each person in the list of who may receive a delegation, so "never to the sender" is kept by
+comparing the two. The Employee ID stays the name of the person whose attendance or leave it is. In today's
+attendance calls the sender is already a user (`captured_by`).
+
+**What the app's developer asks of the server (to be confirmed by the owner at planning; not yet decided):**
+- **Who may receive:** for a person, the deputy, peers with the same role and the higher official, each with name,
+  role, user and whether they are on leave in given days. "Higher" can come from "reports to". The deputy is not a
+  standard field and needs one.
+- **Approved leave** of the person (from, until). Only approved leave counts.
+- **A delegation record:** from whom, to whom, one document or everything, from when, until when, why, ended when.
+  Never deleted.
+- **Calls:** delegate one item (with its version and an optional reason); delegate everything (receiver, from,
+  until); end it; what is set for me; whose approvals are delegated to me.
+- **The check at the decision:** the receiver may decide this document because of that record and only while it runs.
+  The receiver is not given the first person's role.
+- **The server refuses:** everything without matching approved leave; a period outside the leave; the higher official
+  as receiver of everything; the item's sender as receiver; a second step.
+- **Two rules only the server can hold:** when everything is delegated, an approval the receiver sent themselves must
+  not reach them; and what was delegated to a person must not travel on with that person's own delegation.
+- **It ends by itself** at its end, and when the leave is cancelled or cut short.
+- **The trail** says who delegated to whom and why, and who approved for whom; the sender sees with whom the item is.
+- **"What waits for me"** marks items delegated to me and by me.
+- **Alerts:** the receiver's phone rings; the first person's alert goes quiet for a delegated item; during an away
+  period the away person's phone stays quiet.
+- **On the web:** the same delegation visible and usable there, and the deputy field on the person.
+
+**Questions to settle at planning:**
+- Which approvals it covers first: attendance (our own review rules), other ERPNext approvals (workflows), or both.
+- How the check at the decision is added to ERPNext workflows without giving the receiver the role, and whether that
+  changes upstream behaviour (then it goes into the register of our changes).
+- Where the deputy is recorded and who may set it.
+- Whether every person who decides has a user and, for leave, an Employee record (not checked on a site).
+- The SOP for setting a deputy and for ending a delegation by hand.
+
+**Depends on:** sign-in in the native app (P82); the detailed list of waiting items, with the sender, in the
+notification service (P108; `items[]` carries no sender today).
+
+**How it is tested (outline):** offline tests of each refusal and of the two server-only rules; on the test site with
+two phones: delegate one item and everything, decide as the receiver, end it early, cut the leave short.
+
+**Related:** P50, P82, P103, P104, P108.

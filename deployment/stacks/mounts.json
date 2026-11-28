@@ -236,5 +236,12 @@
     "path": "chat_configure_1",
     "target": "/alerts-key",
     "source_kind": "directory"
+  },
+  {
+    "stack": "chat",
+    "service": "web",
+    "path": "chat_web_0",
+    "target": "/app/config.json",
+    "source_kind": "file"
   }
 ]

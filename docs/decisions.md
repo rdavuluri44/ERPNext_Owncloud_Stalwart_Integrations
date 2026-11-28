@@ -60,6 +60,25 @@ discussion that led to a decision is not repeated here.
   triggers for now.
 - **Where:** `erpnext_drive_integrations/notifications/`, `erpnext_drive_integrations/mobile_push/`.
 
+### A chat screen for browsers: Element Web, under its own name, from the Desk menu (P73)
+
+- **Decision (owner, 28 November 2026):** chat gets a screen for browsers now, with a "Chat" entry in the Desk's
+  menu. The phone app's chat continues separately. The screen is Element Web, unchanged, with our configuration.
+  - It has a host name of its own (`chat-web`), not the chat server's, as its makers advise: uploaded files are
+    served from the server's name.
+  - It names only our server and switches off what would call an outside service.
+  - The menu entry opens it in its own tab. The sign-in pages refuse to be shown inside another page, so it is
+    not put into the Desk's frame. Signing out of the Desk does not sign out of it yet.
+- **Adoption check (28 November 2026; GitHub repository and its Security Advisories):** element-hq/element-web,
+  AGPL-3.0 (also offered under GPL-3.0 and a commercial licence). A release about every two weeks (v1.12.36 on
+  24 November 2026). 5 advisories in the last 12 months (1 high, of 16 October 2026), each published with its fixed
+  version; the newest fix is in 1.12.32, so none is open at 1.12.36. Verdict: adopt, pinned by version and digest,
+  in the daily upstream watch (exposure: public).
+- **Alternatives on record:** Cinny and FluffyChat (other Matrix web clients; not checked in detail); no browser
+  screen at all (chat only in the phone app).
+- **Where:** `integrations/chat/element-config.json`, `deployment/stacks/chat.compose.json`,
+  `tools/prepare_ingress.py`, `erpnext_drive_integrations/www/place_holder.*`; register entry CHAT-7.
+
 ### The phone app is named "UNformat ERP" (P85, P50)
 
 - **Decision:** the phone app's name is **UNformat ERP**, replacing "ERP Mobile". It is the default brand's app name
@@ -1599,3 +1618,21 @@ check themselves in keep their existing workflows.
 - **Where:** `deployment/config/proxy/office-acme.yml`, `tools/prepare_test_relay.py`,
   `tools/coolify_proxy_hosts.py`, `tools/coolify_proxy_tls_resolver.py`,
   `tests/test_rebuild_templates.py`, register entry PROXY-6. AI-assisted by Claude Code.
+
+### A person is named by the user in approvals and delegation (P110)
+
+- **Decision (owner, 28 November 2026):** The user (the sign-in ID) is the one
+  identifier for a person who acts on an approval: the sender of an item, the
+  person who decides it, and each person in the list of who may receive a
+  delegation. The Employee ID stays the name of the person whose attendance or
+  leave it is. Lists of waiting items and the delegation calls, when they are
+  built, give the sender and the possible receivers as users.
+- **Why:** The phone app keeps "never delegate to the sender" by comparing the
+  sender with the receivers, so both must use the same identifier (asked by the
+  app's developer on #114). ERPNext records who sent and who approved by user,
+  and the attendance calls already name the sender by user (`captured_by`).
+- **Consequence:** Nothing changes in the code today. The list of waiting items
+  in the notification service (P108) carries no sender yet; it comes with the
+  detailed list and with delegation (P110).
+- **Where:** `erpnext_drive_integrations/custom_hr/API.md` ("Who a person is, in
+  these calls"), work item P110. AI-assisted by Claude Code.

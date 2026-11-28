@@ -128,6 +128,10 @@ alert mail (P57) and this item's editor check are both kept in `tools/host_check
 `p80-test-host-check-retest-92b41fe`). Found there: the installed host check was main's, without the editor commands, so
 the editor timer had been failing every five minutes unnoticed. #76 is ready for the owner to merge.
 
+**Merged (27 November 2026, 19:29 UTC): public #76 as `675c498`. Merged, not deployed to production.** The test VM runs
+the merged host check. Production needs its own go: the host check file, the config with the editor section, the
+editor check's service and timer, `backup.py` in the backup checkout, `editor-setup` once, then the drift check.
+
 ### P81 — Editor follow-ups: Compose safety net and release rule
 
 **App:** editor · **Also touches:** drive, general · **State:** open

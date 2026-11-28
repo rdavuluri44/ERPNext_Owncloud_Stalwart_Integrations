@@ -32,6 +32,7 @@ copy_files = {
     '/app/document-worker.py': 'integrations/document-worker/document-worker.py',
     '/etc/nginx/conf.d/default.conf': 'integrations/website/nginx-default.conf',
     '/configure.py': 'integrations/chat/configure.py',
+    '/app/config.json': 'integrations/chat/element-config.json',
 }
 # Mount name -> repository file (the two identity proxies share the target /etc/nginx/nginx.conf).
 identity_proxy_files = {

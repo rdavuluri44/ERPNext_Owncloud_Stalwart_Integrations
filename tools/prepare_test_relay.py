@@ -22,7 +22,7 @@ import yaml
 
 NAMES = ['erp', 'drive', 'office', 'mail', 'dms', 'respond']
 # Relayed only when the test profile names them (the chat stack, P73).
-OPTIONAL = ['chat', 'chat-auth']
+OPTIONAL = ['chat', 'chat-auth', 'chat-web']
 
 
 def prepare(profile):

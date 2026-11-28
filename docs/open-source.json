@@ -877,6 +877,18 @@
       "status": "adopted",
       "not_watched": "an outside service with no version we pin; the server only calls its HTTP v1 interface with the project's service-account key",
       "note": "carries phone alerts to the app (approvals through mobile-push, chat through the chat stack's gateway); no Google code is included in this repository"
+    },
+    {
+      "name": "Element Web",
+      "repo": "https://github.com/element-hq/element-web",
+      "licence": "AGPL-3.0",
+      "used_in": [
+        "chat"
+      ],
+      "status": "adopted",
+      "watch": [
+        "ghcr.io/element-hq/element-web"
+      ]
     }
   ]
 }

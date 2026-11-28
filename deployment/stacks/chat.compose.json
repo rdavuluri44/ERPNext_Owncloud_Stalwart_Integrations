@@ -176,6 +176,25 @@
       },
       "stop_grace_period": "30s"
     },
+    "web": {
+      "image": "ghcr.io/element-hq/element-web@sha256:8812792403c7b9f94c0cd433bd2eb8dd9f1eb8a7908261aece71c1d5e2540561",
+      "restart": "unless-stopped",
+      "environment": {
+        "ELEMENT_WEB_PORT": "8080"
+      },
+      "volumes": [
+        "${RUNTIME_ROOT:?Set RUNTIME_ROOT}/mounts/chat_web_0:/app/config.json:ro"
+      ],
+      "mem_limit": "128m",
+      "ports": [],
+      "networks": {
+        "workspace": {
+          "aliases": [
+            "chat-web"
+          ]
+        }
+      }
+    },
     "alerts": {
       "image": "matrixdotorg/sygnal@sha256:141f5e72fdf99a28e29ca87f3a46c19ed1cf21d5074aa3ef9df7c067e0c1c46a",
       "restart": "unless-stopped",
@@ -184,6 +203,18 @@
       ],
       "environment": {
         "SYGNAL_CONF": "/config/sygnal.yaml"
+      },
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=4)"
+        ],
+        "interval": "15s",
+        "timeout": "5s",
+        "retries": 3,
+        "start_period": "25s"
       },
       "depends_on": {
         "configure": {

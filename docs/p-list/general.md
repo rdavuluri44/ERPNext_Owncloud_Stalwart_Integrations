@@ -775,7 +775,9 @@ accepts that risk.
   server and for four minutes on the test ERP (receipt `p73-test-erp-chat-rooms-3c8aff5`). **Merged, not deployed:**
   the test ERP is back on another session's build (#142) and gets the module with its next build from main;
   production has no chat stack yet (P70). The Firebase project `unformat-erp` exists since 28 November 2026 (app `in.unformat.erp`); its server key is on
-  the test VM and Google accepts it. Next for alerts: the gateway (Sygnal) in the chat stack, and #82 for approvals. Not built:
+  the test VM and Google accepts it. **The chat alert gateway** (Sygnal, optional, private, content-free) is public PR #148 (`043955e`), on the test chat
+  stack since 27 November 19:06 UTC (receipt `p73-test-chat-alert-gateway-043955e`): it reaches Google; an alert on a
+  real phone waits for the app. Approvals alerts wait for #82. Not built:
   the push gateway, the ERPNext bot and rooms, monitoring, backups and the drift check for the stack, the production
   route file.
 - **First step:** the adoption check (licence, maintenance, security history, how fixes are published) for Synapse,
@@ -1330,6 +1332,11 @@ Matrix chat (P73) and a light mail client (P109) inside the app.
 6. **SMS gateway:** sending SMS to Indian numbers needs DLT registration (the company, a sender name and every message
    template) with a telecom operator, and costs per message. Choose a provider after the licence and adoption checks;
    use SMS only where WhatsApp and mail do not reach.
+8. **How the service is built (owner, 28 November 2026: "take up as much work as you can", taken as agreement to
+   the agent's three recommendations):** public #82 (`mobile_push`, the colleague's) is brought up to date with main,
+   tested and merged first, and the service uses it as its phone channel; public #134 (admin alerts) keeps its own
+   sender until both are merged, then switches to the service; what was sent is kept in a small table for 90 days
+   (who, kind, reference, channel, sent or failed, time; no message text).
 7. **For the phone app (owner, 27 November 2026, night; public #114):** every message carries its kind ("needs a
    decision" or "informs"); a "what waits for me" call (per kind: count, longest wait, nearest deadline); a
    content-free "remove this alert" signal when something is decided anywhere; a reminder for a waiting decision

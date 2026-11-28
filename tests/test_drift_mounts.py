@@ -235,7 +235,7 @@ class SharedTableTests(unittest.TestCase):
     def test_every_repository_mount_has_a_source_that_exists(self):
         mounts = json.loads((ROOT / 'deployment/stacks/mounts.json').read_text())
         sourced = {m['path']: rm.source_of(m) for m in mounts if rm.source_of(m)}
-        self.assertEqual(len(sourced), 14, 'six copied files, two proxies, four folders, two editor files')
+        self.assertEqual(len(sourced), 15, 'seven copied files, two proxies, four folders, two editor files')
         for name, relative in sourced.items():
             self.assertTrue((ROOT / relative).exists(), name + ': ' + relative)
         for name in ('erp_configurator_1', 'processing_document_worker_1', 'drive_ocis_1', 'private_dns_private_dns_0'):
