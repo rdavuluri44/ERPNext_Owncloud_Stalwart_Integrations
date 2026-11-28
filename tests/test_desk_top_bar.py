@@ -284,11 +284,16 @@ class InsideTheDesk(unittest.TestCase):
 
     def test_mails_folder_pane_cannot_be_folded_and_a_folded_one_is_opened_once(self):   # P116 (iii)
         self.assertIn("'.uf-collapse{display:none!important}' +", MAIL_DESK)
-        self.assertIn("if (wide() && pane.getBoundingClientRect().width < 160 && !fold.dataset.ufOpened) { fold.dataset.ufOpened = '1'; fold.click(); }", MAIL_DESK)
+        self.assertIn("if (fold && wide() && pane.getBoundingClientRect().width < 160 && !fold.dataset.ufOpened) { fold.dataset.ufOpened = '1'; fold.click(); }", MAIL_DESK)
+        self.assertIn("folds.forEach(b => b.classList.add('uf-collapse'));", MAIL_DESK)
+        # the webmail redraws its elements and drops our marks: class changes are watched too
+        self.assertIn("attributes: true, attributeFilter: ['class']", MAIL_DESK)
 
     def test_mail_pages_without_a_folder_pane_get_the_row_across_the_top(self):
         self.assertIn("document.body.classList.toggle('uf-lane-top', !row);", MAIL_DESK)
-        self.assertIn("'body.uf-lane-top .uf-rail-parent{flex-direction:column!important}' +", MAIL_DESK)
+        # the page's own panes keep their layout (a column layout pushed the settings page's content below the screen)
+        self.assertIn("'body.uf-lane-top .uf-rail-parent{padding-top:44px!important;box-sizing:border-box}' +", MAIL_DESK)
+        self.assertNotIn('flex-direction:column', MAIL_DESK)
 
     def test_mail_follows_the_desks_font_size(self):
         self.assertIn("e.data.type === 'look' && [0.9, 1, 1.15].includes(e.data.font)", MAIL)
