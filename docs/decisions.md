@@ -1590,3 +1590,22 @@ check themselves in keep their existing workflows.
   detailed list and with delegation (P110).
 - **Where:** `erpnext_drive_integrations/custom_hr/API.md` ("Who a person is, in
   these calls"), work item P110. AI-assisted by Claude Code.
+
+### The repository carries the application's internal name (P113)
+
+- **Decision (owner, 28 November 2026):** The public repository is renamed from
+  `ERPNext_Owncloud_Stalwart_Integrations` to `erpnext_drive_integrations`, the
+  name under which the ERP installs the application, so one name is used
+  everywhere: on GitHub, in the ERP's list of installed applications and in the
+  About popup of the Desk.
+- **Why:** The other way round (renaming the installed application to the
+  repository's name) would need a migration on every site and would touch nearly
+  every file and address; renaming the repository touches no running code.
+- **Consequence:** GitHub redirects the old address, so existing links, clones
+  and posts on other projects keep working; the redirect ends only if a
+  repository is ever created under the old name, so none will be. Working copies
+  on our computers and servers use the new address. Earlier entries in this log
+  and dated records keep the old name. The display title of the application
+  (`app_title`) and the version shown in About follow with the Desk's top bar
+  (P111).
+- **Where:** GitHub repository settings; this entry. AI-assisted by Claude Code.
