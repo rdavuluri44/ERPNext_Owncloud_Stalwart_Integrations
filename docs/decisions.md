@@ -1551,3 +1551,21 @@ check themselves in keep their existing workflows.
 - **Where:** `deployment/config/proxy/office-acme.yml`, `tools/prepare_test_relay.py`,
   `tools/coolify_proxy_hosts.py`, `tools/coolify_proxy_tls_resolver.py`,
   `tests/test_rebuild_templates.py`, register entry PROXY-6. AI-assisted by Claude Code.
+
+### A person is named by the user in approvals and delegation (P110)
+
+- **Decision (owner, 28 November 2026):** The user (the sign-in ID) is the one
+  identifier for a person who acts on an approval: the sender of an item, the
+  person who decides it, and each person in the list of who may receive a
+  delegation. The Employee ID stays the name of the person whose attendance or
+  leave it is. Lists of waiting items and the delegation calls, when they are
+  built, give the sender and the possible receivers as users.
+- **Why:** The phone app keeps "never delegate to the sender" by comparing the
+  sender with the receivers, so both must use the same identifier (asked by the
+  app's developer on #114). ERPNext records who sent and who approved by user,
+  and the attendance calls already name the sender by user (`captured_by`).
+- **Consequence:** Nothing changes in the code today. The list of waiting items
+  in the notification service (P108) carries no sender yet; it comes with the
+  detailed list and with delegation (P110).
+- **Where:** `erpnext_drive_integrations/custom_hr/API.md` ("Who a person is, in
+  these calls"), work item P110. AI-assisted by Claude Code.
