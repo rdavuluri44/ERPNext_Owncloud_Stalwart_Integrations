@@ -3,7 +3,7 @@
   "rules": [
     {
       "name": "ERP add-on",
-      "paths": ["erpnext_drive_integrations/**", "pyproject.toml", "MANIFEST.in", "deployment/erp/Dockerfile.addon", "deployment/face-models.json", "tools/fetch_face_models.py", "integrations/insights/**"],
+      "paths": ["erpnext_drive_integrations/**", "pyproject.toml", "MANIFEST.in", "deployment/erp/Dockerfile.addon", "deployment/face-models.json", "tools/fetch_face_models.py", "tools/about_components.py", "integrations/insights/**"],
       "stacks": ["erp"],
       "steps": ["build the ERP add-on image for this commit", "deploy that one image to every ERP service", "bench migrate (runs the add-on's after_migrate setup)", "check the assets (tools/verify_erp_assets.py)"],
       "restart": ["every ERP service"]
