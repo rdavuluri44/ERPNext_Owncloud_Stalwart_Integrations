@@ -155,14 +155,14 @@ its app's list (copy the `**App:**` line from a neighbour), then run `python3 to
 
 | App | List | Items | Not done |
 |---|---|---|---|
-| General | [pending/general.md](p-list/general.md) | 30 | 30 |
-| DMS | [pending/dms.md](p-list/dms.md) | 1 | 1 |
-| Drive | [pending/drive.md](p-list/drive.md) | 1 | 1 |
-| Editor | [pending/editor.md](p-list/editor.md) | 3 | 3 |
+| General | [pending/general.md](p-list/general.md) | 31 | 31 |
+| DMS | [pending/dms.md](p-list/dms.md) | 2 | 2 |
+| Drive | [pending/drive.md](p-list/drive.md) | 2 | 2 |
+| Editor | [pending/editor.md](p-list/editor.md) | 4 | 4 |
 | ERP | [pending/erp.md](p-list/erp.md) | 15 | 15 |
-| Mail | [pending/mail.md](p-list/mail.md) | 6 | 6 |
+| Mail | [pending/mail.md](p-list/mail.md) | 7 | 7 |
 | Mobile | [pending/mobile.md](p-list/mobile.md) | 10 | 10 |
-| Portal (eZone) | [pending/portal.md](p-list/portal.md) | 4 | 4 |
+| Portal (eZone) | [pending/portal.md](p-list/portal.md) | 6 | 6 |
 | Raven and Insights | [pending/raven.md](p-list/raven.md) | 1 | 1 |
 | Sign-in | [pending/signin.md](p-list/signin.md) | 8 | 8 |
 | Test site | [pending/test-site.md](p-list/test-site.md) | 6 | 6 |
@@ -250,10 +250,17 @@ its app's list (copy the `**App:**` line from a neighbour), then run `python3 to
 | P102 | Admin tools: single sign-on by default, the tailnet as the backup door | [General](p-list/general.md) | signin, test-site · **State:** open | open |
 | P103 | Request ID on every app action, and "what happened to my request" | [ERP](p-list/erp.md) | mobile · **State:** open | open |
 | P104 | Version handshake between the server and the mobile apps | [ERP](p-list/erp.md) | mobile · **State:** open | open |
-| P105 | Test site ready for the native app's five-phone test round | [Test site](p-list/test-site.md) | erp, signin, mobile · **State:** blocked | blocked |
+| P105 | Test site ready for the native app's five-phone test round | [Test site](p-list/test-site.md) | erp, signin, mobile · **State:** in progress | in progress |
 | P106 | Short video clips with site incidents | [Mobile](p-list/mobile.md) | drive, erp · **State:** open | open |
 | P107 | User support: "Report a problem" in the apps, and an admin support desk | [General](p-list/general.md) | erp, mobile, portal, signin · **State:** parked | parked |
 | P108 | Remove Raven from ERPNext; all messages through our own channels | [General](p-list/general.md) | raven, mail, mobile, portal, signin, general · **State:** open | open |
 | P109 | A light mail client in the phone app (JMAP) | [Mobile](p-list/mobile.md) | mail, signin · **State:** open · **Category:** now | open |
 | P110 | Delegation of approvals (deputy, peers, the higher official) | [Mobile](p-list/mobile.md) | erp, signin · **State:** open | open |
+| P111 | Desk: an always-visible top bar instead of the auto-hiding menu | [Portal (eZone)](p-list/portal.md) | erp, drive, dms, mail, editor, raven · **State:** open | open |
+| P112 | Applications open only inside the Desk | [Portal (eZone)](p-list/portal.md) | erp, drive, dms, mail, editor, signin · **State:** open | open |
+| P113 | The public repository takes the application's internal name | [General](p-list/general.md) | erp, portal · **State:** in progress | in progress |
+| P114 | DMS inside the Desk: its header band and logo removed | [DMS](p-list/dms.md) | portal · **State:** open | open |
+| P115 | Drive inside the Desk: header band removed, Spaces first, one look for folders | [Drive](p-list/drive.md) | portal · **State:** open | open |
+| P116 | Mail inside the Desk: one fixed left pane | [Mail](p-list/mail.md) | portal · **State:** open | open |
+| P117 | Office editor: the header changes of spreadsheets also in text documents and presentations | [Editor](p-list/editor.md) | drive · **State:** open | open |
 <!-- APP-INDEX-END -->

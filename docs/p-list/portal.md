@@ -250,3 +250,72 @@ day-planning widgets; not started, nothing designed yet.
   "Production"; whether "IT Admin" is the admin alerts widget and links panel already taken up above, or a
   dashboard beside them; and how this fits the existing rule that each widget asks the app with the person's own
   session.
+
+### P111 — Desk: an always-visible top bar instead of the auto-hiding menu
+
+**App:** portal · **Also touches:** erp, drive, dms, mail, editor, raven · **State:** open
+
+**Status:** recorded 28 November 2026 (owner's change of mind, in a series of messages); **nothing built**. Starts
+when the owner says go. Not ranked yet.
+
+**What the owner asked for**
+- An always-visible top bar on the Desk replaces the auto-hiding menu.
+- From right to left: the **user button**, **notifications**, **search**, a **strip of application icons** that
+  scrolls inside its own space, and at the far left the **brand icon**, which toggles full screen (P09). On the
+  test site a **refresh button** is always shown.
+- **Notifications and search are universal:** one of each for all applications (the universal alerts and search
+  already described under P53).
+- **Help:** where an application's Help is only a link to its online documentation, it is removed.
+- **User button:** squarish, with the person's initial. Its menu: About, font size, dark or automatic mode, Sign out.
+- **About** is a popup laid out like Frappe's own About (two screenshots from the owner, 28 November):
+  - our application's name (the repository's name, P113) with the version we carry;
+  - a link to our public GitHub repository, with the Git icon;
+  - the Frappe applications (seven) with their versions;
+  - all other applications (Drive, the office editor, Mail and webmail, the DMS, sign-in, chat and the rest) with
+    their versions;
+  - the Unformat brand icon, **hardcoded**: it is not read from the assets folder and stays visible whatever
+    customer branding is set elsewhere.
+- The bar takes the place of each application's own header band inside the Desk: P114 (DMS), P115 (Drive),
+  P116 (Mail).
+
+**What this replaces or changes (to confirm with the owner before building)**
+- The Desk bar of public #142 (P53 step 1: a bar at the top right with Sign out last) is folded into this bar.
+- The touch-screen plan of 28 November morning (no overlay on phones and tablets, "Back to home" inside each
+  application's menu) is superseded; with P112 an application cannot be open on its own, so "Back to home" is not
+  needed.
+- The Chat entry of public #154 becomes an icon in the strip; under P112 the chat screen lives inside the Desk.
+- Our ERP module header (register FRAPPE-5) draws its own Help, Search and Notification rows; they go when the bar
+  has them.
+
+**Open points for the owner**
+- Where exactly the test site's refresh button sits in the bar.
+- Phones and tablets: how the bar and the icon strip behave on a narrow screen.
+- "Font size" and "dark or automatic mode": whether they must reach inside every application or only the Desk
+  and the applications that support them.
+
+**Records (owner, 28 November 2026):** every change made to another project's screens for this item gets its
+entry in the register of our changes to upstream apps in the same pull request (how it is applied, the upstream
+version, re-apply or re-check at an upgrade), so it is carried into every image build and re-applied when an
+upstream application is updated.
+
+### P112 — Applications open only inside the Desk
+
+**App:** portal · **Also touches:** erp, drive, dms, mail, editor, signin · **State:** open
+
+**Status:** recorded 28 November 2026 (owner); **nothing built**. Not ranked yet.
+
+**What the owner asked for:** none of our applications may be opened on its own by entering its address in a
+browser; a direct address redirects, hard, to the Desk.
+
+**To settle in the design**
+- **Only a person's page visit is redirected.** The same addresses must keep answering for the Drive desktop and
+  phone clients, mail programs, the phone application, the office editor's saving and callbacks, sign-in
+  callbacks, health checks, and public share links sent to outsiders.
+- **Deep links:** a link to one document, file or mail opens the Desk with that item, not the Desk's home.
+- **Chat screen:** it was built (#154) to open in its own tab, with headers that forbid showing it in a frame;
+  under this rule it lives inside the Desk, so those headers and the menu entry change.
+- **Administration screens** reached only over the private network stay as they are.
+- "Back to home" in the applications (public #142) is no longer needed.
+
+**Records:** proxy rules and settings made for this go into the register of our changes to upstream apps
+(owner, 28 November 2026; see P111).
