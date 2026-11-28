@@ -15,20 +15,27 @@ def token_hash(token):
     return hashlib.sha256(token.encode()).hexdigest()
 
 
-def message(token, kind, doctype=None, docname=None, site=None, site_label=None, extra=None):
+# What never goes into a message, whoever asks: Google would see it.
+NEVER = ('doctype', 'docname', 'site', 'site_label')
+
+
+def message(token, kind, about=None, mark=None, extra=None):
     """One FCM v1 data message, high priority so a sleeping phone wakes. Data only: the phone writes the visible
-    text from the kind, the document type and the site, so no person's name, amount or other business data ever
-    leaves the server. A newer alert of the same kind and type replaces an older one that is still queued.
-    `extra` is for the notification service's own short fields (what the message needs, a count); it can never
-    replace the fields above."""
-    data = {'v': '1', 'kind': kind}
-    for field, value in (('doctype', doctype), ('docname', docname), ('site', site), ('site_label', site_label)):
+    text from the kind and from `about` (a short code for the sort of thing: `payment`, `leave`), so no person's
+    name, amount, document type, document ID or site name ever leaves the server. `mark` names the thing for this
+    one phone without saying what it is: the phone asks the server what it stands for, as the signed-in person.
+    A newer alert of the same kind and sort replaces an older one that is still queued. `extra` is for the
+    notification service's own short fields (what the message needs, a count); it can never replace the fields
+    above or bring in a document or a site."""
+    data = {'v': '2', 'kind': kind}
+    for field, value in (('about', about), ('mark', mark)):
         if value:
             data[field] = str(value)
     for field, value in (extra or {}).items():
-        data.setdefault(str(field), str(value))
+        if str(field) not in NEVER:
+            data.setdefault(str(field), str(value))
     return {'message': {'token': token, 'data': data,
-                        'android': {'priority': 'HIGH', 'ttl': '3600s', 'collapse_key': f"{kind}:{doctype or ''}"}}}
+                        'android': {'priority': 'HIGH', 'ttl': '3600s', 'collapse_key': f"{kind}:{about or ''}"}}}
 
 
 def dead_token(status, body):

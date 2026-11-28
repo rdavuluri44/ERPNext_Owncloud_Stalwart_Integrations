@@ -32,6 +32,12 @@ def _sender():
     return sender if _feature('mobile_push') and sender.configured() else None
 
 
+def _mark(user, doctype, name):
+    """This person's mark for this thing (rules.mark), keyed with the site's own encryption key."""
+    from frappe.utils.password import get_encryption_key
+    return rules.mark(get_encryption_key(), user, doctype, name)
+
+
 def notify(users, kind, doctype, name, reason=None, state=None, site=None, deadline=None, text=None):
     """Tell these people about one thing, once each.
 
@@ -73,18 +79,15 @@ def deliver(records, text=None):
 def _send(record, text):
     if record.kind == rules.DECIDE:
         sender = _sender()
-        if sender and sender.deliver([record.user], record.reason or 'approval', record.reference_doctype,
-                                     record.reference_name, record.site, _site_label(record.site),
-                                     rules.phone_fields(record.kind)):
+        if sender and sender.deliver(
+                [record.user], record.reason or 'approval', rules.about(record.reference_doctype),
+                {record.user: _mark(record.user, record.reference_doctype, record.reference_name)},
+                rules.phone_fields(record.kind)):
             return rules.PHONE
         if record.reason == 'approval' and _workflow(record.reference_doctype, 'send_email_alert'):
             return rules.OWN_MAIL  # the workflow mails its approvers itself; a second mail would say the same
         return _mail(record, None)
     return rules.CHAT if text and _chat(record, text) else _mail(record, text)
-
-
-def _site_label(site):
-    return frappe.db.get_value('Field Site', site, 'site_name') if site else None
 
 
 def _chat(record, text):
@@ -132,8 +135,9 @@ def _close(rows, doctype, name):
     phones = [row.user for row in rows if row.channel == rules.PHONE]
     sender = phones and _sender()
     if sender:
-        # Content-free: the phone removes the alert for this thing. Also for the person who decided it.
-        sender.send(phones, rules.REMOVE, doctype, name, include_actor=True)
+        # Content-free: each phone gets its own mark and removes that alert. Also for the person who decided it.
+        sender.send(phones, rules.REMOVE, marks={user: _mark(user, doctype, name) for user in phones},
+                    include_actor=True)
     return len(rows)
 
 
@@ -195,4 +199,5 @@ def purge():
 
 def waiting(user):
     rows = frappe.get_all(RECORD, filters=_open(kind=rules.DECIDE, user=user), fields=FIELDS)
-    return rules.waiting_summary(frappe.utils.now_datetime(), rows)
+    items = rules.waiting_items(rows, lambda row: _mark(user, row['reference_doctype'], row['reference_name']))
+    return dict(rules.waiting_summary(frappe.utils.now_datetime(), rows), items=items)

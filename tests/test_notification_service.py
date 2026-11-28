@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 HERE = ROOT / 'erpnext_drive_integrations/notifications'
 RECORD = 'Notification Record'
+SECRET = 'the-test-site-secret'
 
 
 class Row(dict):
@@ -39,10 +40,17 @@ phone = types.ModuleType('erpnext_drive_integrations.mobile_push.sender')
 chat = types.ModuleType('erpnext_drive_integrations.chat_rooms.sync')
 sys.modules[phone.__name__], sys.modules[chat.__name__] = phone, chat
 workflow_module = types.ModuleType('frappe.model.workflow')
+password_module = types.ModuleType('frappe.utils.password')
+password_module.get_encryption_key = lambda: SECRET
+sys.modules['frappe.utils'], sys.modules['frappe.utils.password'] = types.ModuleType('frappe.utils'), password_module
 sys.modules['frappe.model'], sys.modules['frappe.model.workflow'] = types.ModuleType('frappe.model'), workflow_module
 
 from erpnext_drive_integrations import hooks  # noqa: E402
 from erpnext_drive_integrations.notifications import api, events, rules, service  # noqa: E402
+
+
+def mark(user, doctype, name):
+    return rules.mark(SECRET, user, doctype, name)
 
 
 def at(day, hour, minute=0):
@@ -87,14 +95,14 @@ class Site:
         chat.notify = self.notice
 
     # the phone channel and chat
-    def push(self, users, kind, doctype=None, docname=None, site=None, site_label=None, extra=None):
+    def push(self, users, kind, about=None, marks=None, extra=None):
         reached = [u for u in users if u in self.phones]
         if reached:
-            self.pushes.append((reached, kind, doctype, docname, site, site_label, extra))
+            self.pushes.append((reached, kind, about, marks, extra))
         return len(reached)
 
-    def signal(self, users, kind, doctype=None, docname=None, site=None, site_label=None, extra=None, include_actor=False):
-        self.signals.append((sorted(users), kind, doctype, docname, include_actor))
+    def signal(self, users, kind, about=None, marks=None, extra=None, include_actor=False):
+        self.signals.append((sorted(users), kind, marks, include_actor))
 
     def notice(self, user, key, text):
         if user in self.in_chat:
@@ -181,7 +189,10 @@ class Decisions(unittest.TestCase):
         service.notify(['pm@x'], rules.DECIDE, 'Purchase Order', 'PO-1', reason='approval', state='Pending')
         self.assertEqual(site.pushes, [], 'nothing leaves before the save is committed')
         site.commit()
-        self.assertEqual(site.pushes, [(['pm@x'], 'approval', 'Purchase Order', 'PO-1', None, None, {'needs': 'decide'})])
+        self.assertEqual(site.pushes, [(['pm@x'], 'approval', 'purchase',
+                                        {'pm@x': mark('pm@x', 'Purchase Order', 'PO-1')}, {'needs': 'decide'})])
+        for word in ('Purchase Order', 'PO-1', 'Pending'):
+            self.assertNotIn(word, json.dumps(site.pushes), 'the sort of thing and a mark, never the document')
         self.assertEqual(site.mails, [])
         record = site.record('pm@x')[0]
         self.assertEqual((record.channel, record.kind, record.resolved_at), ('phone', 'decide', None))
@@ -269,8 +280,11 @@ class Decided(unittest.TestCase):
         fake.session.user = 'actor@x'
         self.assertEqual(service.resolve('Purchase Order', 'PO-1', 'Approved'), 3)
         self.assertTrue(all(r.resolved_at == site.now and r.open_key is None for r in site.records.values()))
-        self.assertEqual(site.signals, [(['actor@x', 'pm@x'], 'remove', 'Purchase Order', 'PO-1', True)],
-                         'phones only, the deciding person included; a kind and a reference, nothing else')
+        marks = {user: mark(user, 'Purchase Order', 'PO-1') for user in ('actor@x', 'pm@x')}
+        self.assertEqual(site.signals, [(['actor@x', 'pm@x'], 'remove', marks, True)],
+                         'phones only, the deciding person included; a kind and each phone\'s own mark, nothing else')
+        self.assertEqual(site.pushes[0][3]['pm@x'], marks['pm@x'], 'the mark the alert carried removes it')
+        self.assertNotEqual(marks['pm@x'], marks['actor@x'], 'two people waiting for one thing cannot be linked')
 
     def test_records_of_the_current_state_stay(self):
         site = Site(phones={'pm@x', 'dir@x'})
@@ -326,7 +340,7 @@ class Reminders(unittest.TestCase):
         site = self.waiting()
         site.now = at(27, 13, 5)
         self.assertEqual(service.remind(), 1)
-        self.assertEqual(site.pushes, [(['pm@x'], 'reminder', None, None, None, None, {'count': 2, 'oldest_hours': 4})],
+        self.assertEqual(site.pushes, [(['pm@x'], 'reminder', None, None, {'count': 2, 'oldest_hours': 4})],
                          'dir@x waits only two hours; clerk@x has no phone and got a mail at the start')
         self.assertEqual(site.mails, [])
         self.assertEqual({(r.last_reminder, r.reminders) for r in site.record('pm@x')}, {(site.now, 1)})
@@ -395,10 +409,21 @@ class WhatWaitsForMe(unittest.TestCase):
         self.assertEqual([(k['reason'], k['doctype'], k['count'], k['longest_wait_hours']) for k in answer['kinds']],
                          [('approval', 'Purchase Order', 2, 5), ('verify', rules.ATTENDANCE, 1, 3)])
         self.assertEqual([(s['site'], s['count']) for s in answer['sites']], [('S1', 1)])
-        self.assertNotIn('PO-1', json.dumps(answer), 'numbers only')
+        self.assertEqual(answer['items'], [
+            {'mark': mark('pm@x', 'Purchase Order', 'PO-1'), 'reason': 'approval', 'about': 'purchase',
+             'doctype': 'Purchase Order', 'docname': 'PO-1', 'site': None, 'waiting_since': '2026-11-27 08:00:00',
+             'deadline': None},
+            {'mark': mark('pm@x', rules.ATTENDANCE, 'FAE-1'), 'reason': 'verify', 'about': 'attendance',
+             'doctype': rules.ATTENDANCE, 'docname': 'FAE-1', 'site': 'S1', 'waiting_since': '2026-11-27 10:00:00',
+             'deadline': None},
+            {'mark': mark('pm@x', 'Purchase Order', 'PO-2'), 'reason': 'approval', 'about': 'purchase',
+             'doctype': 'Purchase Order', 'docname': 'PO-2', 'site': None, 'waiting_since': '2026-11-27 10:00:00',
+             'deadline': '2026-11-29 18:00:00'}], 'the things, oldest first, each with the mark its alert carried')
+        self.assertEqual(answer['items'][0]['mark'], site.pushes[0][3]['pm@x'])
+        self.assertNotIn('other@x', json.dumps(answer), 'nobody else who waits')
         fake.session.user = 'nobody@x'
         self.assertEqual(api.waiting(), {'count': 0, 'waiting_since': None, 'longest_wait_hours': 0,
-                                         'nearest_deadline': None, 'kinds': [], 'sites': []})
+                                         'nearest_deadline': None, 'kinds': [], 'sites': [], 'items': []})
 
     def test_the_call_is_read_only_and_refuses_a_guest(self):
         source = (HERE / 'api.py').read_text(encoding='utf-8')
@@ -441,9 +466,13 @@ class Triggers(unittest.TestCase):
         site.commit()
         return site
 
-    def test_attendance_alerts_only_when_it_waits_or_was_returned_with_the_site(self):
-        self.assertEqual(self.notice('Submitted').pushes,
-                         [(['pm@x'], 'approval', rules.ATTENDANCE, 'FAE-1', 'S1', 'Site A', {'needs': 'decide'})])
+    def test_attendance_alerts_only_when_it_waits_or_was_returned_and_the_site_stays_on_the_server(self):
+        site = self.notice('Submitted')
+        self.assertEqual(site.pushes, [(['pm@x'], 'approval', 'attendance',
+                                        {'pm@x': mark('pm@x', rules.ATTENDANCE, 'FAE-1')}, {'needs': 'decide'})])
+        self.assertEqual(site.record('pm@x')[0].site, 'S1', 'the record keeps the site for "what waits for me"')
+        for word in ('S1', 'Site A', 'FAE-1', rules.ATTENDANCE):
+            self.assertNotIn(word, json.dumps(site.pushes), word)
         self.assertEqual(self.notice('Pending Verification').pushes[0][1], 'verify')
         self.assertEqual(self.notice('Returned').pushes[0][1], 'returned')
         for quiet in ('Approved', 'Draft'):
@@ -459,8 +488,9 @@ class Triggers(unittest.TestCase):
         self.assertEqual(site.signals, [], 'saved in the same state: it still waits')
         events.on_document_update(saved('Purchase Order', 'PO-1', workflow_state='Approved'))
         events.on_document_update(saved(rules.ATTENDANCE, 'FAE-1', state='Verified'))
-        self.assertEqual([s[1:4] for s in site.signals], [('remove', 'Purchase Order', 'PO-1'),
-                                                          ('remove', rules.ATTENDANCE, 'FAE-1')])
+        self.assertEqual([s[1:3] for s in site.signals],
+                         [('remove', {'pm@x': mark('pm@x', 'Purchase Order', 'PO-1')}),
+                          ('remove', {'pm@x': mark('pm@x', rules.ATTENDANCE, 'FAE-1')})])
         decide(site, ['pm@x'], 'PO-9')
         events.on_document_trash(saved('Purchase Order', 'PO-9'))
         self.assertTrue(all(r.resolved_at for r in site.records.values()))
@@ -509,7 +539,8 @@ class Surface(unittest.TestCase):
         for line in (part.split('\n')[0] for part in source.split('frappe.log_error(')[1:]):
             self.assertNotIn('text', line)
             self.assertNotIn('user', line)
-        self.assertIn('sender.send(phones, rules.REMOVE, doctype, name, include_actor=True)', source)
+        self.assertIn('sender.send(phones, rules.REMOVE, marks=', source)
+        self.assertNotIn('site_label', source, 'a site\'s name never goes to a phone')
 
 
 if __name__ == '__main__':

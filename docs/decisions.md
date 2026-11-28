@@ -6,6 +6,38 @@ discussion that led to a decision is not repeated here.
 
 ## 2026-11-28
 
+### Phone alerts carry a sort and a mark, never the document or the site (P108)
+
+- **Decision (owner, 28 November 2026, on the native app's list on public PR #114):**
+  - A phone alert carries its reason, whether it needs a decision, a short code for the sort of thing (`about`:
+    `attendance`, `payment`, `purchase`, `leave`, `petty_cash`, `store`) and a **mark**. It no longer carries the
+    document type, the document ID, the site or the site's name. The removal carries the mark alone.
+  - The mark is keyed with the site's own encryption key and is different for every person, so whoever carries the
+    message cannot tell what waits, nor that two people wait for the same thing.
+  - On a locked phone the app may say the sort ("Payment waiting"), never a name or an amount.
+  - "What waits for me" also gives the things themselves, each with its mark, to the signed-in person. The phone
+    opens the right thing from that, and sets its own list right when a removal was lost.
+- **Why:** the earlier shape let Google see which document waited for whom, and a site's name. The phone needs
+  neither from the message: it asks the server as the signed-in person.
+- **Where:** `erpnext_drive_integrations/notifications/` (`rules.about`, `rules.mark`, `api.waiting`),
+  `erpnext_drive_integrations/mobile_push/rules.py` (`message`).
+
+### The owner's answers to the native app's list of server needs (P50)
+
+- **Decision (owner, 28 November 2026, public PR #114):**
+  - The app offers two decisions, Approve and Reject, and shows a returned attendance entry as "Rejected". The
+    server's own words and rules stay (`Return`, with a remark always required). For other ERPNext approvals the
+    app shows the actions each workflow has.
+  - Delegation of approvals is agreed in principle. It becomes a work item of its own, after sign-in works.
+  - Proof that a fingerprint was used is agreed for every decision, built with the phone's key (P82).
+  - The server does not pause its 4-hour reminder for a phone that runs a reminder of its own.
+  - Who sends mail alerts is decided after mail sign-in works on the test site.
+  - "Save to phone" for mail attachments can be switched on only by an admin.
+  - The site reminder on a locked phone says "your site", not the site's name.
+  - The consent text for the site reminder is written with the face agreement and reviewed with it.
+- **Why:** so the app and the server are built on the same rules while both are in progress.
+- **Where:** nothing is built by this entry; each point is built under its own work item.
+
 ### The notification service: one trigger, one record per person and thing (P108)
 
 - **Decision:**

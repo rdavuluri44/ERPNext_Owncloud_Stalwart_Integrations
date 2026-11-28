@@ -87,5 +87,45 @@ class Reminders(unittest.TestCase):
         self.assertTrue(rules.expired(now, now - datetime.timedelta(days=90, minutes=1)))
 
 
+class Marks(unittest.TestCase):
+    def test_the_sort_of_thing_is_a_short_code_and_unknown_things_get_none(self):
+        self.assertEqual([rules.about(d) for d in (rules.ATTENDANCE, 'Payment Entry', 'Purchase Order',
+                                                   'Purchase Invoice', 'Material Request', 'Leave Application',
+                                                   'Expense Claim', 'Stock Entry')],
+                         ['attendance', 'payment', 'purchase', 'purchase', 'purchase', 'leave', 'petty_cash', 'store'])
+        self.assertIsNone(rules.about('Some Other Document'))
+        self.assertLessEqual(set(rules.ABOUT.values()),
+                             {'attendance', 'payment', 'purchase', 'leave', 'petty_cash', 'store', 'machinery'})
+
+    def test_a_mark_is_stable_keyed_and_different_for_every_person_and_thing(self):
+        one = rules.mark('secret', 'pm@x', 'Purchase Order', 'PO-1')
+        self.assertEqual(one, rules.mark('secret', 'pm@x', 'Purchase Order', 'PO-1'), 'the alert and its removal')
+        self.assertRegex(one, r'^[0-9a-f]{32}$')
+        for other in (rules.mark('another', 'pm@x', 'Purchase Order', 'PO-1'),
+                      rules.mark('secret', 'dir@x', 'Purchase Order', 'PO-1'),
+                      rules.mark('secret', 'pm@x', 'Purchase Invoice', 'PO-1'),
+                      rules.mark('secret', 'pm@x', 'Purchase Order', 'PO-2'),
+                      rules.mark('secret', 'pm@x', 'Purchase Order\nPO', '-1')):
+            self.assertNotEqual(one, other)
+        self.assertNotIn('PO-1', one)
+        self.assertEqual(one, rules.mark(b'secret', 'pm@x', 'Purchase Order', 'PO-1'))
+        with self.assertRaises(rules.RuleError):
+            rules.mark('', 'pm@x', 'Purchase Order', 'PO-1')
+
+    def test_the_waiting_things_come_oldest_first_with_their_marks(self):
+        rows = [{'reference_doctype': 'Leave Application', 'reference_name': 'L-2', 'reason': 'approval',
+                 'waiting_since': at(28, 9), 'deadline': at(29, 18), 'site': None},
+                {'reference_doctype': rules.ATTENDANCE, 'reference_name': 'FAE-1', 'reason': 'verify',
+                 'waiting_since': at(27, 22), 'site': 'S1'}]
+        items = rules.waiting_items(rows, lambda row: 'm-' + row['reference_name'])
+        self.assertEqual(items, [
+            {'mark': 'm-FAE-1', 'reason': 'verify', 'about': 'attendance', 'doctype': rules.ATTENDANCE,
+             'docname': 'FAE-1', 'site': 'S1', 'waiting_since': '2026-11-27 22:00:00', 'deadline': None},
+            {'mark': 'm-L-2', 'reason': 'approval', 'about': 'leave', 'doctype': 'Leave Application',
+             'docname': 'L-2', 'site': None, 'waiting_since': '2026-11-28 09:00:00',
+             'deadline': '2026-11-29 18:00:00'}])
+        self.assertEqual(rules.waiting_items([], None), [])
+
+
 if __name__ == '__main__':
     unittest.main()

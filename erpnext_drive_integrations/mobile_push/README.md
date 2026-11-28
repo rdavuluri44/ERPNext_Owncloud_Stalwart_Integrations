@@ -10,9 +10,11 @@ phone writes the visible text itself and, for approvals, shows the full-page rin
 attendance to approve or verify), and your entry was **returned** to you. Approved entries and other
 notifications send nothing.
 
-**What leaves the server:** the kind (`approval`, `verify`, `returned`; from the notification service also
-`reminder` and `remove`), the document type, the document ID, for attendance the site and its name, and the
-service's short fields (`needs`, and for a reminder a count and hours). Never a person's name, an amount or other business data. The phone opens the
+**What leaves the server** (owner, 28 November 2026): the kind (`approval`, `verify`, `returned`; from the
+notification service also `reminder` and `remove`), a short code for the sort of thing (`about`, such as
+`payment`), a mark that stands for the thing without saying what it is, and the service's short fields (`needs`,
+and for a reminder a count and hours). Never a document type, a document ID, a site or its name, a person's name,
+an amount or other business data: `rules.message` drops those fields whoever passes them. The phone opens the
 details only after the app lock, from ERPNext, as the signed-in person.
 
 ## Contents
@@ -35,7 +37,8 @@ HTTPS from the workers to `oauth2.googleapis.com` and `fcm.googleapis.com`. A Fi
 
 ## Reuse
 
-Any Frappe site can use it: call `sender.send(users, kind, doctype, docname)`. The triggers are in the
+Any Frappe site can use it: call `sender.send(users, kind, about, marks)`, where `marks` gives each person's
+own mark for the thing. The triggers are in the
 notification service. The phone side is `mobile/` (mobile-app module).
 
 ## Configuration
@@ -57,7 +60,7 @@ Without `mobile_push_fcm_key_file` nothing is sent and nothing fails. Switch the
 
 ## Tests
 
-`python tests/test_mobile_push.py`: the rules on the real module (data only, no text for Google, dead addresses
+`python tests/test_mobile_push.py`: the rules on the real module (data only, no text, document or site for Google, dead addresses
 only on 404 / `UNREGISTERED`, the service's fields never replace the message's) and the surface (POST only, own
 records only, sending after commit, nothing secret in logs, the device list for System Managers only). Who is
 alerted and when: `python tests/test_notification_service.py`.

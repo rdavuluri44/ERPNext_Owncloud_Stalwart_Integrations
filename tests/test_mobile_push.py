@@ -1,6 +1,6 @@
 """mobile-push: alerts to closed phones through Google FCM (owner, 26 November 2026).
 
-The rules are tested on the real module. These checks fail if a name or amount could reach Google, if a 400
+The rules are tested on the real module. These checks fail if a name, an amount, a document or a site could reach Google, if a 400
 could switch phones off, or if someone could register a phone for another person. Who is alerted, and when, is
 the notification service's (`tests/test_notifications.py`).
 """
@@ -23,6 +23,7 @@ from erpnext_drive_integrations import hooks  # noqa: E402
 from erpnext_drive_integrations.mobile_push import rules  # noqa: E402
 
 TOKEN = 'f' * 30 + ':APA91b' + 'x' * 120
+MARK = '0123456789abcdef' * 2
 
 
 class Rules(unittest.TestCase):
@@ -32,22 +33,31 @@ class Rules(unittest.TestCase):
             self.assertFalse(rules.valid_token(bad), repr(bad)[:20])
 
     def test_message_is_data_only_high_priority_and_carries_no_text(self):
-        m = rules.message(TOKEN, 'approval', 'Payment Entry', 'ACC-PAY-0001')['message']
+        m = rules.message(TOKEN, 'approval', 'payment', MARK)['message']
         self.assertEqual(set(m), {'token', 'data', 'android'})
         self.assertNotIn('notification', m, 'the phone writes the text; Google never sees one')
         self.assertEqual(m['android']['priority'], 'HIGH')
-        self.assertEqual(m['data'], {'v': '1', 'kind': 'approval', 'doctype': 'Payment Entry', 'docname': 'ACC-PAY-0001'})
-        site = rules.message(TOKEN, 'verify', 'Field Attendance Entry', 'FAE-1', 'S1', 'Site A')['message']['data']
-        self.assertEqual(set(site), {'v', 'kind', 'doctype', 'docname', 'site', 'site_label'})
-        self.assertTrue(all(isinstance(v, str) for v in site.values()), 'FCM data values must be strings')
+        self.assertEqual(m['data'], {'v': '2', 'kind': 'approval', 'about': 'payment', 'mark': MARK})
+        self.assertEqual(m['android']['collapse_key'], 'approval:payment')
+        self.assertTrue(all(isinstance(v, str) for v in m['data'].values()), 'FCM data values must be strings')
+        self.assertEqual(rules.message(TOKEN, 'approval')['message']['data'], {'v': '2', 'kind': 'approval'},
+                         'a sort of thing the server has no code for: the phone says only that an approval waits')
+
+    def test_no_document_and_no_site_can_reach_google(self):
+        sent = json.dumps(rules.message(TOKEN, 'verify', 'attendance', MARK, extra={
+            'needs': 'decide', 'doctype': 'Field Attendance Entry', 'docname': 'FAE-1', 'site': 'S1',
+            'site_label': 'Site A'}))
+        for word in ('doctype', 'docname', 'site', 'Field Attendance Entry', 'FAE-1', 'S1', 'Site A'):
+            self.assertNotIn(word, sent, word)
+        self.assertNotIn('doctype', (PUSH / 'sender.py').read_text(encoding='utf-8'), 'the sender never sees one')
 
     def test_the_service_s_own_fields_never_replace_the_message_s(self):
-        data = rules.message(TOKEN, 'approval', 'Payment Entry', 'ACC-PAY-0001',
-                             extra={'needs': 'decide', 'kind': 'other', 'docname': 'X', 'count': 3})['message']['data']
-        self.assertEqual(data, {'v': '1', 'kind': 'approval', 'doctype': 'Payment Entry', 'docname': 'ACC-PAY-0001',
-                                'needs': 'decide', 'count': '3'})
+        data = rules.message(TOKEN, 'approval', 'payment', MARK,
+                             extra={'needs': 'decide', 'kind': 'other', 'mark': 'X', 'about': 'leave', 'count': 3})['message']['data']
+        self.assertEqual(data, {'v': '2', 'kind': 'approval', 'about': 'payment', 'mark': MARK, 'needs': 'decide',
+                                'count': '3'})
         bare = rules.message(TOKEN, 'reminder', extra={'count': 2, 'oldest_hours': 5})['message']
-        self.assertEqual(bare['data'], {'v': '1', 'kind': 'reminder', 'count': '2', 'oldest_hours': '5'})
+        self.assertEqual(bare['data'], {'v': '2', 'kind': 'reminder', 'count': '2', 'oldest_hours': '5'})
         self.assertEqual(bare['android']['collapse_key'], 'reminder:')
 
     def test_dead_address_only_on_404_or_unregistered(self):

@@ -10,6 +10,8 @@ Every message the system sends to a person has a **kind** (owner, 27 November 20
 Alerts carry no content: a kind and a reference, never a name, an amount or a text.
 """
 import datetime
+import hashlib
+import hmac
 
 DECIDE, INFORM = 'decide', 'inform'
 KINDS = (DECIDE, INFORM)
@@ -90,6 +92,39 @@ def attendance_reason(state):
     return ATTENDANCE_REASONS.get(state)
 
 
+# The sort of thing a decision is about, as a short code the phone turns into its own words on a locked screen
+# ("Payment waiting"; owner, 28 November 2026). The sort only: never the document type, its ID, a name or an amount.
+# A document type that is not listed gets no code, and the phone says only that an approval waits.
+ABOUT = {ATTENDANCE: 'attendance', 'Payment Entry': 'payment', 'Purchase Order': 'purchase',
+         'Purchase Invoice': 'purchase', 'Material Request': 'purchase', 'Leave Application': 'leave',
+         'Expense Claim': 'petty_cash', 'Stock Entry': 'store'}
+
+
+def about(doctype):
+    return ABOUT.get(doctype)
+
+
+def mark(secret, user, doctype, name):
+    """What a phone alert carries in place of the document type and ID (owner, 28 November 2026): a keyed mark
+    only this server can compute. It is the same in the alert and in its removal, and different for every person,
+    so whoever carries the messages cannot tell what waits, nor that two people wait for the same thing."""
+    if not secret:
+        raise RuleError("A mark needs the site's secret.")
+    key = secret.encode() if isinstance(secret, str) else secret
+    text = '\n'.join(('notification-mark-v1', str(user), str(doctype), str(name)))
+    return hmac.new(key, text.encode(), hashlib.sha256).hexdigest()[:32]
+
+
+def waiting_items(rows, mark_of):
+    """The things themselves behind "what waits for me", oldest first, each with the mark its alert carried, so the
+    phone can open the right one and set its own list right when a removal was lost."""
+    return [{'mark': mark_of(row), 'reason': row.get('reason') or '', 'about': about(row['reference_doctype']),
+             'doctype': row['reference_doctype'], 'docname': row['reference_name'], 'site': row.get('site') or None,
+             'waiting_since': _stamp(row['waiting_since']),
+             'deadline': _stamp(row['deadline']) if row.get('deadline') else None}
+            for row in sorted(rows, key=lambda r: (r['waiting_since'], r['reference_doctype'], r['reference_name']))]
+
+
 def moved_on(record_state, current_state):
     """Whether the thing a record waits on has been decided: it is gone (no current state), or it is no longer in
     the state it was in when the record was made."""
@@ -133,7 +168,7 @@ def _block(now, items):
 def waiting_summary(now, rows):
     """The numbers behind "what waits for me", for one person's waiting decisions. In total, per kind of thing
     (why it waits and what it is) and per site: how many, since when the oldest waits, and the nearest deadline
-    when one is known. No names of documents or people."""
+    when one is known. No names of people."""
     empty = {'count': 0, 'waiting_since': None, 'longest_wait_hours': 0, 'nearest_deadline': None}
     if not rows:
         return dict(empty, kinds=[], sites=[])
