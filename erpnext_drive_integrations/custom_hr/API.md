@@ -76,6 +76,8 @@ Takes nothing. Answers who the person is and what they may do.
 | `manager` | true for a Field Attendance Manager or System Manager |
 | `server_now` | The server's clock |
 | `version` | The version of these calls (`0.2.0`) |
+| `contract` | A 12-character fingerprint of what the apps depend on (the calls and the fields of the attendance records); it changes when they change |
+| `minimum_app_version` | The oldest app version this site accepts (`number.number.number`; `0.0.0` without the site setting). The app applies it; the server refuses no call by version |
 | `sites[]` | Sites where the person has a team role (all enabled sites for a manager) |
 | `check_in_sites[]` | Sites where the person may check in themselves; empty when they have no employee record or a supervisor records them |
 

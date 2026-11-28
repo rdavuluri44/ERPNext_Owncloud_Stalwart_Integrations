@@ -6,6 +6,18 @@ discussion that led to a decision is not repeated here.
 
 ## 2026-11-28
 
+### Version handshake between the server and the mobile apps (P104)
+
+- **Decision:** `custom_hr.api.bootstrap` tells the apps, next to `version`, a `contract` (a 12-character
+  fingerprint of the functions they call and the fields they read) and the site's `minimum_app_version` (site
+  setting `mobile_minimum_app_version`). The fingerprint is recorded in the code and a test computes it again, so
+  a mobile-facing change cannot go unnoticed. The app shows "update needed" below the minimum; the server does not
+  refuse calls by version, and a missing or mistyped setting turns nobody away.
+- **Why:** owner, 27 November 2026 (the native app's request on public PR #114): an app that is older than the
+  server's functions should say "update needed" instead of showing strange errors.
+- **Where:** `erpnext_drive_integrations/custom_hr/contract.py`, `custom_hr/api.py` (`bootstrap`),
+  `tests/test_mobile_contract.py`.
+
 ### A chat screen for browsers: Element Web, under its own name, from the Desk menu (P73)
 
 - **Decision (owner, 28 November 2026):** chat gets a screen for browsers now, with a "Chat" entry in the Desk's

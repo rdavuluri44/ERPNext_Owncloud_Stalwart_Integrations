@@ -1,7 +1,7 @@
 import frappe
 from frappe.utils import now_datetime, nowdate, cint
 from erpnext_drive_integrations.custom_hr.access import require_user, require_site, require_manager, site_ids, site_access, is_manager, entry_access, self_sites, supervised_users, can_verify, approval_access
-from erpnext_drive_integrations.custom_hr import service
+from erpnext_drive_integrations.custom_hr import contract, service
 
 
 def data(value):
@@ -30,7 +30,10 @@ def bootstrap():
                 radius_m=doc.radius_m,maximum_accuracy_m=doc.maximum_accuracy_m,
                 shifts=[dict(service.shift_details(doc,s),label=label) for s,label in [(doc.day_shift,'Day'),(doc.night_shift,'Night')]]))
     return dict(user=user,full_name=frappe.db.get_value('User',user,'full_name'),manager=is_manager(user),
-        sites=sites,check_in_sites=check_in_sites,server_now=str(now_datetime()),employee=employee,version='0.2.0')
+        sites=sites,check_in_sites=check_in_sites,server_now=str(now_datetime()),employee=employee,version='0.2.0',
+        # The version handshake (P104): what the apps depend on, and the oldest app this site still accepts.
+        contract=contract.FINGERPRINT,
+        minimum_app_version=contract.minimum(frappe.conf.get('mobile_minimum_app_version')))
 
 
 @frappe.whitelist()
