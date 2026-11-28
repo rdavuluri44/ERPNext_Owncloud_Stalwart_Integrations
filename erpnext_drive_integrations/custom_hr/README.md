@@ -96,6 +96,18 @@ engineer assignment changes.
   `entry`, `entry_photo`, `review`, `review_many`. Writes are POST only. `entry_photo` returns an entry's photo to
   anyone `entry` allows: the private file URL itself applies ERPNext's Employee user permissions, which would stop a
   project manager from seeing another employee's photo.
+- **Version handshake with the mobile apps (P104):** `bootstrap` also returns `contract` and
+  `minimum_app_version`, next to `version`.
+  - `contract` is a 12-character fingerprint of what the apps depend on: every whitelisted function in
+    `custom_hr/api.py` and `drive_store/api.py`, and the fields of Field Attendance Entry, Field Face Capture and
+    Drive Photo. It is recorded in `contract.py`; a test fails when the code changes and the record does not. An
+    app keeps the value it was built against and can tell from a different one that the server has moved on.
+  - `minimum_app_version` is the oldest app version the site accepts, from the site setting
+    `mobile_minimum_app_version` (`number.number.number`). An app below it shows "update needed". Without the
+    setting, or with a mistyped one, it is `0.0.0` and no app is turned away. The app applies it; the server does
+    not refuse calls by version.
+  - Whoever changes a mobile-facing function renews the fingerprint in the same change and says in the pull
+    request whether older apps still work. If they do not, the release raises `mobile_minimum_app_version`.
 
 **Upgrading a site from the former name:** `bench migrate` runs `custom_hr/patches/rename_module.py` before the
 DocTypes are synced; it renames "Cloud Field" to "Custom HR". When Frappe has already registered
@@ -166,6 +178,8 @@ workers that supervisor may record on that site and shift. Decided by the owner 
 - `tests/test_custom_hr_face_queue.py` (offline: who the queue acts for, who decides, photographs, the web screen)
 - `tests/test_custom_hr_face_switch.py` (offline: the off switch, where it applies and where it never does)
 - `tests/test_custom_hr_face_enrolers.py` (offline: who may enrol or remove a face)
+- `tests/test_mobile_contract.py` (offline: the version handshake; fails when a mobile-facing function or field
+  changes without the fingerprint)
 - `erpnext_drive_integrations/custom_hr/face_queue_integration_tests.py` (needs a live test site; rollback only)
 - `tests/test_custom_hr_face_engine.py` (model pins and fetch; the live engine part runs in the ERP image)
 - `erpnext_drive_integrations/custom_hr/test_checkout.py`
