@@ -6,6 +6,51 @@ discussion that led to a decision is not repeated here.
 
 ## 2026-11-28
 
+### Team tasks are built inside ERPNext; Vikunja and Gameplan considered and set aside for now (P121)
+
+- **Decision (owner, 28 November 2026):** the tool that picks up work (recurring jobs, tax filings, preventive
+  maintenance, renewals, alerts from the other tools), gives each task a person and follows it until it is done is
+  **a module of our own add-on inside ERPNext**, with one board on the Desk and a Tasks screen in the phone app.
+  No separate task application is installed. **Vikunja** and **Frappe Gameplan** were considered and are on record
+  as the alternatives; the choice is "for now" and can be looked at again.
+- **Why:**
+  - Our Frappe version (16.60.2) already has the parts that hand out and repeat work: Assignment Rules (in turn, to
+    the person with the fewest open, by a field, by weight), Auto Repeat, asset maintenance schedules, to-dos per
+    person, and date-triggered automation. What is missing is small and specific: a view of a department's pending
+    work per person, escalation, proof of completion and one place for renewals and filings.
+  - The work is caused by ERPNext records, so the task lives next to its cause: no second server, no two-way sync,
+    no second set of users and roles, no new security exposure, and the sign-in, backups, monitoring and test site
+    are the ones that exist.
+  - It must be seen where people already look (owner): beside the notifications on the Desk and in the phone app,
+    which can hold only our own screens.
+  - The cost: we build and maintain the board, the escalation and the phone screens ourselves.
+- **The owner's tests for a tool:** open source; commercial use allowed; works with single sign-on; actively
+  maintained; built on a current language, framework and database.
+- **Candidates checked (28 November 2026; each project's GitHub repository, licence file, releases and GitHub
+  Security Advisories of the last 12 months; the vendors' own edition and pricing pages for sign-in):**
+
+  | Candidate | Licence | Sign-in with our service in the free edition | Latest release | Advisories, 12 months | Result |
+  |---|---|---|---|---|---|
+  | [Vikunja](https://github.com/go-vikunja/vikunja) | AGPL-3.0 | yes (OpenID Connect, teams from the sign-in service) | v2.8.0, 5 Nov 2026 | 131 (4 critical, 31 high) | the alternative on record: Go and PostgreSQL, light; but one main developer and many fixes to follow |
+  | [Frappe Gameplan](https://github.com/frappe/gameplan) | AGPL-3.0 | yes (a Frappe app, the ERP's own sign-in) | v0.1.38, 25 Nov 2026 | 1 (low) | on record: young, mostly one developer, built around discussions more than assigned work |
+  | [Leantime](https://github.com/Leantime/leantime) | AGPL-3.0 | yes | v3.17.0, 23 Nov 2026 | 18 (4 high) | passes the tests; made for client projects, PHP; not chosen |
+  | [Plane](https://github.com/makeplane/plane) | AGPL-3.0 | no (paid edition only) | v1.5.1, 25 Nov 2026 | 106 (6 critical, 44 high) | out: sign-in |
+  | [OpenProject](https://github.com/opf/openproject) | GPL-3.0 | no (Enterprise add-on) | v17.8.3, 19 Nov 2026 | 108 (16 critical, 12 high) | out: sign-in |
+  | [Planka](https://github.com/plankanban/planka) | PLANKA Community License ("fair-code", not open source) | no (moved to the paid edition) | v2.3.1, 5 Nov 2026 | 3 (1 high) | out: licence and sign-in |
+  | [Kanboard](https://github.com/kanboard/kanboard) | MIT | by plugin | v1.2.58, 21 Nov 2026 | 9 (1 critical, 3 high) | out: its README says it is in maintenance mode |
+  | [WeKan](https://github.com/wekan/wekan) | MIT | yes | v13.36, 27 Nov 2026 | 106 (11 critical, 35 high) | out: security history, older stack |
+  | Focalboard, Huly, Taiga | | | no release since June 2024 (Focalboard), July 2026 (Huly); Taiga publishes none on GitHub | | out: upkeep stalled or slowing |
+
+  Sign-in sources: [Plane editions](https://developers.plane.so/self-hosting/editions-and-versions),
+  [OpenProject OpenID providers](https://www.openproject.org/docs/system-admin-guide/authentication/openid-providers/),
+  [Planka issue 1754](https://github.com/plankanban/planka/issues/1754),
+  [Vikunja OpenID](https://vikunja.io/docs/openid). Not checked: any candidate installed and tried; the advisories
+  open at each latest version one by one (none is adopted, so none is shipped).
+- **What it relies on in Frappe and ERPNext** is entered in the register of our changes
+  (`docs/upstream-customizations.md`) in the pull requests that build it, with "re-check" at an upgrade.
+- **Where:** P121 (scope, the board's three dimensions and levels, build order, the questions still open);
+  `docs/open-source.json` (Vikunja and Frappe Gameplan, status `evaluating`, set aside).
+
 ### One header row in every office editor; new sheet views recognised by being new (P117)
 
 - **Decision (owner, 28 November 2026):** Text documents and presentations get the
