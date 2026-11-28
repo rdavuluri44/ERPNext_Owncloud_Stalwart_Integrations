@@ -3,7 +3,7 @@
   "rules": [
     {
       "name": "ERP add-on",
-      "paths": ["erpnext_drive_integrations/**", "pyproject.toml", "MANIFEST.in", "deployment/erp/Dockerfile.addon", "deployment/face-models.json", "tools/fetch_face_models.py", "integrations/insights/**"],
+      "paths": ["erpnext_drive_integrations/**", "pyproject.toml", "MANIFEST.in", "deployment/erp/Dockerfile.addon", "deployment/face-models.json", "tools/fetch_face_models.py", "tools/about_components.py", "integrations/insights/**"],
       "stacks": ["erp"],
       "steps": ["build the ERP add-on image for this commit", "deploy that one image to every ERP service", "bench migrate (runs the add-on's after_migrate setup)", "check the assets (tools/verify_erp_assets.py)"],
       "restart": ["every ERP service"]
@@ -130,7 +130,7 @@
     },
     {
       "name": "Host checks and watches",
-      "paths": ["tools/host_check.py", "tools/render_host_checks.py", "deployment/host-checks.example.json", "tools/editor_safety.py", "integrations/onlyoffice/editor-safety.*", "tools/upstream_watch.py", "tools/upstream_posts.py", "deployment/upstream-watch*", "tools/drift_check.py", "deployment/drift-check.*", "integrations/backup/**", "integrations/monitoring/**", "tools/export_snapshot.py", "tools/backup_to_snapshot.py", "tools/snapshot_archive.py", "deployment/mail-retention-purge.*", "tools/send_alert.py"],
+      "paths": ["tools/host_check.py", "tools/render_host_checks.py", "deployment/host-checks.example.json", "tools/editor_safety.py", "integrations/onlyoffice/editor-safety.*", "tools/upstream_watch.py", "tools/upstream_posts.py", "deployment/upstream-watch*", "tools/drift_check.py", "deployment/drift-check.*", "integrations/backup/**", "integrations/monitoring/**", "tools/export_snapshot.py", "tools/backup_to_snapshot.py", "tools/snapshot_archive.py"],
       "stacks": ["host"],
       "steps": ["update the installed copy on each server that runs it (host checks, editor safety, upstream watch, drift check, backup, snapshot export)"]
     },
