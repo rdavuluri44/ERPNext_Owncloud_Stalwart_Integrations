@@ -52,11 +52,11 @@ class Fingerprint(unittest.TestCase):
         folder = self.copy()
         before = contract.compute(folder)
         self.assertEqual(before, contract.compute(), 'the copy is the code')
-        self.change(folder, 'custom_hr/api.py', 'def review_many(names,decision,remarks=\'\'):',
-                    '# a comment for the next reader\n\ndef review_many(names,decision,remarks=\'\'):')
+        self.change(folder, 'custom_hr/api.py', 'def my_records():',
+                    '# a comment for the next reader\n\ndef my_records():')
         self.assertEqual(contract.compute(folder), before, 'a comment or an empty line is not a change')
-        self.change(folder, 'custom_hr/api.py', 'def review_many(names,decision,remarks=\'\'):',
-                    'def review_many(names,decision,remarks=\'\',revision=None):')
+        self.change(folder, 'custom_hr/api.py', 'def my_records():',
+                    'def my_records(limit=None):')
         argument = contract.compute(folder)
         self.assertNotEqual(argument, before, 'a new argument')
         self.change(folder, 'custom_hr/api.py', "version='0.2.0'", "version='0.3.0'")
