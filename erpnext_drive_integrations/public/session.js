@@ -78,7 +78,21 @@
         try { dirty = !!window.cur_frm?.is_dirty?.(); } catch (_) {}
         window.parent.postMessage({ source: 'cloud-session', type: 'unsaved', value: dirty }, DESK);
       } else if (e.data.type === 'signout') window.parent.postMessage({ source: 'cloud-session', type: 'logout' }, DESK);
+      else if (e.data.type === 'look') {
+        // P111: font size and mode chosen in the Desk's bar.
+        if ([0.9, 1, 1.15].includes(e.data.font)) document.documentElement.style.zoom = String(e.data.font);
+        const mode = e.data.dark === true ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', mode);
+        document.documentElement.setAttribute('data-theme-mode', mode);
+      }
     });
+    // P111: search, notifications and help are in the Desk's bar; the business system's own rows for them
+    // are hidden inside the Desk (its keyboard search still works).
+    const bar = document.createElement('style');
+    bar.id = 'cloud-desk-bar';
+    bar.textContent = 'body .body-sidebar .standard-items-band,body .body-sidebar .uf-help,' +
+      'body .body-sidebar .navbar-modal-search-mobile,body .body-sidebar .sidebar-notification{display:none!important}';
+    (document.head || document.documentElement).append(bar);
   }
   let busy = false, checking = false;
   // Bounded requests: a stalled connection (for example after computer sleep)

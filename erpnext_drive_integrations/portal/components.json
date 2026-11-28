@@ -1,0 +1,119 @@
+{
+  "note": "Written by tools/about_components.py from deployment/upstream-watch.json; do not edit by hand.",
+  "components": [
+    {
+      "name": "ownCloud Infinite Scale",
+      "version": "8.2.3",
+      "repository": "https://github.com/owncloud/ocis"
+    },
+    {
+      "name": "ONLYOFFICE Docs",
+      "version": "10.0.0",
+      "repository": "https://github.com/ONLYOFFICE/DocumentServer"
+    },
+    {
+      "name": "Stalwart",
+      "version": "1.1.1",
+      "repository": "https://github.com/stalwartlabs/stalwart"
+    },
+    {
+      "name": "Paperless-ngx",
+      "version": "3.4.2",
+      "repository": "https://github.com/paperless-ngx/paperless-ngx"
+    },
+    {
+      "name": "authentik",
+      "version": "2026.8.7",
+      "repository": "https://github.com/goauthentik/authentik"
+    },
+    {
+      "name": "Synapse",
+      "version": "1.166.0",
+      "repository": "https://github.com/element-hq/synapse"
+    },
+    {
+      "name": "Element Web",
+      "version": "1.12.36",
+      "repository": "https://github.com/element-hq/element-web"
+    },
+    {
+      "name": "Matrix Authentication Service",
+      "version": "1.30.0",
+      "repository": "https://github.com/element-hq/matrix-authentication-service"
+    },
+    {
+      "name": "Sygnal",
+      "version": "0.17.0",
+      "repository": "https://github.com/element-hq/sygnal"
+    },
+    {
+      "name": "Apache Tika",
+      "version": "3.2.3",
+      "repository": "https://github.com/apache/tika"
+    },
+    {
+      "name": "Gotenberg",
+      "version": "8.40.0",
+      "repository": "https://github.com/gotenberg/gotenberg"
+    },
+    {
+      "name": "CoreDNS",
+      "version": "1.15.0",
+      "repository": "https://github.com/coredns/coredns"
+    },
+    {
+      "name": "MariaDB",
+      "version": "11.8.9"
+    },
+    {
+      "name": "PostgreSQL",
+      "version": "16.16, 17.12"
+    },
+    {
+      "name": "Redis",
+      "version": "8.10.3, 8.6.7"
+    },
+    {
+      "name": "nginx",
+      "version": "1.28.3, 1.30.8"
+    },
+    {
+      "name": "Python",
+      "version": "3.13.18, 3.14.9"
+    },
+    {
+      "name": "Node.js",
+      "version": "24.22.3"
+    },
+    {
+      "name": "Prometheus",
+      "version": "3.16.0",
+      "repository": "https://github.com/prometheus/prometheus"
+    },
+    {
+      "name": "Grafana Loki",
+      "version": "3.7.10",
+      "repository": "https://github.com/grafana/loki"
+    },
+    {
+      "name": "Grafana Alloy",
+      "version": "1.22.0",
+      "repository": "https://github.com/grafana/alloy"
+    },
+    {
+      "name": "Grafana",
+      "version": "13.3.1",
+      "repository": "https://github.com/grafana/grafana"
+    },
+    {
+      "name": "Prometheus node_exporter",
+      "version": "1.13.1",
+      "repository": "https://github.com/prometheus/node_exporter"
+    },
+    {
+      "name": "cAdvisor",
+      "version": "0.61.1",
+      "repository": "https://github.com/google/cadvisor"
+    }
+  ]
+}
