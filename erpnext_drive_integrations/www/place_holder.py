@@ -65,8 +65,9 @@ def get_context(context):
             pass
     context.portal_apps = apps
     # About (P111): our application under the name the business system installs it, with the version it carries.
-    from erpnext_drive_integrations import __version__
-    from erpnext_drive_integrations.portal.desk import OURS, REPOSITORY
-    context.app_name, context.app_version, context.app_repository = OURS, __version__, REPOSITORY
+    import erpnext_drive_integrations as ours
+    context.app_name = 'erpnext_drive_integrations'
+    context.app_version = getattr(ours, '__version__', '')
+    context.app_repository = getattr(ours, '__repository__', '')
     context.logout_url = '/api/method/erpnext_drive_integrations.portal.sso.finish_logout'
     return context

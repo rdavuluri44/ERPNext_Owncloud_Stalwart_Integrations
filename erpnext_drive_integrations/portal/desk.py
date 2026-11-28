@@ -7,9 +7,9 @@ import json
 from pathlib import Path
 
 import frappe
-from frappe.utils import strip_html
 
-REPOSITORY = 'https://github.com/rdavuluri44/erpnext_drive_integrations'
+from erpnext_drive_integrations import __repository__ as REPOSITORY
+
 OURS = 'erpnext_drive_integrations'
 COMPONENTS = Path(__file__).with_name('components.json')
 
@@ -46,6 +46,7 @@ def about():
 @frappe.whitelist(methods=['GET'])
 def notifications():
     """The person's unread notifications of the business system, newest first."""
+    from frappe.utils import strip_html
     user = frappe.session.user
     if user == 'Guest':
         frappe.throw('Sign in first', frappe.PermissionError)
